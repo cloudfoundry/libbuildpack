@@ -1,32 +1,58 @@
 package buildpackUtils
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 type Downloader struct {
-	Dependency Dependency
-	OutputDir  string
-	Manifest   *Manifest
+	OutputDir string
+	Manifest  *Manifest
 }
 
-func (d *Downloader) Run() (string, error) {
-	url, err := d.Manifest.GetUrl(d.Dependency)
-	return url, err
+func NewDownloader(dir string, manifest *Manifest) *Downloader {
+	d := &Downloader{
+		OutputDir: dir,
+		Manifest:  manifest,
+	}
+	return d
+}
+
+func (d *Downloader) Fetch(dep Dependency) (string, error) {
+	url, err := d.Manifest.GetUrl(dep)
+
+	if err != nil {
+		return url, err
+	}
+
+	return url, nil
 }
 
 func (m *Manifest) GetUrl(dep Dependency) (string, error) {
-	var uri string
+	entry, err := m.GetEntry(dep)
+
+	if err != nil {
+		return "", err
+	}
+
+	return entry.URI, nil
+}
+
+func (m *Manifest) GetEntry(dep Dependency) (ManifestEntry, error) {
+	var entry ManifestEntry
 	inManifest := false
 
-	for _, entry := range m.ManifestEntries {
-		if entry.Dependency == dep {
-			uri = entry.URI
+	for _, e := range m.ManifestEntries {
+		if e.Dependency == dep {
+			entry = e
 			inManifest = true
+			break
 		}
 	}
 
 	if !inManifest {
-		return "", errors.New("not found")
+		return entry, errors.New(fmt.Sprintf("dependency %s %s not found", dep.Name, dep.Version))
 	}
 
-	return uri, nil
+	return entry, nil
 }

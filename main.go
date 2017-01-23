@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	buildpackUtils "github.com/sesmith177/go-ce-test/buildpackUtils"
+	"github.com/sesmith177/go-ce-test/buildpackUtils"
 
 	yaml "gopkg.in/yaml.v2"
 )
@@ -36,5 +36,14 @@ func main() {
 		fmt.Printf("  - name: %s\n    version: %s\n    uri: %s\n    md5: %s\n", entry.Dependency.Name, entry.Dependency.Version, entry.URI, entry.MD5)
 	}
 
+	downloader := buildpackUtils.NewDownloader("/tmp/test_go_stuff/", &m)
 
+	a, err := downloader.Fetch(m.ManifestEntries[0].Dependency)
+
+	if err != nil {
+		fmt.Printf("Error downloading: %s\n", err)
+		return
+	}
+
+	fmt.Printf("Downloaded: %s\n", a)
 }
