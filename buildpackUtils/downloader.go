@@ -3,6 +3,11 @@ package buildpackUtils
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"path"
+	"strings"
 )
 
 type Downloader struct {
@@ -22,10 +27,39 @@ func (d *Downloader) Fetch(dep Dependency) (string, error) {
 	url, err := d.Manifest.GetUrl(dep)
 
 	if err != nil {
-		return url, err
+		return "", err
 	}
 
-	return url, nil
+	resp, err := http.Get(url)
+	defer resp.Body.Close()
+
+	if err != nil {
+		return "", err
+	}
+
+	blob, _ := ioutil.ReadAll(resp.Body)
+
+	dest := path.Join(d.OutputDir, filenameFromUrl(url))
+
+	err = os.Mkdir(d.OutputDir, os.ModePerm)
+
+	if err != nil {
+		return "", err
+	}
+
+	err = ioutil.WriteFile(dest, blob, os.ModePerm)
+
+	if err != nil {
+		return "", err
+	}
+
+	fmt.Printf("Downloaded [%s] to %s\n", url, dest)
+	return dest, nil
+}
+
+func filenameFromUrl(url string) string {
+	substrings := strings.Split(url, "/")
+	return substrings[len(substrings)-1]
 }
 
 func (m *Manifest) GetUrl(dep Dependency) (string, error) {

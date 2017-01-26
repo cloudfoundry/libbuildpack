@@ -38,12 +38,11 @@ func main() {
 
 	downloader := buildpackUtils.NewDownloader("/tmp/test_go_stuff/", &m)
 
-	a, err := downloader.Fetch(m.ManifestEntries[0].Dependency)
+	_, err = downloader.Fetch(m.ManifestEntries[0].Dependency)
 
 	if err != nil {
 		fmt.Printf("Error downloading: %s\n", err)
 		return
 	}
 
-	fmt.Printf("Downloaded: %s\n", a)
 }
