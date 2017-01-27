@@ -1,13 +1,11 @@
 package buildpackUtils
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
-	"strings"
 )
 
 type Downloader struct {
@@ -23,7 +21,7 @@ func NewDownloader(dir string, manifest *Manifest) *Downloader {
 	return d
 }
 
-func (d *Downloader) Fetch(dep Dependency) (string, error) {
+func (d *Downloader) Fetch(dep Dependency, filename string) (string, error) {
 	url, err := d.Manifest.GetUrl(dep)
 
 	if err != nil {
@@ -39,9 +37,9 @@ func (d *Downloader) Fetch(dep Dependency) (string, error) {
 
 	blob, _ := ioutil.ReadAll(resp.Body)
 
-	dest := path.Join(d.OutputDir, filenameFromUrl(url))
+	dest := path.Join(d.OutputDir, filename)
 
-	err = os.Mkdir(d.OutputDir, os.ModePerm)
+	err = os.MkdirAll(d.OutputDir, os.ModePerm)
 
 	if err != nil {
 		return "", err
@@ -55,11 +53,6 @@ func (d *Downloader) Fetch(dep Dependency) (string, error) {
 
 	fmt.Printf("Downloaded [%s] to %s\n", url, dest)
 	return dest, nil
-}
-
-func filenameFromUrl(url string) string {
-	substrings := strings.Split(url, "/")
-	return substrings[len(substrings)-1]
 }
 
 func (m *Manifest) GetUrl(dep Dependency) (string, error) {
@@ -85,8 +78,35 @@ func (m *Manifest) GetEntry(dep Dependency) (ManifestEntry, error) {
 	}
 
 	if !inManifest {
-		return entry, errors.New(fmt.Sprintf("dependency %s %s not found", dep.Name, dep.Version))
+		otherVersions := m.AllDependencyVersions(dep)
+
+		fmt.Printf("DEPENDENCY MISSING IN MANIFEST:\n\n")
+
+		if otherVersions == nil {
+			fmt.Printf("Dependency %s is not provided by this buildpack\n", dep.Name)
+		} else {
+			fmt.Printf("Version %s of dependency %s is not supported by this buildpack\n", dep.Version, dep.Name)
+			fmt.Printf("The versions of %s supported in this buildpack are:\n", dep.Name)
+
+			for _, ver := range otherVersions {
+				fmt.Printf("- %s\n", ver)
+			}
+		}
+
+		return entry, fmt.Errorf("dependency %s %s not found", dep.Name, dep.Version)
 	}
 
 	return entry, nil
+}
+
+func (m *Manifest) AllDependencyVersions(dep Dependency) []string {
+	var depVersions []string
+
+	for _, e := range m.ManifestEntries {
+		if e.Dependency.Name == dep.Name {
+			depVersions = append(depVersions, e.Dependency.Version)
+		}
+	}
+
+	return depVersions
 }

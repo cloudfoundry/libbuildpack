@@ -38,7 +38,7 @@ func main() {
 
 	downloader := buildpackUtils.NewDownloader("/tmp/test_go_stuff/", &m)
 
-	_, err = downloader.Fetch(m.ManifestEntries[0].Dependency)
+	_, err = downloader.Fetch(buildpackUtils.Dependency{Name: "dotnet", Version: "what"}, "new.tgz")
 
 	if err != nil {
 		fmt.Printf("Error downloading: %s\n", err)
