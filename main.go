@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/sesmith177/go-ce-test/buildpackUtils"
+	"github.com/sesmith177/go-ce-test/buildpack"
 
 	yaml "gopkg.in/yaml.v2"
 )
 
 func main() {
-	var m buildpackUtils.Manifest
+	var m buildpack.Manifest
 
-	manifestData, err := ioutil.ReadFile("/Users/pivotal/workspace/dotnet-core-buildpack/manifest.yml")
+	manifestData, err := ioutil.ReadFile("./manifest.yml")
 
 	err = yaml.Unmarshal(manifestData, &m)
 
@@ -36,13 +36,24 @@ func main() {
 		fmt.Printf("  - name: %s\n    version: %s\n    uri: %s\n    md5: %s\n", entry.Dependency.Name, entry.Dependency.Version, entry.URI, entry.MD5)
 	}
 
-	downloader := buildpackUtils.NewDownloader("/tmp/test_go_stuff/", &m)
+	depName := "dotnet"
 
-	_, err = downloader.Fetch(buildpackUtils.Dependency{Name: "dotnet", Version: "what"}, "new.tgz")
+	version, err := m.DefaultVersionFor(depName)
 
 	if err != nil {
-		fmt.Printf("Error downloading: %s\n", err)
+		fmt.Printf("DefaultVersions error: %s\n", err)
+		fmt.Printf("%s", buildpack.DefaultVersionsError)
 		return
 	}
 
+	fmt.Printf("DefaultVersionFor %s: %s\n", depName, version)
+
+	filtered_url, err := buildpack.FilterURI("https://user:password@example.com/file.tgz")
+
+	if err != nil {
+		fmt.Printf("FilterURI error: %s\n", err)
+		return
+	}
+
+	fmt.Printf(filtered_url)
 }

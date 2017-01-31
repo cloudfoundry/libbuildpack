@@ -1,4 +1,4 @@
-package buildpackUtils
+package buildpack
 
 type Dependency struct {
 	Name    string `yaml:"name"`
