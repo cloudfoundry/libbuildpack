@@ -8,19 +8,6 @@ import (
 	"path"
 )
 
-type Downloader struct {
-	OutputDir string
-	Manifest  *Manifest
-}
-
-func NewDownloader(dir string, manifest *Manifest) *Downloader {
-	d := &Downloader{
-		OutputDir: dir,
-		Manifest:  manifest,
-	}
-	return d
-}
-
 func (d *Downloader) Fetch(dep Dependency, filename string) (string, error) {
 	url, err := d.Manifest.GetUrl(dep)
 
