@@ -1,6 +1,7 @@
 package buildpack
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -50,6 +51,7 @@ func NewManifest(filename string) (*Manifest, error) {
 
 func (m *Manifest) DefaultVersion(depName string) (string, error) {
 	var defaultVersion string
+	var err error
 	numDefaults := 0
 
 	for _, dep := range m.DefaultVersions {
@@ -60,9 +62,14 @@ func (m *Manifest) DefaultVersion(depName string) (string, error) {
 	}
 
 	if numDefaults == 0 {
-		return "", newBuildpackError(defaultVersionsError, "no default version for %s", depName)
+		err = fmt.Errorf("no default version for %s", depName)
 	} else if numDefaults > 1 {
-		return "", newBuildpackError(defaultVersionsError, "found %d default versions for %s", numDefaults, depName)
+		err = fmt.Errorf("found %d default versions for %s", numDefaults, depName)
+	}
+
+	if err != nil {
+		Log.Error(defaultVersionsError)
+		return "", err
 	}
 
 	return defaultVersion, nil
@@ -70,7 +77,6 @@ func (m *Manifest) DefaultVersion(depName string) (string, error) {
 
 func (m *Manifest) FetchDependency(dep Dependency, outputFile string) error {
 	entry, err := m.getEntry(dep)
-
 	if err != nil {
 		return err
 	}
@@ -97,8 +103,7 @@ func (m *Manifest) FetchDependency(dep Dependency, outputFile string) error {
 		return err
 	}
 
-	Log.Info("Downloaded [%s]", filteredURI)
-	Log.Info("        to [%s]", outputFile)
+	Log.Info("Downloaded [%s]\n        to [%s]", filteredURI, outputFile)
 
 	return nil
 }
@@ -109,7 +114,9 @@ func (m *Manifest) getEntry(dep Dependency) (*ManifestEntry, error) {
 			return &e, nil
 		}
 	}
-	return nil, newBuildpackError("FIXME", "dependency %s %s not found", dep.Name, dep.Version)
+
+	Log.Error(m.dependencyMissingError(dep))
+	return nil, fmt.Errorf("dependency %s %s not found", dep.Name, dep.Version)
 }
 
 func (m *Manifest) isCached() bool {
@@ -121,4 +128,16 @@ func (m *Manifest) isCached() bool {
 	}
 
 	return true
+}
+
+func (m *Manifest) allDependencyVersions(depName string) []string {
+	var depVersions []string
+
+	for _, e := range m.ManifestEntries {
+		if e.Dependency.Name == depName {
+			depVersions = append(depVersions, e.Dependency.Version)
+		}
+	}
+
+	return depVersions
 }

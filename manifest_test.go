@@ -163,19 +163,17 @@ var _ = Describe("Manifest", func() {
 
 		Context("requested name exists (twice)", func() {
 			BeforeEach(func() { manifestFile = "fixtures/manifest_duplicate_default.yml" })
-			It("returns an buildpack error", func() {
+			It("returns an error", func() {
 				_, err := manifest.DefaultVersion("bower")
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("found 2 default versions for bower"))
-				Expect(err.(be.Error).BuildpackError()).To(ContainSubstring("misconfigured for 'default_versions'"))
 			})
 		})
 		Context("requested name does not exist", func() {
-			It("returns an buildpack error", func() {
+			It("returns an error", func() {
 				_, err := manifest.DefaultVersion("notexist")
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("no default version for notexist"))
-				Expect(err.(be.Error).BuildpackError()).To(ContainSubstring("misconfigured for 'default_versions'"))
 			})
 		})
 	})

@@ -3,6 +3,7 @@ package buildpack
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -48,7 +49,8 @@ func checkMD5(filePath, expectedMD5 string) error {
 	actualMD5 := hex.EncodeToString(hashInBytes)
 
 	if actualMD5 != expectedMD5 {
-		return newBuildpackError("FIXME", "md5 mismatch: expected: %s got: %s", expectedMD5, actualMD5)
+		Log.Error("FIXME")
+		return fmt.Errorf("expected md5: %s actual md5: %s", expectedMD5, actualMD5)
 	}
 	return nil
 }

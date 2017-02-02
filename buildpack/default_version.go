@@ -1,6 +1,0 @@
-package buildpack
-
-import (
-	"fmt"
-)
-
