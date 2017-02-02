@@ -1,7 +1,6 @@
 package buildpack
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -98,7 +97,8 @@ func (m *Manifest) FetchDependency(dep Dependency, outputFile string) error {
 		return err
 	}
 
-	fmt.Printf("Downloaded [%s]\n         to [%s]\n", filteredURI, outputFile)
+	Log.Info("Downloaded [%s]", filteredURI)
+	Log.Info("        to [%s]", outputFile)
 
 	return nil
 }
