@@ -1,12 +1,8 @@
 package buildpack
 
 import (
-	"crypto/md5"
-	"encoding/hex"
 	"fmt"
-	"io"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -52,10 +48,6 @@ func NewManifest(filename string) (*Manifest, error) {
 
 	return &m, nil
 }
-
-const defaultVersionsError = "The buildpack manifest is misconfigured for 'default_versions'. " +
-	"Contact your Cloud Foundry operator/admin. For more information, see " +
-	"https://docs.cloudfoundry.org/buildpacks/custom.html#specifying-default-versions"
 
 func (m *Manifest) DefaultVersion(depName string) (string, error) {
 	var defaultVersion string
@@ -129,65 +121,4 @@ func (m *Manifest) isCached() bool {
 	}
 
 	return true
-}
-
-func checkMD5(filePath, expectedMD5 string) error {
-	file, err := os.Open(filePath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	hash := md5.New()
-	if _, err := io.Copy(hash, file); err != nil {
-		return err
-	}
-
-	hashInBytes := hash.Sum(nil)[:16]
-	actualMD5 := hex.EncodeToString(hashInBytes)
-
-	if actualMD5 != expectedMD5 {
-		return newBuildpackError("FIXME", "md5 mismatch: expected: %s got: %s", expectedMD5, actualMD5)
-	}
-	return nil
-}
-
-func downloadFile(url, dest string) error {
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	return writeToFile(resp.Body, dest)
-}
-
-func copyFile(source, dest string) error {
-	fh, err := os.Open(source)
-	if err != nil {
-		return err
-	}
-	defer fh.Close()
-
-	return writeToFile(fh, dest)
-}
-
-func writeToFile(source io.Reader, dest string) error {
-	err := os.MkdirAll(filepath.Dir(dest), os.ModePerm)
-	if err != nil {
-		return err
-	}
-
-	fh, err := os.Create(dest)
-	if err != nil {
-		return err
-	}
-	defer fh.Close()
-
-	_, err = io.Copy(fh, source)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

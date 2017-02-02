@@ -26,3 +26,7 @@ func (e *bperror) BuildpackError() string {
 func newBuildpackError(bpe, format string, args ...interface{}) error {
 	return &bperror{e: fmt.Sprintf(format, args...), bpe: bpe}
 }
+
+const defaultVersionsError = "The buildpack manifest is misconfigured for 'default_versions'. " +
+	"Contact your Cloud Foundry operator/admin. For more information, see " +
+	"https://docs.cloudfoundry.org/buildpacks/custom.html#specifying-default-versions"
