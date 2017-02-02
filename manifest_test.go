@@ -37,24 +37,24 @@ var _ = Describe("Manifest", func() {
 	})
 
 	Describe("FetchDependency", func() {
-		var tmpdir string
+		var tmpdir, outputFile string
 
 		BeforeEach(func() {
 			manifestFile = "fixtures/manifest_fetch.yml"
 			tmpdir, err = ioutil.TempDir("", "downloads")
 			Expect(err).To(BeNil())
+			outputFile = filepath.Join(tmpdir, "out.tgz")
 		})
 		AfterEach(func() { err = os.RemoveAll(tmpdir); Expect(err).To(BeNil()) })
 
 		Context("uncached", func() {
 			Context("url exists and matches md5", func() {
 				BeforeEach(func() {
-					httpmock.RegisterResponder("GET", "https://example.com/dependencies/file.tgz",
+					httpmock.RegisterResponder("GET", "https://example.com/dependencies/thing-1-linux-x64.tgz",
 						httpmock.NewStringResponder(200, "exciting binary data"))
 				})
 
 				It("downloads the file to the requested location", func() {
-					outputFile := filepath.Join(tmpdir, "out.tgz")
 					err = manifest.FetchDependency(be.Dependency{Name: "thing", Version: "1"}, outputFile)
 
 					Expect(err).To(BeNil())
@@ -62,7 +62,7 @@ var _ = Describe("Manifest", func() {
 				})
 
 				It("makes intermediate directories", func() {
-					outputFile := filepath.Join(tmpdir, "notexist", "out.tgz")
+					outputFile = filepath.Join(tmpdir, "notexist", "out.tgz")
 					err = manifest.FetchDependency(be.Dependency{Name: "thing", Version: "1"}, outputFile)
 
 					Expect(err).To(BeNil())
@@ -72,17 +72,15 @@ var _ = Describe("Manifest", func() {
 
 			Context("url exists but does not match md5", func() {
 				BeforeEach(func() {
-					httpmock.RegisterResponder("GET", "https://example.com/dependencies/file.tgz",
+					httpmock.RegisterResponder("GET", "https://example.com/dependencies/thing-1-linux-x64.tgz",
 						httpmock.NewStringResponder(200, "other data"))
 				})
 				It("raises error", func() {
-					outputFile := filepath.Join(tmpdir, "out.tgz")
 					err = manifest.FetchDependency(be.Dependency{Name: "thing", Version: "1"}, outputFile)
 
 					Expect(err).ToNot(BeNil())
 				})
 				It("outputfile does not exist", func() {
-					outputFile := filepath.Join(tmpdir, "out.tgz")
 					err = manifest.FetchDependency(be.Dependency{Name: "thing", Version: "1"}, outputFile)
 
 					Expect(outputFile).ToNot(BeAnExistingFile())
@@ -91,7 +89,69 @@ var _ = Describe("Manifest", func() {
 
 		})
 
-		PContext("cached", func() {})
+		Context("cached", func() {
+			var dependenciesDir string
+
+			BeforeEach(func() {
+				manifestDir, err := ioutil.TempDir("", "cached")
+				Expect(err).To(BeNil())
+
+				dependenciesDir = filepath.Join(manifestDir, "dependencies")
+				os.MkdirAll(dependenciesDir, 0755)
+
+				data, err := ioutil.ReadFile("fixtures/manifest_fetch.yml")
+				Expect(err).To(BeNil())
+
+				manifestFile = filepath.Join(manifestDir, "manifest.yml")
+				err = ioutil.WriteFile(manifestFile, data, 0644)
+				Expect(err).To(BeNil())
+
+				outputFile = filepath.Join(tmpdir, "out.tgz")
+			})
+
+			Context("url exists cached on disk and matches md5", func() {
+				BeforeEach(func() {
+					ioutil.WriteFile(filepath.Join(dependenciesDir, "https___example.com_dependencies_thing-2-linux-x64.tgz"), []byte("awesome binary data"), 0644)
+				})
+				It("copies the cached file to outputFile", func() {
+					err = manifest.FetchDependency(be.Dependency{Name: "thing", Version: "2"}, outputFile)
+
+					Expect(err).To(BeNil())
+					Expect(ioutil.ReadFile(outputFile)).To(Equal([]byte("awesome binary data")))
+				})
+				It("makes intermediate directories", func() {
+					outputFile = filepath.Join(tmpdir, "notexist", "out.tgz")
+					err = manifest.FetchDependency(be.Dependency{Name: "thing", Version: "2"}, outputFile)
+
+					Expect(err).To(BeNil())
+					Expect(ioutil.ReadFile(outputFile)).To(Equal([]byte("awesome binary data")))
+				})
+			})
+
+			Context("url exists cached on disk and does not match md5", func() {
+				BeforeEach(func() {
+					ioutil.WriteFile(filepath.Join(dependenciesDir, "https___example.com_dependencies_thing-2-linux-x64.tgz"), []byte("different binary data"), 0644)
+				})
+				It("raises error", func() {
+					err = manifest.FetchDependency(be.Dependency{Name: "thing", Version: "2"}, outputFile)
+
+					Expect(err).ToNot(BeNil())
+				})
+				It("outputfile does not exist", func() {
+					err = manifest.FetchDependency(be.Dependency{Name: "thing", Version: "2"}, outputFile)
+
+					Expect(outputFile).ToNot(BeAnExistingFile())
+				})
+			})
+
+			Context("url is not cached on disk", func() {
+				It("raises error", func() {
+					err = manifest.FetchDependency(be.Dependency{Name: "thing", Version: "2"}, outputFile)
+
+					Expect(err).ToNot(BeNil())
+				})
+			})
+		})
 	})
 
 	Describe("DefaultVersion", func() {
