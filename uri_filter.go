@@ -2,7 +2,7 @@ package buildpack
 
 import "net/url"
 
-func FilterURI(rawURL string) (string, error) {
+func filterURI(rawURL string) (string, error) {
 	unsafeURL, err := url.Parse(rawURL)
 
 	if err != nil {

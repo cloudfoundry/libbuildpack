@@ -1,0 +1,9 @@
+---
+language: sample
+dependencies:
+- name: thing
+  version: 1
+  cf_stacks:
+  - cflinuxfs2
+  uri: https://example.com/dependencies/file.tgz
+  md5: 7712b658293ea4b2c8505843b0e15441
