@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestGoCeTest(t *testing.T) {
+func TestBuildpackExtensionsTest(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "GoCeTest Suite")
+	RunSpecs(t, "BuildpackExtensionsTest Suite")
 }

@@ -3,12 +3,12 @@ package buildpack_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	ce "github.com/sesmith177/go-ce-test"
+	be "github.com/sesmith177/buildpack-extensions"
 )
 
 var _ = Describe("Manifest", func() {
 	var (
-		manifest     *ce.Manifest
+		manifest     *be.Manifest
 		manifestFile string
 		err          error
 	)
@@ -16,7 +16,7 @@ var _ = Describe("Manifest", func() {
 		manifestFile = "fixtures/manifest.yml"
 	})
 	JustBeforeEach(func() {
-		manifest, err = ce.NewManifest(manifestFile)
+		manifest, err = be.NewManifest(manifestFile)
 		Expect(err).To(BeNil())
 	})
 
@@ -45,7 +45,7 @@ var _ = Describe("Manifest", func() {
 				_, err := manifest.DefaultVersion("bower")
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("found 2 default versions for bower"))
-				Expect(err.(ce.Error).BuildpackError()).To(ContainSubstring("misconfigured for 'default_versions'"))
+				Expect(err.(be.Error).BuildpackError()).To(ContainSubstring("misconfigured for 'default_versions'"))
 			})
 		})
 		Context("requested name does not exist", func() {
@@ -53,7 +53,7 @@ var _ = Describe("Manifest", func() {
 				_, err := manifest.DefaultVersion("notexist")
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("no default version for notexist"))
-				Expect(err.(ce.Error).BuildpackError()).To(ContainSubstring("misconfigured for 'default_versions'"))
+				Expect(err.(be.Error).BuildpackError()).To(ContainSubstring("misconfigured for 'default_versions'"))
 			})
 
 		})
