@@ -1,6 +1,7 @@
 package buildpack_test
 
 import (
+	"bytes"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -64,6 +65,34 @@ var _ = Describe("Manifest", func() {
 
 					Expect(err).To(BeNil())
 					Expect(ioutil.ReadFile(outputFile)).To(Equal([]byte("exciting binary data")))
+				})
+			})
+
+			Context("url returns 404", func() {
+				BeforeEach(func() {
+					httpmock.RegisterResponder("GET", "https://example.com/dependencies/thing-1-linux-x64.tgz",
+						httpmock.NewStringResponder(404, "exciting binary data"))
+				})
+				It("raises error", func() {
+					err = manifest.FetchDependency(be.Dependency{Name: "thing", Version: "1"}, outputFile)
+
+					Expect(err).ToNot(BeNil())
+				})
+
+				It("alerts the user that the url could not be downloaded", func() {
+					buf := new(bytes.Buffer)
+					be.Log.SetOutput(buf)
+
+					err = manifest.FetchDependency(be.Dependency{Name: "thing", Version: "1"}, outputFile)
+
+					Expect(buf.String()).To(ContainSubstring("**ERROR** Could not download: 404"))
+					Expect(buf.String()).ToNot(ContainSubstring("to ["))
+				})
+
+				It("outputfile does not exist", func() {
+					err = manifest.FetchDependency(be.Dependency{Name: "thing", Version: "1"}, outputFile)
+
+					Expect(outputFile).ToNot(BeAnExistingFile())
 				})
 			})
 

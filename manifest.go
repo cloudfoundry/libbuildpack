@@ -88,9 +88,11 @@ func (m *Manifest) FetchDependency(dep Dependency, outputFile string) error {
 
 	if m.isCached() {
 		r := strings.NewReplacer("/", "_", ":", "_", "?", "_", "&", "_")
-		dependenciesDir := filepath.Join(m.ManifestRootDir, "dependencies")
-		err = copyFile(filepath.Join(dependenciesDir, r.Replace(filteredURI)), outputFile)
+		source := filepath.Join(m.ManifestRootDir, "dependencies", r.Replace(filteredURI))
+		Log.Info("Copy [%s]", source)
+		err = copyFile(source, outputFile)
 	} else {
+		Log.Info("Download [%s]", filteredURI)
 		err = downloadFile(entry.URI, outputFile)
 	}
 	if err != nil {
@@ -102,8 +104,7 @@ func (m *Manifest) FetchDependency(dep Dependency, outputFile string) error {
 		os.Remove(outputFile)
 		return err
 	}
-
-	Log.Info("Downloaded [%s]\n        to [%s]", filteredURI, outputFile)
+	Log.Info("to [%s]", outputFile)
 
 	return nil
 }
@@ -115,7 +116,7 @@ func (m *Manifest) getEntry(dep Dependency) (*ManifestEntry, error) {
 		}
 	}
 
-	Log.Error(m.dependencyMissingError(dep))
+	Log.Error(dependencyMissingError(m, dep))
 	return nil, fmt.Errorf("dependency %s %s not found", dep.Name, dep.Version)
 }
 

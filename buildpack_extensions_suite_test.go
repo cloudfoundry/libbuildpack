@@ -12,9 +12,11 @@ import (
 )
 
 var _ = BeforeSuite(func() {
-	be.Log.SetOutput(ioutil.Discard)
-
 	httpmock.Activate()
+})
+
+var _ = BeforeEach(func() {
+	be.Log.SetOutput(ioutil.Discard)
 })
 
 var _ = AfterSuite(func() {

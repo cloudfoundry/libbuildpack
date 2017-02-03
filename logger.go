@@ -31,7 +31,6 @@ func (l *Logger) printWithHeader(header string, format string, args ...interface
 	msg := fmt.Sprintf(format, args...)
 
 	msg = strings.Replace(msg, "\n", "\n       ", -1)
-	fmt.Fprintf(l.w, "\n\n")
 	fmt.Fprintf(l.w, "%s%s\n", header, msg)
 }
 

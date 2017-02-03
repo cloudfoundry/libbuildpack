@@ -6,7 +6,7 @@ const defaultVersionsError = "The buildpack manifest is misconfigured for 'defau
 	"Contact your Cloud Foundry operator/admin. For more information, see " +
 	"https://docs.cloudfoundry.org/buildpacks/custom.html#specifying-default-versions"
 
-func (m *Manifest) dependencyMissingError(dep Dependency) string {
+func dependencyMissingError(m *Manifest, dep Dependency) string {
 	var msg string
 	otherVersions := m.allDependencyVersions(dep.Name)
 
