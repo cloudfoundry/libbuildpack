@@ -6,9 +6,9 @@ import (
 	"os"
 	"path/filepath"
 
+	bp "github.com/cloudfoundry/libbuildpack"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	bp "github.com/cloudfoundry/libbuildpack"
 	"gopkg.in/jarcoal/httpmock.v1"
 )
 
@@ -183,7 +183,10 @@ var _ = Describe("Manifest", func() {
 	Describe("DefaultVersion", func() {
 		Context("requested name exists (once)", func() {
 			It("returns the default", func() {
-				Expect(manifest.DefaultVersion("node")).To(Equal("6.9.4"))
+				dep, err := manifest.DefaultVersion("node")
+				Expect(err).To(BeNil())
+
+				Expect(dep).To(Equal(bp.Dependency{Name: "node", Version: "6.9.4"}))
 			})
 		})
 

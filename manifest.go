@@ -49,14 +49,14 @@ func NewManifest(filename string) (*Manifest, error) {
 	return &m, nil
 }
 
-func (m *Manifest) DefaultVersion(depName string) (string, error) {
-	var defaultVersion string
+func (m *Manifest) DefaultVersion(depName string) (Dependency, error) {
+	var defaultVersion Dependency
 	var err error
 	numDefaults := 0
 
 	for _, dep := range m.DefaultVersions {
 		if depName == dep.Name {
-			defaultVersion = dep.Version
+			defaultVersion = dep
 			numDefaults++
 		}
 	}
@@ -69,7 +69,7 @@ func (m *Manifest) DefaultVersion(depName string) (string, error) {
 
 	if err != nil {
 		Log.Error(defaultVersionsError)
-		return "", err
+		return Dependency{}, err
 	}
 
 	return defaultVersion, nil
