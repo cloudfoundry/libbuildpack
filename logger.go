@@ -16,26 +16,23 @@ func (l *Logger) Info(format string, args ...interface{}) {
 }
 
 func (l *Logger) Warning(format string, args ...interface{}) {
-	l.printWithHeader("       **WARNING**", format, args...)
+	l.printWithHeader("       **WARNING** ", format, args...)
 
 }
 func (l *Logger) Error(format string, args ...interface{}) {
-	l.printWithHeader("       **ERROR**", format, args...)
+	l.printWithHeader("       **ERROR** ", format, args...)
 }
 
 func (l *Logger) BeginStep(format string, args ...interface{}) {
-	l.printWithHeader("----->", format, args...)
+	l.printWithHeader("-----> ", format, args...)
 }
 
 func (l *Logger) printWithHeader(header string, format string, args ...interface{}) {
 	msg := fmt.Sprintf(format, args...)
-	lines := strings.Split(msg, "\n")
 
-	fmt.Fprintf(l.w, "%s %s\n", header, lines[0])
-
-	for i := 1; i < len(lines); i++ {
-		fmt.Fprintf(l.w, "       %s\n", lines[i])
-	}
+	msg = strings.Replace(msg, "\n", "\n       ", -1)
+	fmt.Fprintf(l.w, "\n\n")
+	fmt.Fprintf(l.w, "%s%s\n", header, msg)
 }
 
 func (l *Logger) SetOutput(w io.Writer) {

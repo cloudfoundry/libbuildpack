@@ -18,9 +18,6 @@ var _ = Describe("Manifest", func() {
 		err          error
 	)
 
-	BeforeSuite(func() { httpmock.Activate() })
-	AfterSuite(func() { httpmock.DeactivateAndReset() })
-
 	BeforeEach(func() {
 		manifestFile = "fixtures/manifest.yml"
 		httpmock.Reset()
