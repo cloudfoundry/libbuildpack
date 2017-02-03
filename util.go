@@ -1,6 +1,10 @@
 package buildpack
 
 import (
+	"archive/tar"
+	"archive/zip"
+	"compress/gzip"
+
 	"crypto/md5"
 	"encoding/hex"
 	"errors"
@@ -11,6 +15,75 @@ import (
 	"os"
 	"path/filepath"
 )
+
+// ExtractZip extracts zipfile to destDir
+func ExtractZip(zipfile, destDir string) error {
+	r, err := zip.OpenReader(zipfile)
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+
+	for _, f := range r.File {
+		path := filepath.Join(destDir, f.Name)
+
+		rc, err := f.Open()
+		if err != nil {
+			return err
+		}
+
+		if f.FileInfo().IsDir() {
+			err = os.MkdirAll(path, f.Mode())
+		} else {
+			err = writeToFile(rc, path)
+		}
+
+		rc.Close()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ExtractTarGz extracts tar.gz to destDir
+func ExtractTarGz(tarfile, destDir string) error {
+	file, err := os.Open(tarfile)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	gz, err := gzip.NewReader(file)
+	if err != nil {
+		return err
+	}
+	defer gz.Close()
+	return extractTar(gz, destDir)
+}
+
+func extractTar(src io.Reader, destDir string) error {
+	tr := tar.NewReader(src)
+
+	for {
+		hdr, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		path := filepath.Join(destDir, hdr.Name)
+
+		if hdr.FileInfo().IsDir() {
+			err = os.MkdirAll(path, hdr.FileInfo().Mode())
+		} else {
+			err = writeToFile(tr, path)
+		}
+
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
 func filterURI(rawURL string) (string, error) {
 	unsafeURL, err := url.Parse(rawURL)
@@ -56,7 +129,7 @@ func checkMD5(filePath, expectedMD5 string) error {
 	return nil
 }
 
-func downloadFile(url, dest string) error {
+func downloadFile(url, destFile string) error {
 	resp, err := http.Get(url)
 	if err != nil {
 		return err
@@ -68,10 +141,10 @@ func downloadFile(url, dest string) error {
 		return errors.New("file download failed")
 	}
 
-	return writeToFile(resp.Body, dest)
+	return writeToFile(resp.Body, destFile)
 }
 
-func copyFile(source, dest string) error {
+func copyFile(source, destFile string) error {
 	fh, err := os.Open(source)
 	if err != nil {
 		Log.Error("Could not be found")
@@ -79,26 +152,26 @@ func copyFile(source, dest string) error {
 	}
 	defer fh.Close()
 
-	return writeToFile(fh, dest)
+	return writeToFile(fh, destFile)
 }
 
-func writeToFile(source io.Reader, dest string) error {
-	err := os.MkdirAll(filepath.Dir(dest), os.ModePerm)
+func writeToFile(source io.Reader, destFile string) error {
+	err := os.MkdirAll(filepath.Dir(destFile), 0755)
 	if err != nil {
-		Log.Error("Could not create %s", filepath.Dir(dest))
+		Log.Error("Could not create %s", filepath.Dir(destFile))
 		return err
 	}
 
-	fh, err := os.Create(dest)
+	fh, err := os.Create(destFile)
 	if err != nil {
-		Log.Error("Could not write to %s", dest)
+		Log.Error("Could not write to %s", destFile)
 		return err
 	}
 	defer fh.Close()
 
 	_, err = io.Copy(fh, source)
 	if err != nil {
-		Log.Error("Could not write to %s", dest)
+		Log.Error("Could not write to %s", destFile)
 		return err
 	}
 
