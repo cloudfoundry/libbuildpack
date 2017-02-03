@@ -1,4 +1,4 @@
-package buildpack
+package libbuildpack
 
 import (
 	"archive/tar"

@@ -1,4 +1,4 @@
-package buildpack_test
+package libbuildpack_test
 
 import (
 	"bytes"
@@ -8,13 +8,13 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	be "github.com/sesmith177/buildpack-extensions"
+	bp "github.com/cloudfoundry/libbuildpack"
 	"gopkg.in/jarcoal/httpmock.v1"
 )
 
 var _ = Describe("Manifest", func() {
 	var (
-		manifest     *be.Manifest
+		manifest     *bp.Manifest
 		manifestFile string
 		err          error
 	)
@@ -24,7 +24,7 @@ var _ = Describe("Manifest", func() {
 		httpmock.Reset()
 	})
 	JustBeforeEach(func() {
-		manifest, err = be.NewManifest(manifestFile)
+		manifest, err = bp.NewManifest(manifestFile)
 		Expect(err).To(BeNil())
 	})
 
@@ -53,7 +53,7 @@ var _ = Describe("Manifest", func() {
 				})
 
 				It("downloads the file to the requested location", func() {
-					err = manifest.FetchDependency(be.Dependency{Name: "thing", Version: "1"}, outputFile)
+					err = manifest.FetchDependency(bp.Dependency{Name: "thing", Version: "1"}, outputFile)
 
 					Expect(err).To(BeNil())
 					Expect(ioutil.ReadFile(outputFile)).To(Equal([]byte("exciting binary data")))
@@ -61,7 +61,7 @@ var _ = Describe("Manifest", func() {
 
 				It("makes intermediate directories", func() {
 					outputFile = filepath.Join(tmpdir, "notexist", "out.tgz")
-					err = manifest.FetchDependency(be.Dependency{Name: "thing", Version: "1"}, outputFile)
+					err = manifest.FetchDependency(bp.Dependency{Name: "thing", Version: "1"}, outputFile)
 
 					Expect(err).To(BeNil())
 					Expect(ioutil.ReadFile(outputFile)).To(Equal([]byte("exciting binary data")))
@@ -74,23 +74,23 @@ var _ = Describe("Manifest", func() {
 						httpmock.NewStringResponder(404, "exciting binary data"))
 				})
 				It("raises error", func() {
-					err = manifest.FetchDependency(be.Dependency{Name: "thing", Version: "1"}, outputFile)
+					err = manifest.FetchDependency(bp.Dependency{Name: "thing", Version: "1"}, outputFile)
 
 					Expect(err).ToNot(BeNil())
 				})
 
 				It("alerts the user that the url could not be downloaded", func() {
 					buf := new(bytes.Buffer)
-					be.Log.SetOutput(buf)
+					bp.Log.SetOutput(buf)
 
-					err = manifest.FetchDependency(be.Dependency{Name: "thing", Version: "1"}, outputFile)
+					err = manifest.FetchDependency(bp.Dependency{Name: "thing", Version: "1"}, outputFile)
 
 					Expect(buf.String()).To(ContainSubstring("**ERROR** Could not download: 404"))
 					Expect(buf.String()).ToNot(ContainSubstring("to ["))
 				})
 
 				It("outputfile does not exist", func() {
-					err = manifest.FetchDependency(be.Dependency{Name: "thing", Version: "1"}, outputFile)
+					err = manifest.FetchDependency(bp.Dependency{Name: "thing", Version: "1"}, outputFile)
 
 					Expect(outputFile).ToNot(BeAnExistingFile())
 				})
@@ -102,12 +102,12 @@ var _ = Describe("Manifest", func() {
 						httpmock.NewStringResponder(200, "other data"))
 				})
 				It("raises error", func() {
-					err = manifest.FetchDependency(be.Dependency{Name: "thing", Version: "1"}, outputFile)
+					err = manifest.FetchDependency(bp.Dependency{Name: "thing", Version: "1"}, outputFile)
 
 					Expect(err).ToNot(BeNil())
 				})
 				It("outputfile does not exist", func() {
-					err = manifest.FetchDependency(be.Dependency{Name: "thing", Version: "1"}, outputFile)
+					err = manifest.FetchDependency(bp.Dependency{Name: "thing", Version: "1"}, outputFile)
 
 					Expect(outputFile).ToNot(BeAnExistingFile())
 				})
@@ -140,14 +140,14 @@ var _ = Describe("Manifest", func() {
 					ioutil.WriteFile(filepath.Join(dependenciesDir, "https___example.com_dependencies_thing-2-linux-x64.tgz"), []byte("awesome binary data"), 0644)
 				})
 				It("copies the cached file to outputFile", func() {
-					err = manifest.FetchDependency(be.Dependency{Name: "thing", Version: "2"}, outputFile)
+					err = manifest.FetchDependency(bp.Dependency{Name: "thing", Version: "2"}, outputFile)
 
 					Expect(err).To(BeNil())
 					Expect(ioutil.ReadFile(outputFile)).To(Equal([]byte("awesome binary data")))
 				})
 				It("makes intermediate directories", func() {
 					outputFile = filepath.Join(tmpdir, "notexist", "out.tgz")
-					err = manifest.FetchDependency(be.Dependency{Name: "thing", Version: "2"}, outputFile)
+					err = manifest.FetchDependency(bp.Dependency{Name: "thing", Version: "2"}, outputFile)
 
 					Expect(err).To(BeNil())
 					Expect(ioutil.ReadFile(outputFile)).To(Equal([]byte("awesome binary data")))
@@ -159,12 +159,12 @@ var _ = Describe("Manifest", func() {
 					ioutil.WriteFile(filepath.Join(dependenciesDir, "https___example.com_dependencies_thing-2-linux-x64.tgz"), []byte("different binary data"), 0644)
 				})
 				It("raises error", func() {
-					err = manifest.FetchDependency(be.Dependency{Name: "thing", Version: "2"}, outputFile)
+					err = manifest.FetchDependency(bp.Dependency{Name: "thing", Version: "2"}, outputFile)
 
 					Expect(err).ToNot(BeNil())
 				})
 				It("outputfile does not exist", func() {
-					err = manifest.FetchDependency(be.Dependency{Name: "thing", Version: "2"}, outputFile)
+					err = manifest.FetchDependency(bp.Dependency{Name: "thing", Version: "2"}, outputFile)
 
 					Expect(outputFile).ToNot(BeAnExistingFile())
 				})
@@ -172,7 +172,7 @@ var _ = Describe("Manifest", func() {
 
 			Context("url is not cached on disk", func() {
 				It("raises error", func() {
-					err = manifest.FetchDependency(be.Dependency{Name: "thing", Version: "2"}, outputFile)
+					err = manifest.FetchDependency(bp.Dependency{Name: "thing", Version: "2"}, outputFile)
 
 					Expect(err).ToNot(BeNil())
 				})

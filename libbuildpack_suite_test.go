@@ -1,11 +1,11 @@
-package buildpack_test
+package libbuildpack_test
 
 import (
 	"io/ioutil"
 
+	bp "github.com/cloudfoundry/libbuildpack"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	be "github.com/sesmith177/buildpack-extensions"
 	"gopkg.in/jarcoal/httpmock.v1"
 
 	"testing"
@@ -16,14 +16,14 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = BeforeEach(func() {
-	be.Log.SetOutput(ioutil.Discard)
+	bp.Log.SetOutput(ioutil.Discard)
 })
 
 var _ = AfterSuite(func() {
 	httpmock.DeactivateAndReset()
 })
 
-func TestBuildpackExtensionsTest(t *testing.T) {
+func TestLibBuildpackTest(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "BuildpackExtensionsTest Suite")
+	RunSpecs(t, "LibBuildpackTest Suite")
 }
