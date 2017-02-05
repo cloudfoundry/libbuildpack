@@ -27,6 +27,11 @@ func (l *Logger) BeginStep(format string, args ...interface{}) {
 	l.printWithHeader("-----> ", format, args...)
 }
 
+func (l *Logger) Protip(tip string, help_url string) {
+	l.printWithHeader("       PRO TIP: %s", tip)
+	l.printWithHeader("       Visit %s", help_url)
+}
+
 func (l *Logger) printWithHeader(header string, format string, args ...interface{}) {
 	msg := fmt.Sprintf(format, args...)
 
