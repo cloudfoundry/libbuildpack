@@ -7,40 +7,52 @@ import (
 	"strings"
 )
 
-type Logger struct {
+type Logger interface {
+	Info(format string, args ...interface{})
+	Warning(format string, args ...interface{})
+	Error(format string, args ...interface{})
+	BeginStep(format string, args ...interface{})
+	Protip(tip string, help_url string)
+}
+
+type logger struct {
 	w io.Writer
 }
 
-func (l *Logger) Info(format string, args ...interface{}) {
+func NewLogger() Logger {
+	return &logger{w: os.Stdout}
+}
+
+func (l *logger) Info(format string, args ...interface{}) {
 	l.printWithHeader("       ", format, args...)
 }
 
-func (l *Logger) Warning(format string, args ...interface{}) {
+func (l *logger) Warning(format string, args ...interface{}) {
 	l.printWithHeader("       **WARNING** ", format, args...)
 
 }
-func (l *Logger) Error(format string, args ...interface{}) {
+func (l *logger) Error(format string, args ...interface{}) {
 	l.printWithHeader("       **ERROR** ", format, args...)
 }
 
-func (l *Logger) BeginStep(format string, args ...interface{}) {
+func (l *logger) BeginStep(format string, args ...interface{}) {
 	l.printWithHeader("-----> ", format, args...)
 }
 
-func (l *Logger) Protip(tip string, help_url string) {
+func (l *logger) Protip(tip string, help_url string) {
 	l.printWithHeader("       PRO TIP: %s", tip)
 	l.printWithHeader("       Visit %s", help_url)
 }
 
-func (l *Logger) printWithHeader(header string, format string, args ...interface{}) {
+func (l *logger) printWithHeader(header string, format string, args ...interface{}) {
 	msg := fmt.Sprintf(format, args...)
 
 	msg = strings.Replace(msg, "\n", "\n       ", -1)
 	fmt.Fprintf(l.w, "%s%s\n", header, msg)
 }
 
-func (l *Logger) SetOutput(w io.Writer) {
+func (l *logger) SetOutput(w io.Writer) {
 	l.w = w
 }
 
-var Log = &Logger{w: os.Stdout}
+var Log = &logger{w: os.Stdout}

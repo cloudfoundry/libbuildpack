@@ -10,6 +10,13 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+type Manifest interface {
+	DefaultVersion(depName string) (Dependency, error)
+	FetchDependency(dep Dependency, outputFile string) error
+	Version() (string, error)
+	Language() string
+}
+
 type Dependency struct {
 	Name    string `yaml:"name"`
 	Version string `yaml:"version"`
@@ -22,26 +29,26 @@ type ManifestEntry struct {
 	CFStacks   []string   `yaml:"cf_stacks"`
 }
 
-type Manifest struct {
-	Language        string          `yaml:"language"`
+type manifest struct {
+	LanguageString  string          `yaml:"language"`
 	DefaultVersions []Dependency    `yaml:"default_versions"`
 	ManifestEntries []ManifestEntry `yaml:"dependencies"`
 	ManifestRootDir string
 }
 
-func NewManifest(filename string) (*Manifest, error) {
-	data, err := ioutil.ReadFile(filename)
+func NewManifest(bpDir string) (Manifest, error) {
+	data, err := ioutil.ReadFile(filepath.Join(bpDir, "manifest.yml"))
 	if err != nil {
 		return nil, err
 	}
 
-	var m Manifest
+	var m manifest
 	err = yaml.Unmarshal(data, &m)
 	if err != nil {
 		return nil, err
 	}
 
-	m.ManifestRootDir, err = filepath.Abs(filepath.Dir(filename))
+	m.ManifestRootDir, err = filepath.Abs(bpDir)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +56,16 @@ func NewManifest(filename string) (*Manifest, error) {
 	return &m, nil
 }
 
-func (m *Manifest) DefaultVersion(depName string) (Dependency, error) {
+func (m *manifest) Language() string {
+	return m.LanguageString
+}
+
+func (m *manifest) Version() (string, error) {
+	// data, err := ioutil.ReadFile(filepath.Join(m.ManifestRootDir, "manifest.yml"))
+	return "", nil
+}
+
+func (m *manifest) DefaultVersion(depName string) (Dependency, error) {
 	var defaultVersion Dependency
 	var err error
 	numDefaults := 0
@@ -75,7 +91,7 @@ func (m *Manifest) DefaultVersion(depName string) (Dependency, error) {
 	return defaultVersion, nil
 }
 
-func (m *Manifest) FetchDependency(dep Dependency, outputFile string) error {
+func (m *manifest) FetchDependency(dep Dependency, outputFile string) error {
 	entry, err := m.getEntry(dep)
 	if err != nil {
 		return err
@@ -109,7 +125,7 @@ func (m *Manifest) FetchDependency(dep Dependency, outputFile string) error {
 	return nil
 }
 
-func (m *Manifest) getEntry(dep Dependency) (*ManifestEntry, error) {
+func (m *manifest) getEntry(dep Dependency) (*ManifestEntry, error) {
 	for _, e := range m.ManifestEntries {
 		if e.Dependency == dep {
 			return &e, nil
@@ -120,7 +136,7 @@ func (m *Manifest) getEntry(dep Dependency) (*ManifestEntry, error) {
 	return nil, fmt.Errorf("dependency %s %s not found", dep.Name, dep.Version)
 }
 
-func (m *Manifest) isCached() bool {
+func (m *manifest) isCached() bool {
 	dependenciesDir := filepath.Join(m.ManifestRootDir, "dependencies")
 
 	_, err := os.Stat(dependenciesDir)
@@ -131,7 +147,7 @@ func (m *Manifest) isCached() bool {
 	return true
 }
 
-func (m *Manifest) allDependencyVersions(depName string) []string {
+func (m *manifest) allDependencyVersions(depName string) []string {
 	var depVersions []string
 
 	for _, e := range m.ManifestEntries {

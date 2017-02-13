@@ -14,23 +14,23 @@ import (
 
 var _ = Describe("Manifest", func() {
 	var (
-		manifest     *bp.Manifest
-		manifestFile string
-		err          error
+		manifest    bp.Manifest
+		manifestDir string
+		err         error
 	)
 
 	BeforeEach(func() {
-		manifestFile = "fixtures/manifest.yml"
+		manifestDir = "fixtures/manifest/standard"
 		httpmock.Reset()
 	})
 	JustBeforeEach(func() {
-		manifest, err = bp.NewManifest(manifestFile)
+		manifest, err = bp.NewManifest(manifestDir)
 		Expect(err).To(BeNil())
 	})
 
 	Describe("NewManifest", func() {
 		It("has a language", func() {
-			Expect(manifest.Language).To(Equal("dotnet-core"))
+			Expect(manifest.Language()).To(Equal("dotnet-core"))
 		})
 	})
 
@@ -38,7 +38,7 @@ var _ = Describe("Manifest", func() {
 		var tmpdir, outputFile string
 
 		BeforeEach(func() {
-			manifestFile = "fixtures/manifest_fetch.yml"
+			manifestDir = "fixtures/manifest/fetch"
 			tmpdir, err = ioutil.TempDir("", "downloads")
 			Expect(err).To(BeNil())
 			outputFile = filepath.Join(tmpdir, "out.tgz")
@@ -119,17 +119,17 @@ var _ = Describe("Manifest", func() {
 			var dependenciesDir string
 
 			BeforeEach(func() {
-				manifestDir, err := ioutil.TempDir("", "cached")
+				var err error
+				manifestDir, err = ioutil.TempDir("", "cached")
 				Expect(err).To(BeNil())
 
 				dependenciesDir = filepath.Join(manifestDir, "dependencies")
 				os.MkdirAll(dependenciesDir, 0755)
 
-				data, err := ioutil.ReadFile("fixtures/manifest_fetch.yml")
+				data, err := ioutil.ReadFile("fixtures/manifest/fetch/manifest.yml")
 				Expect(err).To(BeNil())
 
-				manifestFile = filepath.Join(manifestDir, "manifest.yml")
-				err = ioutil.WriteFile(manifestFile, data, 0644)
+				err = ioutil.WriteFile(filepath.Join(manifestDir, "manifest.yml"), data, 0644)
 				Expect(err).To(BeNil())
 
 				outputFile = filepath.Join(tmpdir, "out.tgz")
@@ -191,7 +191,7 @@ var _ = Describe("Manifest", func() {
 		})
 
 		Context("requested name exists (twice)", func() {
-			BeforeEach(func() { manifestFile = "fixtures/manifest_duplicate_default.yml" })
+			BeforeEach(func() { manifestDir = "fixtures/manifest/duplicate" })
 			It("returns an error", func() {
 				_, err := manifest.DefaultVersion("bower")
 				Expect(err).ToNot(BeNil())
