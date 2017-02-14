@@ -62,6 +62,30 @@ func ExtractTarGz(tarfile, destDir string) error {
 	return extractTar(gz, destDir)
 }
 
+// CopyFile copies source file to destFile, creating all intermediate directories in destFile
+func CopyFile(source, destFile string) error {
+	fh, err := os.Open(source)
+	if err != nil {
+		Log.Error("Could not be found")
+		return err
+	}
+
+	fileInfo, err := fh.Stat()
+	if err != nil {
+		Log.Error("Could not stat")
+		return err
+	}
+
+	defer fh.Close()
+
+	err = os.MkdirAll(filepath.Dir(destFile), 0755)
+	if err != nil {
+		Log.Error("Could not create %s", filepath.Dir(destFile))
+		return err
+	}
+	return writeToFile(fh, destFile, fileInfo.Mode())
+}
+
 func extractTar(src io.Reader, destDir string) error {
 	tr := tar.NewReader(src)
 
@@ -147,29 +171,6 @@ func downloadFile(url, destFile string) error {
 		return err
 	}
 	return writeToFile(resp.Body, destFile, 0666)
-}
-
-func copyFile(source, destFile string) error {
-	fh, err := os.Open(source)
-	if err != nil {
-		Log.Error("Could not be found")
-		return err
-	}
-
-	fileInfo, err := fh.Stat()
-	if err != nil {
-		Log.Error("Could not stat")
-		return err
-	}
-
-	defer fh.Close()
-
-	err = os.MkdirAll(filepath.Dir(destFile), 0755)
-	if err != nil {
-		Log.Error("Could not create %s", filepath.Dir(destFile))
-		return err
-	}
-	return writeToFile(fh, destFile, fileInfo.Mode())
 }
 
 func writeToFile(source io.Reader, destFile string, mode os.FileMode) error {

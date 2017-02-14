@@ -90,7 +90,7 @@ func (m *Manifest) FetchDependency(dep Dependency, outputFile string) error {
 		r := strings.NewReplacer("/", "_", ":", "_", "?", "_", "&", "_")
 		source := filepath.Join(m.ManifestRootDir, "dependencies", r.Replace(filteredURI))
 		Log.Info("Copy [%s]", source)
-		err = copyFile(source, outputFile)
+		err = CopyFile(source, outputFile)
 	} else {
 		Log.Info("Download [%s]", filteredURI)
 		err = downloadFile(entry.URI, outputFile)
