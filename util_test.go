@@ -124,12 +124,41 @@ var _ = Describe("Util", func() {
 			tmpdir   string
 			err      error
 			fileInfo os.FileInfo
+			oldMode  os.FileMode
 		)
 		BeforeEach(func() {
+			var fh *os.File
+			sourceFile := "fixtures/source.txt"
+
 			tmpdir, err = ioutil.TempDir("", "copy")
 			Expect(err).To(BeNil())
+
+			fileInfo, err = os.Stat(sourceFile)
+			Expect(err).To(BeNil())
+			oldMode = fileInfo.Mode()
+
+			fh, err = os.Open(sourceFile)
+			Expect(err).To(BeNil())
+			defer fh.Close()
+
+			err = fh.Chmod(0742)
+			Expect(err).To(BeNil())
+
 		})
-		AfterEach(func() { err = os.RemoveAll(tmpdir); Expect(err).To(BeNil()) })
+		AfterEach(func() {
+			var fh *os.File
+			sourceFile := "fixtures/source.txt"
+
+			fh, err = os.Open(sourceFile)
+			Expect(err).To(BeNil())
+			defer fh.Close()
+
+			err = fh.Chmod(oldMode)
+			Expect(err).To(BeNil())
+
+			err = os.RemoveAll(tmpdir)
+			Expect(err).To(BeNil())
+		})
 
 		Context("with a valid source file", func() {
 			It("copies the file", func() {
@@ -147,7 +176,7 @@ var _ = Describe("Util", func() {
 				Expect(filepath.Join(tmpdir, "out.txt")).To(BeAnExistingFile())
 				fileInfo, err = os.Stat(filepath.Join(tmpdir, "out.txt"))
 
-				Expect(fileInfo.Mode()).To(Equal(os.FileMode(0666)))
+				Expect(fileInfo.Mode()).To(Equal(os.FileMode(0742)))
 			})
 		})
 
