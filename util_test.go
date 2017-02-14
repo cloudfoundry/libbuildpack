@@ -13,8 +13,9 @@ import (
 var _ = Describe("Util", func() {
 	Describe("Unzip", func() {
 		var (
-			tmpdir string
-			err    error
+			tmpdir   string
+			err      error
+			fileInfo os.FileInfo
 		)
 		BeforeEach(func() {
 			tmpdir, err = ioutil.TempDir("", "exploded")
@@ -30,12 +31,23 @@ var _ = Describe("Util", func() {
 				Expect(filepath.Join(tmpdir, "root.txt")).To(BeAnExistingFile())
 				Expect(ioutil.ReadFile(filepath.Join(tmpdir, "root.txt"))).To(Equal([]byte("root\n")))
 			})
+
 			It("extracts a nested file", func() {
 				err = bp.ExtractZip("fixtures/thing.zip", tmpdir)
 				Expect(err).To(BeNil())
 
 				Expect(filepath.Join(tmpdir, "thing", "bin", "file2.exe")).To(BeAnExistingFile())
 				Expect(ioutil.ReadFile(filepath.Join(tmpdir, "thing", "bin", "file2.exe"))).To(Equal([]byte("progam2\n")))
+			})
+
+			It("preserves the file mode", func() {
+				err = bp.ExtractZip("fixtures/thing.zip", tmpdir)
+				Expect(err).To(BeNil())
+
+				Expect(filepath.Join(tmpdir, "thing", "bin", "file2.exe")).To(BeAnExistingFile())
+				fileInfo, err = os.Stat(filepath.Join(tmpdir, "thing", "bin", "file2.exe"))
+
+				Expect(fileInfo.Mode()).To(Equal(os.FileMode(0755)))
 			})
 		})
 
@@ -56,8 +68,9 @@ var _ = Describe("Util", func() {
 
 	Describe("Untar", func() {
 		var (
-			tmpdir string
-			err    error
+			tmpdir   string
+			err      error
+			fileInfo os.FileInfo
 		)
 		BeforeEach(func() {
 			tmpdir, err = ioutil.TempDir("", "exploded")
@@ -79,6 +92,15 @@ var _ = Describe("Util", func() {
 
 				Expect(filepath.Join(tmpdir, "thing", "bin", "file2.exe")).To(BeAnExistingFile())
 				Expect(ioutil.ReadFile(filepath.Join(tmpdir, "thing", "bin", "file2.exe"))).To(Equal([]byte("progam2\n")))
+			})
+			It("preserves the file mode", func() {
+				err = bp.ExtractTarGz("fixtures/thing.tgz", tmpdir)
+				Expect(err).To(BeNil())
+
+				Expect(filepath.Join(tmpdir, "thing", "bin", "file2.exe")).To(BeAnExistingFile())
+				fileInfo, err = os.Stat(filepath.Join(tmpdir, "thing", "bin", "file2.exe"))
+
+				Expect(fileInfo.Mode()).To(Equal(os.FileMode(0755)))
 			})
 		})
 

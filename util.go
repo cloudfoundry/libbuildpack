@@ -35,7 +35,7 @@ func ExtractZip(zipfile, destDir string) error {
 		if f.FileInfo().IsDir() {
 			err = os.MkdirAll(path, f.Mode())
 		} else {
-			err = writeToFile(rc, path)
+			err = writeToFile(rc, path, f.Mode())
 		}
 
 		rc.Close()
@@ -75,7 +75,7 @@ func extractTar(src io.Reader, destDir string) error {
 		if hdr.FileInfo().IsDir() {
 			err = os.MkdirAll(path, hdr.FileInfo().Mode())
 		} else {
-			err = writeToFile(tr, path)
+			err = writeToFile(tr, path, hdr.FileInfo().Mode())
 		}
 
 		if err != nil {
@@ -141,7 +141,12 @@ func downloadFile(url, destFile string) error {
 		return errors.New("file download failed")
 	}
 
-	return writeToFile(resp.Body, destFile)
+	err = os.MkdirAll(filepath.Dir(destFile), 0755)
+	if err != nil {
+		Log.Error("Could not create %s", filepath.Dir(destFile))
+		return err
+	}
+	return writeToFile(resp.Body, destFile, 0666)
 }
 
 func copyFile(source, destFile string) error {
@@ -150,21 +155,34 @@ func copyFile(source, destFile string) error {
 		Log.Error("Could not be found")
 		return err
 	}
+
+	fileInfo, err := fh.Stat()
+	if err != nil {
+		Log.Error("Could not stat")
+		return err
+	}
+
 	defer fh.Close()
 
-	return writeToFile(fh, destFile)
-}
-
-func writeToFile(source io.Reader, destFile string) error {
-	err := os.MkdirAll(filepath.Dir(destFile), 0755)
+	err = os.MkdirAll(filepath.Dir(destFile), 0755)
 	if err != nil {
 		Log.Error("Could not create %s", filepath.Dir(destFile))
 		return err
 	}
+	return writeToFile(fh, destFile, fileInfo.Mode())
+}
 
+func writeToFile(source io.Reader, destFile string, mode os.FileMode) error {
 	fh, err := os.Create(destFile)
 	if err != nil {
 		Log.Error("Could not write to %s", destFile)
+		return err
+	}
+	defer fh.Close()
+
+	err = fh.Chmod(mode)
+	if err != nil {
+		Log.Error("Could not set file mode for %s", destFile)
 		return err
 	}
 	defer fh.Close()
