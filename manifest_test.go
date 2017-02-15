@@ -37,24 +37,44 @@ var _ = Describe("Manifest", func() {
 	})
 
 	Describe("CheckStackSupport", func() {
+		var (
+			oldCfStack string
+		)
+
+		BeforeEach(func() { oldCfStack = os.Getenv("CF_STACK") })
+		AfterEach(func() { err = os.Setenv("CF_STACK", oldCfStack); Expect(err).To(BeNil()) })
+
 		Context("Stack is supported", func() {
+			BeforeEach(func() {
+				manifestDir = "fixtures/manifest/stacks"
+				err = os.Setenv("CF_STACK", "cflinuxfs2")
+				Expect(err).To(BeNil())
+			})
+
 			It("returns nil", func() {
-				Expect(manifest.CheckStackSupport("cflinuxfs2")).To(Succeed())
+				Expect(manifest.CheckStackSupport()).To(Succeed())
 			})
 
 			Context("by a single dependency", func() {
 				BeforeEach(func() {
 					manifestDir = "fixtures/manifest/stacks"
+					err = os.Setenv("CF_STACK", "xenial")
+					Expect(err).To(BeNil())
 				})
 				It("returns nil", func() {
-					Expect(manifest.CheckStackSupport("xenial")).To(Succeed())
+					Expect(manifest.CheckStackSupport()).To(Succeed())
 				})
 			})
 		})
 
 		Context("Stack is not supported", func() {
+			BeforeEach(func() {
+				err = os.Setenv("CF_STACK", "notastack")
+				Expect(err).To(BeNil())
+			})
+
 			It("returns nil", func() {
-				Expect(manifest.CheckStackSupport("notastack")).To(MatchError(errors.New("required stack notastack was not found")))
+				Expect(manifest.CheckStackSupport()).To(MatchError(errors.New("required stack notastack was not found")))
 			})
 		})
 	})

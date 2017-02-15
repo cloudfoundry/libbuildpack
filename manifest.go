@@ -13,7 +13,7 @@ type Manifest interface {
 	FetchDependency(dep Dependency, outputFile string) error
 	Version() (string, error)
 	Language() string
-	CheckStackSupport(stack string) error
+	CheckStackSupport() error
 	CheckBuildpackVersion(cacheDir string)
 }
 
@@ -94,7 +94,9 @@ func (m *manifest) Version() (string, error) {
 	return strings.TrimSpace(string(version)), nil
 }
 
-func (m *manifest) CheckStackSupport(requiredStack string) error {
+func (m *manifest) CheckStackSupport() error {
+	requiredStack := os.Getenv("CF_STACK")
+
 	for _, entry := range m.ManifestEntries {
 		for _, stack := range entry.CFStacks {
 			if stack == requiredStack {
