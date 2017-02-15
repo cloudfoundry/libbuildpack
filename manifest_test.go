@@ -2,6 +2,7 @@ package libbuildpack_test
 
 import (
 	"bytes"
+	"errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -31,6 +32,29 @@ var _ = Describe("Manifest", func() {
 	Describe("NewManifest", func() {
 		It("has a language", func() {
 			Expect(manifest.Language()).To(Equal("dotnet-core"))
+		})
+	})
+
+	Describe("CheckStackSupport", func() {
+		Context("Stack is supported", func() {
+			It("returns nil", func() {
+				Expect(manifest.CheckStackSupport("cflinuxfs2")).To(Succeed())
+			})
+
+			Context("by a single dependency", func() {
+				BeforeEach(func() {
+					manifestDir = "fixtures/manifest/stacks"
+				})
+				It("returns nil", func() {
+					Expect(manifest.CheckStackSupport("xenial")).To(Succeed())
+				})
+			})
+		})
+
+		Context("Stack is not supported", func() {
+			It("returns nil", func() {
+				Expect(manifest.CheckStackSupport("notastack")).To(MatchError(errors.New("Required Stack (notastack) was not found")))
+			})
 		})
 	})
 

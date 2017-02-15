@@ -15,6 +15,7 @@ type Manifest interface {
 	FetchDependency(dep Dependency, outputFile string) error
 	Version() (string, error)
 	Language() string
+	CheckStackSupport(stack string) error
 }
 
 type Dependency struct {
@@ -63,6 +64,17 @@ func (m *manifest) Language() string {
 func (m *manifest) Version() (string, error) {
 	// data, err := ioutil.ReadFile(filepath.Join(m.ManifestRootDir, "manifest.yml"))
 	return "", nil
+}
+
+func (m *manifest) CheckStackSupport(requiredStack string) error {
+	for _, entry := range m.ManifestEntries {
+		for _, stack := range entry.CFStacks {
+			if stack == requiredStack {
+				return nil
+			}
+		}
+	}
+	return fmt.Errorf("Required Stack (%s) was not found", requiredStack)
 }
 
 func (m *manifest) DefaultVersion(depName string) (Dependency, error) {
