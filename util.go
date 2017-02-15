@@ -89,6 +89,21 @@ func CopyFile(source, destFile string) error {
 	return writeToFile(fh, destFile, fileInfo.Mode())
 }
 
+// LoadYAML loads the source file into the obj struct
+func LoadYAML(file string, obj interface{}) error {
+	data, err := ioutil.ReadFile(file)
+	if err != nil {
+		return err
+	}
+
+	err = yaml.Unmarshal(data, obj)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func extractTar(src io.Reader, destDir string) error {
 	tr := tar.NewReader(src)
 
@@ -194,20 +209,6 @@ func writeToFile(source io.Reader, destFile string, mode os.FileMode) error {
 	_, err = io.Copy(fh, source)
 	if err != nil {
 		Log.Error("Could not write to %s", destFile)
-		return err
-	}
-
-	return nil
-}
-
-func loadYAML(file string, obj interface{}) error {
-	data, err := ioutil.ReadFile(file)
-	if err != nil {
-		return err
-	}
-
-	err = yaml.Unmarshal(data, obj)
-	if err != nil {
 		return err
 	}
 
