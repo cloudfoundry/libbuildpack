@@ -39,9 +39,9 @@ func (l *logger) BeginStep(format string, args ...interface{}) {
 	l.printWithHeader("-----> ", format, args...)
 }
 
-func (l *logger) Protip(tip string, help_url string) {
-	l.printWithHeader("       PRO TIP: %s", tip)
-	l.printWithHeader("       Visit %s", help_url)
+func (l *logger) Protip(tip string, helpURL string) {
+	l.printWithHeader("       PRO TIP: ", "%s", tip)
+	l.printWithHeader("       Visit ", "%s", helpURL)
 }
 
 func (l *logger) printWithHeader(header string, format string, args ...interface{}) {
