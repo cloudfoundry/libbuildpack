@@ -6,8 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"gopkg.in/yaml.v2"
 )
 
 type Manifest interface {
@@ -16,6 +14,7 @@ type Manifest interface {
 	Version() (string, error)
 	Language() string
 	CheckStackSupport(stack string) error
+	CheckBuildpackVersion(cacheDir string)
 }
 
 type Dependency struct {
@@ -37,14 +36,15 @@ type manifest struct {
 	ManifestRootDir string
 }
 
-func NewManifest(bpDir string) (Manifest, error) {
-	data, err := ioutil.ReadFile(filepath.Join(bpDir, "manifest.yml"))
-	if err != nil {
-		return nil, err
-	}
+type buildpackMetadata struct {
+	Language string `yaml:"language"`
+	Version  string `yaml:"version"`
+}
 
+func NewManifest(bpDir string) (Manifest, error) {
 	var m manifest
-	err = yaml.Unmarshal(data, &m)
+
+	err := loadYAML(filepath.Join(bpDir, "manifest.yml"), &m)
 	if err != nil {
 		return nil, err
 	}
@@ -57,13 +57,41 @@ func NewManifest(bpDir string) (Manifest, error) {
 	return &m, nil
 }
 
+func (m *manifest) CheckBuildpackVersion(cacheDir string) {
+	var md buildpackMetadata
+
+	err := loadYAML(filepath.Join(cacheDir, "BUILDPACK_METADATA"), &md)
+	if err != nil {
+		return
+	}
+
+	if md.Language != m.Language() {
+		return
+	}
+
+	version, err := m.Version()
+	if err != nil {
+		return
+	}
+
+	if md.Version != version {
+		Log.Warning("buildpack version changed from %s to %s", md.Version, version)
+	}
+
+	return
+}
+
 func (m *manifest) Language() string {
 	return m.LanguageString
 }
 
 func (m *manifest) Version() (string, error) {
-	// data, err := ioutil.ReadFile(filepath.Join(m.ManifestRootDir, "manifest.yml"))
-	return "", nil
+	version, err := ioutil.ReadFile(filepath.Join(m.ManifestRootDir, "VERSION"))
+	if err != nil {
+		return "", fmt.Errorf("unable to read VERSION file %s", err)
+	}
+
+	return strings.TrimSpace(string(version)), nil
 }
 
 func (m *manifest) CheckStackSupport(requiredStack string) error {
@@ -74,7 +102,7 @@ func (m *manifest) CheckStackSupport(requiredStack string) error {
 			}
 		}
 	}
-	return fmt.Errorf("Required Stack (%s) was not found", requiredStack)
+	return fmt.Errorf("required stack %s was not found", requiredStack)
 }
 
 func (m *manifest) DefaultVersion(depName string) (Dependency, error) {

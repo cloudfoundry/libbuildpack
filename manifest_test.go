@@ -18,6 +18,7 @@ var _ = Describe("Manifest", func() {
 		manifest    bp.Manifest
 		manifestDir string
 		err         error
+		version     string
 	)
 
 	BeforeEach(func() {
@@ -53,7 +54,32 @@ var _ = Describe("Manifest", func() {
 
 		Context("Stack is not supported", func() {
 			It("returns nil", func() {
-				Expect(manifest.CheckStackSupport("notastack")).To(MatchError(errors.New("Required Stack (notastack) was not found")))
+				Expect(manifest.CheckStackSupport("notastack")).To(MatchError(errors.New("required stack notastack was not found")))
+			})
+		})
+	})
+
+	Describe("Version", func() {
+		Context("VERSION file exists", func() {
+			It("returns the version", func() {
+				version, err = manifest.Version()
+				Expect(err).To(BeNil())
+
+				Expect(version).To(Equal("99.99"))
+			})
+		})
+
+		Context("VERSION file does not exist", func() {
+			BeforeEach(func() {
+				manifestDir = "fixtures/manifest/duplicate"
+			})
+
+			It("returns an error", func() {
+				version, err = manifest.Version()
+				Expect(version).To(Equal(""))
+				Expect(err).ToNot(BeNil())
+
+				Expect(err.Error()).To(ContainSubstring("unable to read VERSION file"))
 			})
 		})
 	})
@@ -227,6 +253,74 @@ var _ = Describe("Manifest", func() {
 				_, err := manifest.DefaultVersion("notexist")
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("no default version for notexist"))
+			})
+		})
+	})
+
+	Describe("CheckBuildpackVersion", func() {
+		var (
+			cacheDir string
+			buffer   *bytes.Buffer
+		)
+		BeforeEach(func() {
+			cacheDir, err = ioutil.TempDir("", "cache")
+
+			buffer = new(bytes.Buffer)
+			bp.Log.SetOutput(buffer)
+		})
+		AfterEach(func() {
+			err = os.RemoveAll(cacheDir)
+			Expect(err).To(BeNil())
+
+			bp.Log.SetOutput(ioutil.Discard)
+		})
+
+		Context("BUILDPACK_METADATA exists", func() {
+			Context("The language does not match", func() {
+				BeforeEach(func() {
+					metadata := "---\nlanguage: diffLang\nversion: 99.99"
+					ioutil.WriteFile(filepath.Join(cacheDir, "BUILDPACK_METADATA"), []byte(metadata), 0666)
+				})
+
+				It("Does not log anything", func() {
+					manifest.CheckBuildpackVersion(cacheDir)
+					Expect(buffer.String()).To(Equal(""))
+				})
+			})
+			Context("The language matches", func() {
+				Context("The version matches", func() {
+					BeforeEach(func() {
+						metadata := "---\nlanguage: dotnet-core\nversion: 99.99"
+						ioutil.WriteFile(filepath.Join(cacheDir, "BUILDPACK_METADATA"), []byte(metadata), 0666)
+					})
+
+					It("Does not log anything", func() {
+						manifest.CheckBuildpackVersion(cacheDir)
+						Expect(buffer.String()).To(Equal(""))
+
+					})
+				})
+
+				Context("The version does not match", func() {
+					BeforeEach(func() {
+						metadata := "---\nlanguage: dotnet-core\nversion: 33.99"
+						ioutil.WriteFile(filepath.Join(cacheDir, "BUILDPACK_METADATA"), []byte(metadata), 0666)
+					})
+
+					It("Logs a warning that the buildpack version has changed", func() {
+						manifest.CheckBuildpackVersion(cacheDir)
+						Expect(buffer.String()).To(ContainSubstring("buildpack version changed from 33.99 to 99.99"))
+
+					})
+				})
+			})
+		})
+
+		Context("BUILDPACK_METADATA does not exist", func() {
+			It("Does not log anything", func() {
+				manifest.CheckBuildpackVersion(cacheDir)
+				Expect(buffer.String()).To(Equal(""))
+
 			})
 		})
 	})

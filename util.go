@@ -4,6 +4,9 @@ import (
 	"archive/tar"
 	"archive/zip"
 	"compress/gzip"
+	"io/ioutil"
+
+	yaml "gopkg.in/yaml.v2"
 
 	"crypto/md5"
 	"encoding/hex"
@@ -191,6 +194,20 @@ func writeToFile(source io.Reader, destFile string, mode os.FileMode) error {
 	_, err = io.Copy(fh, source)
 	if err != nil {
 		Log.Error("Could not write to %s", destFile)
+		return err
+	}
+
+	return nil
+}
+
+func loadYAML(file string, obj interface{}) error {
+	data, err := ioutil.ReadFile(file)
+	if err != nil {
+		return err
+	}
+
+	err = yaml.Unmarshal(data, obj)
+	if err != nil {
 		return err
 	}
 
