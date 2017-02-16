@@ -192,16 +192,9 @@ func downloadFile(url, destFile string) error {
 }
 
 func writeToFile(source io.Reader, destFile string, mode os.FileMode) error {
-	fh, err := os.Create(destFile)
+	fh, err := os.OpenFile(destFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, mode)
 	if err != nil {
-		Log.Error("Could not write to %s", destFile)
-		return err
-	}
-	defer fh.Close()
-
-	err = fh.Chmod(mode)
-	if err != nil {
-		Log.Error("Could not set file mode for %s", destFile)
+		Log.Error("Could not create %s", destFile)
 		return err
 	}
 	defer fh.Close()

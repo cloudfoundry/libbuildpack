@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"syscall"
 
 	bp "github.com/cloudfoundry/libbuildpack"
 	. "github.com/onsi/ginkgo"
@@ -125,6 +126,7 @@ var _ = Describe("Util", func() {
 			err      error
 			fileInfo os.FileInfo
 			oldMode  os.FileMode
+			oldUmask int
 		)
 		BeforeEach(func() {
 			var fh *os.File
@@ -144,6 +146,8 @@ var _ = Describe("Util", func() {
 			err = fh.Chmod(0742)
 			Expect(err).To(BeNil())
 
+			oldUmask = syscall.Umask(0000)
+
 		})
 		AfterEach(func() {
 			var fh *os.File
@@ -158,6 +162,8 @@ var _ = Describe("Util", func() {
 
 			err = os.RemoveAll(tmpdir)
 			Expect(err).To(BeNil())
+
+			syscall.Umask(oldUmask)
 		})
 
 		Context("with a valid source file", func() {
