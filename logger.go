@@ -13,6 +13,8 @@ type Logger interface {
 	Error(format string, args ...interface{})
 	BeginStep(format string, args ...interface{})
 	Protip(tip string, help_url string)
+	GetOutput() io.Writer
+	SetOutput(w io.Writer)
 }
 
 type logger struct {
