@@ -16,6 +16,7 @@ type Manifest interface {
 	CheckStackSupport() error
 	RootDir() string
 	CheckBuildpackVersion(cacheDir string)
+	StoreBuildpackMetadata(cacheDir string)
 }
 
 type Dependency struct {
@@ -37,7 +38,7 @@ type manifest struct {
 	ManifestRootDir string
 }
 
-type buildpackMetadata struct {
+type BuildpackMetadata struct {
 	Language string `yaml:"language"`
 	Version  string `yaml:"version"`
 }
@@ -63,7 +64,7 @@ func (m *manifest) RootDir() string {
 }
 
 func (m *manifest) CheckBuildpackVersion(cacheDir string) {
-	var md buildpackMetadata
+	var md BuildpackMetadata
 
 	err := LoadYAML(filepath.Join(cacheDir, "BUILDPACK_METADATA"), &md)
 	if err != nil {
@@ -82,6 +83,23 @@ func (m *manifest) CheckBuildpackVersion(cacheDir string) {
 	if md.Version != version {
 		Log.Warning("buildpack version changed from %s to %s", md.Version, version)
 	}
+
+	return
+}
+
+func (m *manifest) StoreBuildpackMetadata(cacheDir string) {
+	logOutput := Log.GetOutput()
+	Log.SetOutput(ioutil.Discard)
+	defer Log.SetOutput(logOutput)
+
+	version, err := m.Version()
+	if err != nil {
+		return
+	}
+
+	md := BuildpackMetadata{Language: m.Language(), Version: version}
+
+	_ = WriteYAML(filepath.Join(cacheDir, "BUILDPACK_METADATA"), &md)
 
 	return
 }

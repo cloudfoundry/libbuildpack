@@ -51,6 +51,10 @@ func (l *logger) printWithHeader(header string, format string, args ...interface
 	fmt.Fprintf(l.w, "%s%s\n", header, msg)
 }
 
+func (l *logger) GetOutput() io.Writer {
+	return l.w
+}
+
 func (l *logger) SetOutput(w io.Writer) {
 	l.w = w
 }

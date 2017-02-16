@@ -3,6 +3,7 @@ package libbuildpack
 import (
 	"archive/tar"
 	"archive/zip"
+	"bytes"
 	"compress/gzip"
 	"io/ioutil"
 
@@ -101,6 +102,20 @@ func LoadYAML(file string, obj interface{}) error {
 		return err
 	}
 
+	return nil
+}
+
+// WriteYAML marshalls YAML from the obj struct and writes it to filename
+func WriteYAML(dest string, obj interface{}) error {
+	data, err := yaml.Marshal(&obj)
+	if err != nil {
+		return err
+	}
+
+	err = writeToFile(bytes.NewBuffer(data), dest, 0666)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -344,4 +344,57 @@ var _ = Describe("Manifest", func() {
 			})
 		})
 	})
+
+	Describe("StoreBuildpackMetadata", func() {
+		var (
+			cacheDir string
+			buffer   *bytes.Buffer
+		)
+		BeforeEach(func() {
+			cacheDir, err = ioutil.TempDir("", "cache")
+
+			buffer = new(bytes.Buffer)
+			bp.Log.SetOutput(buffer)
+		})
+		AfterEach(func() {
+			err = os.RemoveAll(cacheDir)
+			Expect(err).To(BeNil())
+
+			bp.Log.SetOutput(ioutil.Discard)
+		})
+
+		Context("VERSION file exists", func() {
+			Context("cache dir exists", func() {
+				It("writes to the BUILDPACK_METADATA file", func() {
+					manifest.StoreBuildpackMetadata(cacheDir)
+
+					var md bp.BuildpackMetadata
+
+					err = bp.LoadYAML(filepath.Join(cacheDir, "BUILDPACK_METADATA"), &md)
+					Expect(err).To(BeNil())
+
+					Expect(md.Language).To(Equal("dotnet-core"))
+					Expect(md.Version).To(Equal("99.99"))
+				})
+			})
+
+			Context("cache dir does not exist", func() {
+				It("Does not log anything", func() {
+					manifest.StoreBuildpackMetadata("not_exist")
+					Expect(buffer.String()).To(Equal(""))
+				})
+			})
+		})
+
+		Context("VERSION file does not exist", func() {
+			BeforeEach(func() {
+				manifestDir = "fixtures/manifest/stacks"
+			})
+
+			It("Does not log anything", func() {
+				manifest.StoreBuildpackMetadata(cacheDir)
+				Expect(buffer.String()).To(Equal(""))
+			})
+		})
+	})
 })
