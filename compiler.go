@@ -13,20 +13,20 @@ type Compiler struct {
 	Log      Logger
 }
 
-func NewCompiler(buildDir string, cacheDir string, logger Logger) (Compiler, error) {
+func NewCompiler(buildDir string, cacheDir string, logger Logger) (*Compiler, error) {
 	bpDir, err := GetBuildpackDir()
 	if err != nil {
 		logger.Error("Unable to determine buildpack directory: %s", err.Error())
-		return Compiler{}, err
+		return nil, err
 	}
 
 	manifest, err := NewManifest(bpDir)
 	if err != nil {
 		logger.Error("Unable to load buildpack manifest: %s", err.Error())
-		return Compiler{}, err
+		return nil, err
 	}
 
-	c := Compiler{BuildDir: buildDir,
+	c := &Compiler{BuildDir: buildDir,
 		CacheDir: cacheDir,
 		Manifest: manifest,
 		Log:      logger}
