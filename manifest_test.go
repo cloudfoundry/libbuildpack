@@ -250,6 +250,121 @@ var _ = Describe("Manifest", func() {
 		})
 	})
 
+	Describe("InstallDependency", func() {
+		var outputDir string
+
+		BeforeEach(func() {
+			manifestDir = "fixtures/manifest/fetch"
+			outputDir, err = ioutil.TempDir("", "downloads")
+			Expect(err).To(BeNil())
+		})
+		AfterEach(func() { err = os.RemoveAll(outputDir); Expect(err).To(BeNil()) })
+
+		Context("uncached", func() {
+			Context("url exists and matches md5", func() {
+				BeforeEach(func() {
+					tgzContents, err := ioutil.ReadFile("fixtures/thing.tgz")
+					Expect(err).To(BeNil())
+					httpmock.RegisterResponder("GET", "https://example.com/dependencies/real_tar_file-3-linux-x64.tgz",
+						httpmock.NewStringResponder(200, string(tgzContents)))
+				})
+
+				It("extracts a file at the root", func() {
+					err = manifest.InstallDependency(bp.Dependency{Name: "real_tar_file", Version: "3"}, outputDir)
+					Expect(err).To(BeNil())
+
+					Expect(filepath.Join(outputDir, "root.txt")).To(BeAnExistingFile())
+					Expect(ioutil.ReadFile(filepath.Join(outputDir, "root.txt"))).To(Equal([]byte("root\n")))
+				})
+
+				It("extracts a nested file", func() {
+					err = manifest.InstallDependency(bp.Dependency{Name: "real_tar_file", Version: "3"}, outputDir)
+					Expect(err).To(BeNil())
+
+					Expect(filepath.Join(outputDir, "thing", "bin", "file2.exe")).To(BeAnExistingFile())
+					Expect(ioutil.ReadFile(filepath.Join(outputDir, "thing", "bin", "file2.exe"))).To(Equal([]byte("progam2\n")))
+				})
+
+				It("makes intermediate directories", func() {
+					outputDir = filepath.Join(outputDir, "notexist")
+					err = manifest.InstallDependency(bp.Dependency{Name: "real_tar_file", Version: "3"}, outputDir)
+					Expect(err).To(BeNil())
+
+					Expect(filepath.Join(outputDir, "thing", "bin", "file2.exe")).To(BeAnExistingFile())
+					Expect(ioutil.ReadFile(filepath.Join(outputDir, "thing", "bin", "file2.exe"))).To(Equal([]byte("progam2\n")))
+				})
+			})
+
+			Context("url exists but does not match md5", func() {
+				BeforeEach(func() {
+					httpmock.RegisterResponder("GET", "https://example.com/dependencies/thing-1-linux-x64.tgz",
+						httpmock.NewStringResponder(200, "other data"))
+				})
+
+				It("outputfile does not exist", func() {
+					err = manifest.InstallDependency(bp.Dependency{Name: "thing", Version: "1"}, outputDir)
+					Expect(err).ToNot(BeNil())
+
+					Expect(filepath.Join(outputDir, "root.txt")).ToNot(BeAnExistingFile())
+				})
+			})
+		})
+
+		Context("cached", func() {
+			var (
+				dependenciesDir string
+				outputDir       string
+			)
+
+			BeforeEach(func() {
+				manifestDir, err = ioutil.TempDir("", "cached")
+				Expect(err).To(BeNil())
+
+				dependenciesDir = filepath.Join(manifestDir, "dependencies")
+				os.MkdirAll(dependenciesDir, 0755)
+
+				data, err := ioutil.ReadFile("fixtures/manifest/fetch/manifest.yml")
+				Expect(err).To(BeNil())
+
+				err = ioutil.WriteFile(filepath.Join(manifestDir, "manifest.yml"), data, 0644)
+				Expect(err).To(BeNil())
+
+				outputDir, err = ioutil.TempDir("", "downloads")
+				Expect(err).To(BeNil())
+			})
+
+			Context("url exists cached on disk and matches md5", func() {
+				BeforeEach(func() {
+					bp.CopyFile("fixtures/thing.zip", filepath.Join(dependenciesDir, "https___example.com_dependencies_real_zip_file-3-linux-x64.zip"))
+				})
+				It("extracts a file at the root", func() {
+					err = manifest.InstallDependency(bp.Dependency{Name: "real_zip_file", Version: "3"}, outputDir)
+					Expect(err).To(BeNil())
+
+					Expect(filepath.Join(outputDir, "root.txt")).To(BeAnExistingFile())
+					Expect(ioutil.ReadFile(filepath.Join(outputDir, "root.txt"))).To(Equal([]byte("root\n")))
+				})
+
+				It("extracts a nested file", func() {
+					err = manifest.InstallDependency(bp.Dependency{Name: "real_zip_file", Version: "3"}, outputDir)
+					Expect(err).To(BeNil())
+
+					Expect(filepath.Join(outputDir, "thing", "bin", "file2.exe")).To(BeAnExistingFile())
+					Expect(ioutil.ReadFile(filepath.Join(outputDir, "thing", "bin", "file2.exe"))).To(Equal([]byte("progam2\n")))
+				})
+
+				It("makes intermediate directories", func() {
+					outputDir = filepath.Join(outputDir, "notexist")
+					err = manifest.InstallDependency(bp.Dependency{Name: "real_zip_file", Version: "3"}, outputDir)
+					Expect(err).To(BeNil())
+
+					Expect(filepath.Join(outputDir, "thing", "bin", "file2.exe")).To(BeAnExistingFile())
+					Expect(ioutil.ReadFile(filepath.Join(outputDir, "thing", "bin", "file2.exe"))).To(Equal([]byte("progam2\n")))
+				})
+			})
+		})
+	})
+
 	Describe("DefaultVersion", func() {
 		Context("requested name exists (once)", func() {
 			It("returns the default", func() {

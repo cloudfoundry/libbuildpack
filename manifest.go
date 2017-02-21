@@ -11,6 +11,7 @@ import (
 type Manifest interface {
 	DefaultVersion(depName string) (Dependency, error)
 	FetchDependency(dep Dependency, outputFile string) error
+	InstallDependency(dep Dependency, outputDir string) error
 	Version() (string, error)
 	Language() string
 	CheckStackSupport() error
@@ -154,6 +155,35 @@ func (m *manifest) DefaultVersion(depName string) (Dependency, error) {
 	}
 
 	return defaultVersion, nil
+}
+
+func (m *manifest) InstallDependency(dep Dependency, outputDir string) error {
+	tmpDir, err := ioutil.TempDir("", "downloads")
+	if err != nil {
+		return err
+	}
+	tmpFile := filepath.Join(tmpDir, "archive")
+
+	entry, err := m.getEntry(dep)
+	if err != nil {
+		return err
+	}
+
+	err = m.FetchDependency(dep, tmpFile)
+	if err != nil {
+		return err
+	}
+
+	err = os.MkdirAll(outputDir, 0755)
+	if err != nil {
+		return err
+	}
+
+	if strings.HasSuffix(entry.URI, ".zip") {
+		return ExtractZip(tmpFile, outputDir)
+	}
+
+	return ExtractTarGz(tmpFile, outputDir)
 }
 
 func (m *manifest) FetchDependency(dep Dependency, outputFile string) error {
