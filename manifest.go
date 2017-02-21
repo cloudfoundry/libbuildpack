@@ -46,7 +46,7 @@ type BuildpackMetadata struct {
 func NewManifest(bpDir string) (Manifest, error) {
 	var m manifest
 
-	err := LoadYAML(filepath.Join(bpDir, "manifest.yml"), &m)
+	err := NewYAML().Load(filepath.Join(bpDir, "manifest.yml"), &m)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func (m *manifest) RootDir() string {
 func (m *manifest) CheckBuildpackVersion(cacheDir string) {
 	var md BuildpackMetadata
 
-	err := LoadYAML(filepath.Join(cacheDir, "BUILDPACK_METADATA"), &md)
+	err := NewYAML().Load(filepath.Join(cacheDir, "BUILDPACK_METADATA"), &md)
 	if err != nil {
 		return
 	}
@@ -99,7 +99,7 @@ func (m *manifest) StoreBuildpackMetadata(cacheDir string) {
 
 	md := BuildpackMetadata{Language: m.Language(), Version: version}
 
-	_ = WriteYAML(filepath.Join(cacheDir, "BUILDPACK_METADATA"), &md)
+	_ = NewYAML().Write(filepath.Join(cacheDir, "BUILDPACK_METADATA"), &md)
 
 	return
 }

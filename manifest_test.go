@@ -370,7 +370,7 @@ var _ = Describe("Manifest", func() {
 
 					var md bp.BuildpackMetadata
 
-					err = bp.LoadYAML(filepath.Join(cacheDir, "BUILDPACK_METADATA"), &md)
+					err = bp.NewYAML().Load(filepath.Join(cacheDir, "BUILDPACK_METADATA"), &md)
 					Expect(err).To(BeNil())
 
 					Expect(md.Language).To(Equal("dotnet-core"))
