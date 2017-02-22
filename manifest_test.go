@@ -55,6 +55,15 @@ var _ = Describe("Manifest", func() {
 				Expect(manifest.CheckStackSupport()).To(Succeed())
 			})
 
+			Context("with no dependencies listed", func() {
+				BeforeEach(func() {
+					manifestDir = "fixtures/manifest/no-deps"
+				})
+				It("returns nil", func() {
+					Expect(manifest.CheckStackSupport()).To(Succeed())
+				})
+			})
+
 			Context("by a single dependency", func() {
 				BeforeEach(func() {
 					manifestDir = "fixtures/manifest/stacks"
