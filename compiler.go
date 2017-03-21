@@ -9,11 +9,12 @@ import (
 type Compiler struct {
 	BuildDir string
 	CacheDir string
+	DepsDir  string
 	Manifest Manifest
 	Log      Logger
 }
 
-func NewCompiler(buildDir string, cacheDir string, logger Logger) (*Compiler, error) {
+func NewCompiler(args []string, logger Logger) (*Compiler, error) {
 	bpDir, err := GetBuildpackDir()
 	if err != nil {
 		logger.Error("Unable to determine buildpack directory: %s", err.Error())
@@ -26,8 +27,17 @@ func NewCompiler(buildDir string, cacheDir string, logger Logger) (*Compiler, er
 		return nil, err
 	}
 
+	buildDir := args[0]
+	cacheDir := args[1]
+	depsDir := ""
+
+	if len(args) >= 4 {
+		depsDir = args[3]
+	}
+
 	c := &Compiler{BuildDir: buildDir,
 		CacheDir: cacheDir,
+		DepsDir:  depsDir,
 		Manifest: manifest,
 		Log:      logger}
 

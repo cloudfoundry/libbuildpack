@@ -13,6 +13,71 @@ import (
 )
 
 var _ = Describe("Compiler", func() {
+	Describe("NewCompiler", func() {
+		var (
+			args     []string
+			oldBpDir string
+		)
+
+		BeforeEach(func() {
+			oldBpDir = os.Getenv("BUILDPACK_DIR")
+
+			err := os.Setenv("BUILDPACK_DIR", "fixtures/manifest/standard")
+			Expect(err).To(BeNil())
+		})
+		AfterEach(func() {
+			err := os.Setenv("BUILDPACK_DIR", oldBpDir)
+			Expect(err).To(BeNil())
+		})
+
+		Context("A deps dir is provided", func() {
+			It("sets it in the compiler struct", func() {
+				args = []string{"buildDir", "cacheDir", "", "depsDir"}
+				c, err := bp.NewCompiler(args, bp.NewLogger())
+				Expect(err).To(BeNil())
+				Expect(c.BuildDir).To(Equal("buildDir"))
+				Expect(c.CacheDir).To(Equal("cacheDir"))
+				Expect(c.DepsDir).To(Equal("depsDir"))
+			})
+		})
+
+		Context("A deps dir is not provided", func() {
+			It("sets DepsDir to the empty string", func() {
+				args = []string{"buildDir", "cacheDir"}
+				c, err := bp.NewCompiler(args, bp.NewLogger())
+				Expect(err).To(BeNil())
+				Expect(c.BuildDir).To(Equal("buildDir"))
+				Expect(c.CacheDir).To(Equal("cacheDir"))
+				Expect(c.DepsDir).To(Equal(""))
+			})
+		})
+
+		Context("the buildpack dir is invalid", func() {
+			BeforeEach(func() {
+				oldBpDir = os.Getenv("BUILDPACK_DIR")
+
+				err := os.Setenv("BUILDPACK_DIR", "nothing/here")
+				Expect(err).To(BeNil())
+			})
+			AfterEach(func() {
+				err := os.Setenv("BUILDPACK_DIR", oldBpDir)
+				Expect(err).To(BeNil())
+			})
+
+			It("returns an error and logs that it couldn't load the manifest", func() {
+				args = []string{"buildDir", "cacheDir"}
+				logger := bp.NewLogger()
+				buffer := new(bytes.Buffer)
+				logger.SetOutput(buffer)
+
+				_, err := bp.NewCompiler(args, logger)
+				Expect(err).NotTo(BeNil())
+
+				Expect(buffer.String()).To(ContainSubstring("Unable to load buildpack manifest"))
+			})
+		})
+	})
+
 	Describe("GetBuildpackDir", func() {
 		var (
 			err       error
