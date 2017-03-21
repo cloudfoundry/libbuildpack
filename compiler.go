@@ -80,6 +80,26 @@ func (c *Compiler) CheckBuildpackValid() error {
 	return nil
 }
 
+func (c *Compiler) LoadSuppliedDeps() error {
+	if c.DepsDir == "" {
+		return nil
+	}
+
+	err := SetEnvironmentFromSupply(c.DepsDir)
+	if err != nil {
+		c.Log.Error("Unable to setup environment variables: %s", err.Error())
+		return err
+	}
+
+	err = WriteProfileDFromSupply(c.DepsDir, c.BuildDir)
+	if err != nil {
+		c.Log.Error("Unable to write .profile.d supply script: %s", err.Error())
+		return err
+	}
+
+	return nil
+}
+
 func (c *Compiler) StagingComplete() {
 	c.Manifest.StoreBuildpackMetadata(c.CacheDir)
 }
