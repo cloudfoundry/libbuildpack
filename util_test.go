@@ -193,4 +193,38 @@ var _ = Describe("Util", func() {
 			})
 		})
 	})
+
+	Describe("FileExists", func() {
+		Context("the file exists", func() {
+			var (
+				dir string
+				err error
+			)
+
+			BeforeEach(func() {
+				dir, err = ioutil.TempDir("", "file.exists")
+				Expect(err).To(BeNil())
+			})
+
+			AfterEach(func() {
+				err = os.RemoveAll(dir)
+				Expect(err).To(BeNil())
+			})
+
+			It("returns true", func() {
+				exists, err := bp.FileExists(dir)
+				Expect(err).To(BeNil())
+				Expect(exists).To(BeTrue())
+			})
+		})
+
+		Context("the file does not exist", func() {
+			It("returns false", func() {
+				exists, err := bp.FileExists("not/exist")
+				Expect(err).To(BeNil())
+				Expect(exists).To(BeFalse())
+			})
+		})
+
+	})
 })
