@@ -8,7 +8,7 @@ const defaultVersionsError = "The buildpack manifest is misconfigured for 'defau
 
 func dependencyMissingError(m *manifest, dep Dependency) string {
 	var msg string
-	otherVersions := m.allDependencyVersions(dep.Name)
+	otherVersions := m.AllDependencyVersions(dep.Name)
 
 	msg += fmt.Sprintf("DEPENDENCY MISSING IN MANIFEST:\n\n")
 

@@ -18,6 +18,7 @@ type Manifest interface {
 	RootDir() string
 	CheckBuildpackVersion(cacheDir string)
 	StoreBuildpackMetadata(cacheDir string)
+	AllDependencyVersions(string) []string
 }
 
 type Dependency struct {
@@ -223,6 +224,18 @@ func (m *manifest) FetchDependency(dep Dependency, outputFile string) error {
 	return nil
 }
 
+func (m *manifest) AllDependencyVersions(depName string) []string {
+	var depVersions []string
+
+	for _, e := range m.ManifestEntries {
+		if e.Dependency.Name == depName {
+			depVersions = append(depVersions, e.Dependency.Version)
+		}
+	}
+
+	return depVersions
+}
+
 func (m *manifest) getEntry(dep Dependency) (*ManifestEntry, error) {
 	for _, e := range m.ManifestEntries {
 		if e.Dependency == dep {
@@ -243,16 +256,4 @@ func (m *manifest) isCached() bool {
 	}
 
 	return isCached
-}
-
-func (m *manifest) allDependencyVersions(depName string) []string {
-	var depVersions []string
-
-	for _, e := range m.ManifestEntries {
-		if e.Dependency.Name == depName {
-			depVersions = append(depVersions, e.Dependency.Version)
-		}
-	}
-
-	return depVersions
 }
