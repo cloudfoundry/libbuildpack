@@ -23,6 +23,10 @@ var _ = Describe("Command", func() {
 		cmd.SetOutput(buffer)
 	})
 
+	AfterEach(func() {
+		cmd.Reset()
+	})
+
 	Context("valid command", func() {
 		BeforeEach(func() {
 			exe = "ls"
@@ -34,6 +38,20 @@ var _ = Describe("Command", func() {
 			Expect(err).To(BeNil())
 
 			Expect(buffer.String()).To(ContainSubstring("thing.tgz"))
+		})
+	})
+	Context("changing directory", func() {
+		BeforeEach(func() {
+			exe = "pwd"
+			args = []string{}
+		})
+
+		It("runs the command with the output in the right location", func() {
+			cmd.SetDir("fixtures")
+			err := cmd.Run(exe, args...)
+			Expect(err).To(BeNil())
+
+			Expect(buffer.String()).To(ContainSubstring("libbuildpack/fixtures"))
 		})
 	})
 
