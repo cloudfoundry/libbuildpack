@@ -12,6 +12,7 @@ type Compiler struct {
 	DepsDir  string
 	Manifest Manifest
 	Log      Logger
+	Command  CommandRunner
 }
 
 func NewCompiler(args []string, logger Logger) (*Compiler, error) {
@@ -39,7 +40,8 @@ func NewCompiler(args []string, logger Logger) (*Compiler, error) {
 		CacheDir: cacheDir,
 		DepsDir:  depsDir,
 		Manifest: manifest,
-		Log:      logger}
+		Log:      logger,
+		Command:  NewCommandRunner()}
 
 	return c, nil
 }
