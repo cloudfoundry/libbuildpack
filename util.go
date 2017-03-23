@@ -9,11 +9,53 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 )
+
+// CopyDirectory copies srcDir to destDir
+func CopyDirectory(srcDir, destDir string) error {
+	destExists, _ := FileExists(destDir)
+	if !destExists {
+		return errors.New("destination dir must exist")
+	}
+
+	files, err := ioutil.ReadDir(srcDir)
+	if err != nil {
+		return err
+	}
+
+	for _, f := range files {
+		src := filepath.Join(srcDir, f.Name())
+		dest := filepath.Join(destDir, f.Name())
+
+		if f.IsDir() {
+			err = os.MkdirAll(dest, f.Mode())
+			if err != nil {
+				return err
+			}
+			err = CopyDirectory(src, dest)
+
+		} else {
+			rc, err := os.Open(src)
+			if err != nil {
+				return err
+			}
+
+			err = writeToFile(rc, dest, f.Mode())
+			if err != nil {
+				rc.Close()
+				return err
+			}
+			rc.Close()
+		}
+	}
+
+	return nil
+}
 
 // ExtractZip extracts zipfile to destDir
 func ExtractZip(zipfile, destDir string) error {

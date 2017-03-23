@@ -194,6 +194,29 @@ var _ = Describe("Util", func() {
 		})
 	})
 
+	Describe("CopyDirectory", func() {
+		var (
+			destDir string
+			err     error
+		)
+
+		BeforeEach(func() {
+			destDir, err = ioutil.TempDir("", "destDir")
+			Expect(err).To(BeNil())
+		})
+
+		It("copies source to destination", func() {
+			err = bp.CopyDirectory("fixtures", destDir)
+			Expect(err).To(BeNil())
+
+			Expect(filepath.Join("fixtures", "source.txt")).To(BeAnExistingFile())
+			Expect(filepath.Join("fixtures", "manifest", "standard", "manifest.yml")).To(BeAnExistingFile())
+
+			Expect(filepath.Join(destDir, "source.txt")).To(BeAnExistingFile())
+			Expect(filepath.Join(destDir, "manifest", "standard", "manifest.yml")).To(BeAnExistingFile())
+		})
+	})
+
 	Describe("FileExists", func() {
 		Context("the file exists", func() {
 			var (
