@@ -48,7 +48,7 @@ var _ = Describe("Command", func() {
 			err := cmd.Run(exe, args...)
 			Expect(err).NotTo(BeNil())
 
-			Expect(buffer.String()).To(Equal("ls: not/a/dir: No such file or directory\n"))
+			Expect(buffer.String()).To(ContainSubstring("No such file or directory"))
 		})
 	})
 })
