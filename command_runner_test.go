@@ -55,6 +55,20 @@ var _ = Describe("Command", func() {
 		})
 	})
 
+	Context("capturing output", func() {
+		BeforeEach(func() {
+			exe = "ls"
+			args = []string{"-l", "fixtures"}
+		})
+
+		It("returns the output as a string", func() {
+			output, err := cmd.CaptureOutput(exe, args...)
+			Expect(err).To(BeNil())
+
+			Expect(output).To(ContainSubstring("thing.tgz"))
+		})
+	})
+
 	Context("invalid command", func() {
 		BeforeEach(func() {
 			exe = "ls"
