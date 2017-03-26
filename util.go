@@ -149,9 +149,16 @@ func extractTar(src io.Reader, destDir string) error {
 			break
 		}
 		path := filepath.Join(destDir, hdr.Name)
+		fi := hdr.FileInfo()
 
-		if hdr.FileInfo().IsDir() {
+		if fi.IsDir() {
 			err = os.MkdirAll(path, hdr.FileInfo().Mode())
+		} else if fi.Mode()&os.ModeSymlink != 0 {
+			target := hdr.Linkname
+			err = os.Symlink(target, path)
+			if err != nil {
+				return err
+			}
 		} else {
 			err = writeToFile(tr, path, hdr.FileInfo().Mode())
 		}

@@ -103,6 +103,18 @@ var _ = Describe("Util", func() {
 
 				Expect(fileInfo.Mode()).To(Equal(os.FileMode(0755)))
 			})
+			It("handles symlinks", func() {
+				err = bp.ExtractTarGz("fixtures/symlink.tgz", tmpdir)
+				Expect(err).To(BeNil())
+
+				path := filepath.Join(tmpdir, "other", "file.txt")
+				Expect(path).To(BeAnExistingFile())
+				Expect(ioutil.ReadFile(path)).To(Equal([]byte("content\n")))
+
+				fi, err := os.Lstat(path)
+				Expect(err).To(BeNil())
+				Expect(fi.Mode() & os.ModeSymlink).ToNot(Equal(0))
+			})
 		})
 
 		Context("with a missing tar file", func() {
