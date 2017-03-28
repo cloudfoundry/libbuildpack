@@ -163,6 +163,8 @@ func (m *manifest) DefaultVersion(depName string) (Dependency, error) {
 }
 
 func (m *manifest) InstallDependency(dep Dependency, outputDir string) error {
+	Log.BeginStep("Installing %s %s", dep.Name, dep.Version)
+
 	tmpDir, err := ioutil.TempDir("", "downloads")
 	if err != nil {
 		return err

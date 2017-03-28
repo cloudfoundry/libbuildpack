@@ -269,14 +269,23 @@ var _ = Describe("Manifest", func() {
 	})
 
 	Describe("InstallDependency", func() {
-		var outputDir string
+		var (
+			outputDir string
+			buffer    *bytes.Buffer
+		)
 
 		BeforeEach(func() {
 			manifestDir = "fixtures/manifest/fetch"
 			outputDir, err = ioutil.TempDir("", "downloads")
 			Expect(err).To(BeNil())
+			buffer = new(bytes.Buffer)
+			bp.Log.SetOutput(buffer)
 		})
-		AfterEach(func() { err = os.RemoveAll(outputDir); Expect(err).To(BeNil()) })
+		AfterEach(func() {
+			err = os.RemoveAll(outputDir)
+			Expect(err).To(BeNil())
+			bp.Log.SetOutput(ioutil.Discard)
+		})
 
 		Context("uncached", func() {
 			Context("url exists and matches md5", func() {
@@ -285,6 +294,13 @@ var _ = Describe("Manifest", func() {
 					Expect(err).To(BeNil())
 					httpmock.RegisterResponder("GET", "https://example.com/dependencies/real_tar_file-3-linux-x64.tgz",
 						httpmock.NewStringResponder(200, string(tgzContents)))
+				})
+
+				It("logs the name and version of the dependency", func() {
+					err = manifest.InstallDependency(bp.Dependency{Name: "real_tar_file", Version: "3"}, outputDir)
+					Expect(err).To(BeNil())
+
+					Expect(buffer.String()).To(ContainSubstring("-----> Installing real_tar_file 3"))
 				})
 
 				It("extracts a file at the root", func() {
@@ -317,6 +333,13 @@ var _ = Describe("Manifest", func() {
 				BeforeEach(func() {
 					httpmock.RegisterResponder("GET", "https://example.com/dependencies/thing-1-linux-x64.tgz",
 						httpmock.NewStringResponder(200, "other data"))
+				})
+
+				It("logs the name and version of the dependency", func() {
+					err = manifest.InstallDependency(bp.Dependency{Name: "thing", Version: "1"}, outputDir)
+					Expect(err).ToNot(BeNil())
+
+					Expect(buffer.String()).To(ContainSubstring("-----> Installing thing 1"))
 				})
 
 				It("outputfile does not exist", func() {
@@ -355,6 +378,14 @@ var _ = Describe("Manifest", func() {
 				BeforeEach(func() {
 					bp.CopyFile("fixtures/thing.zip", filepath.Join(dependenciesDir, "https___example.com_dependencies_real_zip_file-3-linux-x64.zip"))
 				})
+
+				It("logs the name and version of the dependency", func() {
+					err = manifest.InstallDependency(bp.Dependency{Name: "real_zip_file", Version: "3"}, outputDir)
+					Expect(err).To(BeNil())
+
+					Expect(buffer.String()).To(ContainSubstring("-----> Installing real_zip_file 3"))
+				})
+
 				It("extracts a file at the root", func() {
 					err = manifest.InstallDependency(bp.Dependency{Name: "real_zip_file", Version: "3"}, outputDir)
 					Expect(err).To(BeNil())
