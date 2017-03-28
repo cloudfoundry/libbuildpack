@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 
 	bp "github.com/cloudfoundry/libbuildpack"
 	. "github.com/onsi/ginkgo"
@@ -19,14 +20,16 @@ var _ = Describe("Manifest", func() {
 		manifestDir string
 		err         error
 		version     string
+		currentTime time.Time
 	)
 
 	BeforeEach(func() {
 		manifestDir = "fixtures/manifest/standard"
+		currentTime = time.Now()
 		httpmock.Reset()
 	})
 	JustBeforeEach(func() {
-		manifest, err = bp.NewManifest(manifestDir)
+		manifest, err = bp.NewManifest(manifestDir, currentTime)
 		Expect(err).To(BeNil())
 	})
 
@@ -359,6 +362,110 @@ var _ = Describe("Manifest", func() {
 						err = manifest.InstallDependency(bp.Dependency{Name: "thing", Version: "6.2.3"}, outputDir)
 						Expect(err).To(BeNil())
 						Expect(buffer.String()).NotTo(ContainSubstring("newer version"))
+					})
+				})
+
+				Context("version has an EOL, version line is major", func() {
+					const warning = "**WARNING** thing 4.x will no longer be available in new buildpacks released after 2017-03-01"
+					BeforeEach(func() {
+						tgzContents, err := ioutil.ReadFile("fixtures/thing.tgz")
+						Expect(err).To(BeNil())
+						httpmock.RegisterResponder("GET", "https://example.com/dependencies/thing-4.6.1-linux-x64.tgz",
+							httpmock.NewStringResponder(200, string(tgzContents)))
+					})
+
+					Context("less than 30 days in the future", func() {
+						BeforeEach(func() {
+							currentTime, err = time.Parse("2006-01-02", "2017-02-15")
+							Expect(err).To(BeNil())
+						})
+						It("warns the user", func() {
+							err = manifest.InstallDependency(bp.Dependency{Name: "thing", Version: "4.6.1"}, outputDir)
+							Expect(err).To(BeNil())
+							Expect(buffer.String()).To(ContainSubstring(warning))
+						})
+					})
+					Context("in the past", func() {
+						BeforeEach(func() {
+							currentTime, err = time.Parse("2006-01-02", "2017-12-15")
+							Expect(err).To(BeNil())
+						})
+						It("warns the user", func() {
+							err = manifest.InstallDependency(bp.Dependency{Name: "thing", Version: "4.6.1"}, outputDir)
+							Expect(err).To(BeNil())
+							Expect(buffer.String()).To(ContainSubstring(warning))
+						})
+					})
+					Context("more than 30 days in the future", func() {
+						BeforeEach(func() {
+							currentTime, err = time.Parse("2006-01-02", "2016-10-15")
+							Expect(err).To(BeNil())
+						})
+						It("does not warn the user", func() {
+							err = manifest.InstallDependency(bp.Dependency{Name: "thing", Version: "4.6.1"}, outputDir)
+							Expect(err).To(BeNil())
+							Expect(buffer.String()).ToNot(ContainSubstring(warning))
+						})
+					})
+				})
+
+				Context("version has an EOL, version line is major + minor", func() {
+					const warning = "**WARNING** thing 6.2.x will no longer be available in new buildpacks released after 2018-04-01"
+					BeforeEach(func() {
+						tgzContents, err := ioutil.ReadFile("fixtures/thing.tgz")
+						Expect(err).To(BeNil())
+						httpmock.RegisterResponder("GET", "https://example.com/dependencies/thing-6.2.3-linux-x64.tgz",
+							httpmock.NewStringResponder(200, string(tgzContents)))
+					})
+
+					Context("less than 30 days in the future", func() {
+						BeforeEach(func() {
+							currentTime, err = time.Parse("2006-01-02", "2018-03-29")
+							Expect(err).To(BeNil())
+						})
+						It("warns the user", func() {
+							err = manifest.InstallDependency(bp.Dependency{Name: "thing", Version: "6.2.3"}, outputDir)
+							Expect(err).To(BeNil())
+							Expect(buffer.String()).To(ContainSubstring(warning))
+						})
+					})
+					Context("in the past", func() {
+						BeforeEach(func() {
+							currentTime, err = time.Parse("2006-01-02", "2019-12-30")
+							Expect(err).To(BeNil())
+						})
+						It("warns the user", func() {
+							err = manifest.InstallDependency(bp.Dependency{Name: "thing", Version: "6.2.3"}, outputDir)
+							Expect(err).To(BeNil())
+							Expect(buffer.String()).To(ContainSubstring(warning))
+						})
+					})
+					Context("more than 30 days in the future", func() {
+						BeforeEach(func() {
+							currentTime, err = time.Parse("2006-01-02", "2018-01-15")
+							Expect(err).To(BeNil())
+						})
+						It("does not warn the user", func() {
+							err = manifest.InstallDependency(bp.Dependency{Name: "thing", Version: "6.2.3"}, outputDir)
+							Expect(err).To(BeNil())
+							Expect(buffer.String()).ToNot(ContainSubstring(warning))
+						})
+					})
+				})
+
+				Context("version does not have an EOL", func() {
+					const warning = "**WARNING** real_tar_file 3 will no longer be available in new buildpacks released after"
+					BeforeEach(func() {
+						tgzContents, err := ioutil.ReadFile("fixtures/thing.tgz")
+						Expect(err).To(BeNil())
+						httpmock.RegisterResponder("GET", "https://example.com/dependencies/real_tar_file-3-linux-x64.tgz",
+							httpmock.NewStringResponder(200, string(tgzContents)))
+					})
+
+					It("does not warn the user", func() {
+						err = manifest.InstallDependency(bp.Dependency{Name: "real_tar_file", Version: "3"}, outputDir)
+						Expect(err).To(BeNil())
+						Expect(buffer.String()).ToNot(ContainSubstring(warning))
 					})
 				})
 			})

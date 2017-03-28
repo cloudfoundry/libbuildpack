@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 type Compiler struct {
@@ -23,7 +24,7 @@ func NewCompiler(args []string, logger Logger) (*Compiler, error) {
 		return nil, err
 	}
 
-	manifest, err := NewManifest(bpDir)
+	manifest, err := NewManifest(bpDir, time.Now())
 	if err != nil {
 		logger.Error("Unable to load buildpack manifest: %s", err.Error())
 		return nil, err

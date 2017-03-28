@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 
 	bp "github.com/cloudfoundry/libbuildpack"
 
@@ -143,7 +144,7 @@ var _ = Describe("Compiler", func() {
 			cacheDir, err = ioutil.TempDir("", "cache")
 			Expect(err).To(BeNil())
 
-			manifest, err = bp.NewManifest("fixtures/manifest/standard")
+			manifest, err = bp.NewManifest("fixtures/manifest/standard", time.Now())
 			Expect(err).To(BeNil())
 
 			logger = bp.NewLogger()
