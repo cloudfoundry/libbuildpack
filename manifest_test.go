@@ -383,6 +383,53 @@ var _ = Describe("Manifest", func() {
 		})
 	})
 
+	Describe("InstallOnlyVersion", func() {
+		var outputDir string
+
+		BeforeEach(func() {
+			manifestDir = "fixtures/manifest/fetch"
+			outputDir, err = ioutil.TempDir("", "downloads")
+			Expect(err).To(BeNil())
+		})
+		AfterEach(func() { err = os.RemoveAll(outputDir); Expect(err).To(BeNil()) })
+
+		Context("there is only one version of the dependency", func() {
+			BeforeEach(func() {
+				tgzContents, err := ioutil.ReadFile("fixtures/thing.tgz")
+				Expect(err).To(BeNil())
+				httpmock.RegisterResponder("GET", "https://example.com/dependencies/real_tar_file-3-linux-x64.tgz",
+					httpmock.NewStringResponder(200, string(tgzContents)))
+			})
+
+			It("installs", func() {
+				outputDir = filepath.Join(outputDir, "notexist")
+				err = manifest.InstallOnlyVersion("real_tar_file", outputDir)
+				Expect(err).To(BeNil())
+
+				Expect(filepath.Join(outputDir, "thing", "bin", "file2.exe")).To(BeAnExistingFile())
+				Expect(ioutil.ReadFile(filepath.Join(outputDir, "thing", "bin", "file2.exe"))).To(Equal([]byte("progam2\n")))
+			})
+		})
+
+		Context("there is more than one version of the dependency", func() {
+			It("fails", func() {
+				outputDir = filepath.Join(outputDir, "notexist")
+				err = manifest.InstallOnlyVersion("thing", outputDir)
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(Equal("more than one version of thing found"))
+			})
+		})
+
+		Context("there are no versions of the dependency", func() {
+			It("fails", func() {
+				outputDir = filepath.Join(outputDir, "notexist")
+				err = manifest.InstallOnlyVersion("not_a_dependency", outputDir)
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(Equal("no versions of not_a_dependency found"))
+			})
+		})
+	})
+
 	Describe("DefaultVersion", func() {
 		Context("requested name exists (once)", func() {
 			It("returns the default", func() {

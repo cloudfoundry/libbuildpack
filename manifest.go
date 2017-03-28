@@ -19,6 +19,7 @@ type Manifest interface {
 	CheckBuildpackVersion(cacheDir string)
 	StoreBuildpackMetadata(cacheDir string)
 	AllDependencyVersions(string) []string
+	InstallOnlyVersion(depName string, installDir string) error
 }
 
 type Dependency struct {
@@ -234,6 +235,19 @@ func (m *manifest) AllDependencyVersions(depName string) []string {
 	}
 
 	return depVersions
+}
+
+func (m *manifest) InstallOnlyVersion(depName string, installDir string) error {
+	depVersions := m.AllDependencyVersions(depName)
+
+	if len(depVersions) > 1 {
+		return fmt.Errorf("more than one version of %s found", depName)
+	} else if len(depVersions) == 0 {
+		return fmt.Errorf("no versions of %s found", depName)
+	}
+
+	dep := Dependency{Name: depName, Version: depVersions[0]}
+	return m.InstallDependency(dep, installDir)
 }
 
 func (m *manifest) getEntry(dep Dependency) (*ManifestEntry, error) {
