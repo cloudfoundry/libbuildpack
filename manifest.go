@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/Masterminds/semver"
 )
 
 type Manifest interface {
@@ -181,6 +183,11 @@ func (m *manifest) InstallDependency(dep Dependency, outputDir string) error {
 		return err
 	}
 
+	err = m.warnNewerPatch(dep)
+	if err != nil {
+		return err
+	}
+
 	err = os.MkdirAll(outputDir, 0755)
 	if err != nil {
 		return err
@@ -191,6 +198,27 @@ func (m *manifest) InstallDependency(dep Dependency, outputDir string) error {
 	}
 
 	return ExtractTarGz(tmpFile, outputDir)
+}
+
+func (m *manifest) warnNewerPatch(dep Dependency) error {
+	versions := m.AllDependencyVersions(dep.Name)
+
+	v, err := semver.NewVersion(dep.Version)
+	if err != nil {
+		return err
+	}
+
+	constraint := fmt.Sprintf("%d.%d.x", v.Major(), v.Minor())
+	latest, err := FindMatchingVersion(constraint, versions)
+	if err != nil {
+		return err
+	}
+
+	if latest != dep.Version {
+		Log.Warning(outdatedDependencyWarning(dep.Name, dep.Version, latest))
+	}
+
+	return nil
 }
 
 func (m *manifest) FetchDependency(dep Dependency, outputFile string) error {
@@ -222,7 +250,6 @@ func (m *manifest) FetchDependency(dep Dependency, outputFile string) error {
 		os.Remove(outputFile)
 		return err
 	}
-	Log.Info("to [%s]", outputFile)
 
 	return nil
 }

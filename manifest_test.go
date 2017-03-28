@@ -327,6 +327,40 @@ var _ = Describe("Manifest", func() {
 					Expect(filepath.Join(outputDir, "thing", "bin", "file2.exe")).To(BeAnExistingFile())
 					Expect(ioutil.ReadFile(filepath.Join(outputDir, "thing", "bin", "file2.exe"))).To(Equal([]byte("progam2\n")))
 				})
+
+				Context("version is NOT latest in version line", func() {
+					BeforeEach(func() {
+						tgzContents, err := ioutil.ReadFile("fixtures/thing.tgz")
+						Expect(err).To(BeNil())
+						httpmock.RegisterResponder("GET", "https://example.com/dependencies/thing-6.2.2-linux-x64.tgz",
+							httpmock.NewStringResponder(200, string(tgzContents)))
+					})
+
+					It("warns the user", func() {
+						patchWarning := "**WARNING** A newer version of thing is available in this buildpack. " +
+							"Please adjust your app to use version 6.2.3 instead of version 6.2.2 as soon as possible. " +
+							"Old versions of thing are only provided to assist in migrating to newer versions.\n"
+
+						err = manifest.InstallDependency(bp.Dependency{Name: "thing", Version: "6.2.2"}, outputDir)
+						Expect(err).To(BeNil())
+						Expect(buffer.String()).To(ContainSubstring(patchWarning))
+					})
+				})
+
+				Context("version is latest in version line", func() {
+					BeforeEach(func() {
+						tgzContents, err := ioutil.ReadFile("fixtures/thing.tgz")
+						Expect(err).To(BeNil())
+						httpmock.RegisterResponder("GET", "https://example.com/dependencies/thing-6.2.3-linux-x64.tgz",
+							httpmock.NewStringResponder(200, string(tgzContents)))
+					})
+
+					It("does not warn the user", func() {
+						err = manifest.InstallDependency(bp.Dependency{Name: "thing", Version: "6.2.3"}, outputDir)
+						Expect(err).To(BeNil())
+						Expect(buffer.String()).NotTo(ContainSubstring("newer version"))
+					})
+				})
 			})
 
 			Context("url exists but does not match md5", func() {

@@ -25,3 +25,11 @@ func dependencyMissingError(m *manifest, dep Dependency) string {
 
 	return msg
 }
+
+func outdatedDependencyWarning(depName, used, newest string) string {
+	warning := "A newer version of %s is available in this buildpack. " +
+		"Please adjust your app to use version %s instead of version %s as soon as possible. " +
+		"Old versions of %s are only provided to assist in migrating to newer versions."
+
+	return fmt.Sprintf(warning, depName, newest, used, depName)
+}

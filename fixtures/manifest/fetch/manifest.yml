@@ -31,4 +31,21 @@ dependencies:
   - cflinuxfs2
   uri: https://example.com/dependencies/real_zip_file-3-linux-x64.zip
   md5: 8b9658ba9b7f5a384b40a6d542890541
-
+- name: thing
+  version: 6.2.2
+  cf_stacks:
+  - cflinuxfs2
+  uri: https://example.com/dependencies/thing-6.2.2-linux-x64.tgz
+  md5: 2c93222f86668c41ce947d4232e303c2
+- name: thing
+  version: 6.2.3
+  cf_stacks:
+  - cflinuxfs2
+  uri: https://example.com/dependencies/thing-6.2.3-linux-x64.tgz
+  md5: 2c93222f86668c41ce947d4232e303c2
+- name: thing
+  version: 6.2.1
+  cf_stacks:
+  - cflinuxfs2
+  uri: https://example.com/dependencies/thing-6.2.1-linux-x64.tgz
+  md5: e7437e09b0b13de8cd926e4b9b923fcb
