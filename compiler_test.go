@@ -168,4 +168,52 @@ var _ = Describe("Compiler", func() {
 			})
 		})
 	})
+
+	Describe("ClearCache", func() {
+		var (
+			err      error
+			cacheDir string
+			compiler bp.Compiler
+		)
+
+		BeforeEach(func() {
+			cacheDir, err = ioutil.TempDir("", "cache")
+			Expect(err).To(BeNil())
+
+		})
+
+		JustBeforeEach(func() {
+			compiler = bp.Compiler{BuildDir: "", CacheDir: cacheDir}
+		})
+
+		Context("already empty", func() {
+			It("returns successfully", func() {
+				err = compiler.ClearCache()
+				Expect(err).To(BeNil())
+				Expect(cacheDir).To(BeADirectory())
+			})
+		})
+
+		Context("not empty", func() {
+			BeforeEach(func() {
+				Expect(os.MkdirAll(filepath.Join(cacheDir, "fred", "jane"), 0755)).To(Succeed())
+				Expect(ioutil.WriteFile(filepath.Join(cacheDir, "fred", "jane", "jack.txt"), []byte("content"), 0644)).To(Succeed())
+				Expect(ioutil.WriteFile(filepath.Join(cacheDir, "jill.txt"), []byte("content"), 0644)).To(Succeed())
+
+				fi, err := ioutil.ReadDir(cacheDir)
+				Expect(err).To(BeNil())
+				Expect(len(fi)).To(Equal(2))
+			})
+
+			It("it clears the cache", func() {
+				err = compiler.ClearCache()
+				Expect(err).To(BeNil())
+				Expect(cacheDir).To(BeADirectory())
+
+				fi, err := ioutil.ReadDir(cacheDir)
+				Expect(err).To(BeNil())
+				Expect(len(fi)).To(Equal(0))
+			})
+		})
+	})
 })

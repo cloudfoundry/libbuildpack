@@ -1,6 +1,7 @@
 package libbuildpack
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -104,4 +105,20 @@ func (c *Compiler) LoadSuppliedDeps() error {
 
 func (c *Compiler) StagingComplete() {
 	c.Manifest.StoreBuildpackMetadata(c.CacheDir)
+}
+
+func (c *Compiler) ClearCache() error {
+	files, err := ioutil.ReadDir(c.CacheDir)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		err = os.RemoveAll(filepath.Join(c.CacheDir, file.Name()))
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
