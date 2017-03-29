@@ -732,8 +732,9 @@ var _ = Describe("Manifest", func() {
 
 			Context("cache dir does not exist", func() {
 				It("Does not log anything", func() {
-					manifest.StoreBuildpackMetadata("not_exist")
+					manifest.StoreBuildpackMetadata(filepath.Join(cacheDir, "not_exist"))
 					Expect(buffer.String()).To(Equal(""))
+					Expect(filepath.Join(cacheDir, "not_exist")).ToNot(BeADirectory())
 				})
 			})
 		})

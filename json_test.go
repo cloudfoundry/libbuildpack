@@ -77,12 +77,14 @@ var _ = Describe("JSON", func() {
 		})
 
 		Context("directory does not exist", func() {
-			It("returns an error ", func() {
+			It("creates the directory", func() {
 				obj := map[string]string{
 					"key": "val",
 				}
 				err = json.Write(filepath.Join(tmpDir, "extradir", "file.json"), obj)
-				Expect(err).ToNot(BeNil())
+				Expect(err).To(BeNil())
+
+				Expect(ioutil.ReadFile(filepath.Join(tmpDir, "extradir", "file.json"))).To(Equal([]byte(`{"key":"val"}`)))
 			})
 		})
 	})

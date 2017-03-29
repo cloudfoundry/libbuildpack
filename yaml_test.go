@@ -12,16 +12,16 @@ import (
 
 var _ = Describe("YAML", func() {
 	var (
-		yaml    bp.YAML
+		yaml   bp.YAML
 		tmpDir string
-		err         error
+		err    error
 	)
 
 	BeforeEach(func() {
-			tmpDir, err = ioutil.TempDir("", "yaml")
-			Expect(err).To(BeNil())
+		tmpDir, err = ioutil.TempDir("", "yaml")
+		Expect(err).To(BeNil())
 
-			yaml = bp.NewYAML()
+		yaml = bp.NewYAML()
 	})
 
 	AfterEach(func() {
@@ -77,12 +77,14 @@ var _ = Describe("YAML", func() {
 		})
 
 		Context("directory does not exist", func() {
-			It("returns an error ", func() {
+			It("creates the directory ", func() {
 				obj := map[string]string{
 					"key": "val",
 				}
 				err = yaml.Write(filepath.Join(tmpDir, "extradir", "file.yml"), obj)
-				Expect(err).ToNot(BeNil())
+				Expect(err).To(BeNil())
+
+				Expect(ioutil.ReadFile(filepath.Join(tmpDir, "extradir", "file.yml"))).To(Equal([]byte("key: val\n")))
 			})
 		})
 	})
