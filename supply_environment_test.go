@@ -31,10 +31,10 @@ var _ = Describe("Supply Environment", func() {
 		err = os.MkdirAll(filepath.Join(depsDir, "01", "bin"), 0755)
 		Expect(err).To(BeNil())
 
-		err = os.MkdirAll(filepath.Join(depsDir, "01", "ld_library_path"), 0755)
+		err = os.MkdirAll(filepath.Join(depsDir, "01", "lib"), 0755)
 		Expect(err).To(BeNil())
 
-		err = os.MkdirAll(filepath.Join(depsDir, "02", "ld_library_path"), 0755)
+		err = os.MkdirAll(filepath.Join(depsDir, "02", "lib"), 0755)
 		Expect(err).To(BeNil())
 	})
 
@@ -78,7 +78,7 @@ var _ = Describe("Supply Environment", func() {
 			Expect(err).To(BeNil())
 
 			newPath := os.Getenv("LD_LIBRARY_PATH")
-			Expect(newPath).To(Equal(fmt.Sprintf("%s/02/ld_library_path:%s/01/ld_library_path:%s", depsDir, depsDir, oldLdLibraryPath)))
+			Expect(newPath).To(Equal(fmt.Sprintf("%s/02/lib:%s/01/lib:%s", depsDir, depsDir, oldLdLibraryPath)))
 		})
 	})
 
@@ -91,7 +91,7 @@ var _ = Describe("Supply Environment", func() {
 			Expect(err).To(BeNil())
 
 			Expect(string(contents)).To(ContainSubstring("export PATH=$DEPS_DIR/01/bin:$DEPS_DIR/00/bin:$PATH"))
-			Expect(string(contents)).To(ContainSubstring("export LD_LIBRARY_PATH=$DEPS_DIR/02/ld_library_path:$DEPS_DIR/01/ld_library_path:$LD_LIBRARY_PATH"))
+			Expect(string(contents)).To(ContainSubstring("export LD_LIBRARY_PATH=$DEPS_DIR/02/lib:$DEPS_DIR/01/lib:$LD_LIBRARY_PATH"))
 		})
 	})
 })
