@@ -2,6 +2,7 @@ package libbuildpack_test
 
 import (
 	"errors"
+
 	bp "github.com/cloudfoundry/libbuildpack"
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
@@ -12,15 +13,15 @@ import (
 
 var _ = Describe("Hooks", func() {
 	var (
-		mockCtrl     *gomock.Controller
-		mockHook     *MockHook
-		mockCompiler *bp.Compiler
+		mockCtrl   *gomock.Controller
+		mockHook   *MockHook
+		mockStager *bp.Stager
 	)
 
 	BeforeEach(func() {
 		mockCtrl = gomock.NewController(GinkgoT())
 		mockHook = NewMockHook(mockCtrl)
-		mockCompiler = &bp.Compiler{}
+		mockStager = &bp.Stager{}
 	})
 
 	AfterEach(func() {
@@ -29,32 +30,32 @@ var _ = Describe("Hooks", func() {
 
 	Describe("RunBeforeCompile", func() {
 		It("Runs BeforeCompile on an added hook", func() {
-			mockHook.EXPECT().BeforeCompile(mockCompiler)
+			mockHook.EXPECT().BeforeCompile(mockStager)
 			bp.AddHook(mockHook)
-			err := bp.RunBeforeCompile(mockCompiler)
+			err := bp.RunBeforeCompile(mockStager)
 			Expect(err).To(Succeed())
 		})
 
 		It("Returns errors", func() {
-			mockHook.EXPECT().BeforeCompile(mockCompiler).Return(errors.New("err"))
+			mockHook.EXPECT().BeforeCompile(mockStager).Return(errors.New("err"))
 			bp.AddHook(mockHook)
-			err := bp.RunBeforeCompile(mockCompiler)
+			err := bp.RunBeforeCompile(mockStager)
 			Expect(err).To(HaveOccurred())
 		})
 	})
 
 	Describe("RunAfterCompile", func() {
 		It("Runs AfterCompile on an added hook", func() {
-			mockHook.EXPECT().AfterCompile(mockCompiler)
+			mockHook.EXPECT().AfterCompile(mockStager)
 			bp.AddHook(mockHook)
-			err := bp.RunAfterCompile(mockCompiler)
+			err := bp.RunAfterCompile(mockStager)
 			Expect(err).To(Succeed())
 		})
 
 		It("Returns errors", func() {
-			mockHook.EXPECT().AfterCompile(mockCompiler).Return(errors.New("err"))
+			mockHook.EXPECT().AfterCompile(mockStager).Return(errors.New("err"))
 			bp.AddHook(mockHook)
-			err := bp.RunAfterCompile(mockCompiler)
+			err := bp.RunAfterCompile(mockStager)
 			Expect(err).To(HaveOccurred())
 		})
 	})

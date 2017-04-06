@@ -29,7 +29,7 @@ func (_m *MockHook) EXPECT() *_MockHookRecorder {
 	return _m.recorder
 }
 
-func (_m *MockHook) BeforeCompile(_param0 *Compiler) error {
+func (_m *MockHook) BeforeCompile(_param0 *Stager) error {
 	ret := _m.ctrl.Call(_m, "BeforeCompile", _param0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -39,7 +39,7 @@ func (_mr *_MockHookRecorder) BeforeCompile(arg0 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "BeforeCompile", arg0)
 }
 
-func (_m *MockHook) AfterCompile(_param0 *Compiler) error {
+func (_m *MockHook) AfterCompile(_param0 *Stager) error {
 	ret := _m.ctrl.Call(_m, "AfterCompile", _param0)
 	ret0, _ := ret[0].(error)
 	return ret0
