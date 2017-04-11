@@ -228,6 +228,18 @@ var _ = Describe("Stager", func() {
 			})
 		})
 
+		Context("cache dir does not exist", func() {
+			BeforeEach(func() {
+				cacheDir = filepath.Join("not", "real")
+			})
+
+			It("returns successfully", func() {
+				err = s.ClearCache()
+				Expect(err).To(BeNil())
+				Expect(cacheDir).ToNot(BeADirectory())
+			})
+		})
+
 		Context("not empty", func() {
 			BeforeEach(func() {
 				Expect(os.MkdirAll(filepath.Join(cacheDir, "fred", "jane"), 0755)).To(Succeed())

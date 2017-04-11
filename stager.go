@@ -129,6 +129,9 @@ func (s *Stager) StagingComplete() {
 func (s *Stager) ClearCache() error {
 	files, err := ioutil.ReadDir(s.CacheDir)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
 		return err
 	}
 
