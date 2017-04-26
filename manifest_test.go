@@ -9,6 +9,8 @@ import (
 	"time"
 
 	bp "github.com/cloudfoundry/libbuildpack"
+	"github.com/cloudfoundry/libbuildpack/ansicleaner"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gopkg.in/jarcoal/httpmock.v1"
@@ -22,10 +24,6 @@ var _ = Describe("Manifest", func() {
 		version     string
 		currentTime time.Time
 	)
-
-	const ERROR = "\033[31;1m**ERROR**\033[0m "
-	const WARNING = "\033[31;1m**WARNING**\033[0m "
-	const PROTIP = "\033[34;1mPRO TIP:\033[0m "
 
 	BeforeEach(func() {
 		manifestDir = "fixtures/manifest/standard"
@@ -176,11 +174,11 @@ var _ = Describe("Manifest", func() {
 
 				It("alerts the user that the url could not be downloaded", func() {
 					buf := new(bytes.Buffer)
-					bp.Log.SetOutput(buf)
+					bp.Log.SetOutput(ansicleaner.New(buf))
 
 					err = manifest.FetchDependency(bp.Dependency{Name: "thing", Version: "1"}, outputFile)
 
-					Expect(buf.String()).To(ContainSubstring(ERROR + "Could not download: 404"))
+					Expect(buf.String()).To(ContainSubstring("**ERROR** Could not download: 404"))
 					Expect(buf.String()).ToNot(ContainSubstring("to ["))
 				})
 
@@ -286,7 +284,7 @@ var _ = Describe("Manifest", func() {
 			outputDir, err = ioutil.TempDir("", "downloads")
 			Expect(err).To(BeNil())
 			buffer = new(bytes.Buffer)
-			bp.Log.SetOutput(buffer)
+			bp.Log.SetOutput(ansicleaner.New(buffer))
 		})
 		AfterEach(func() {
 			err = os.RemoveAll(outputDir)
@@ -344,7 +342,7 @@ var _ = Describe("Manifest", func() {
 					})
 
 					It("warns the user", func() {
-						patchWarning := WARNING + "A newer version of thing is available in this buildpack. " +
+						patchWarning := "**WARNING** A newer version of thing is available in this buildpack. " +
 							"Please adjust your app to use version 6.2.3 instead of version 6.2.2 as soon as possible. " +
 							"Old versions of thing are only provided to assist in migrating to newer versions.\n"
 
@@ -370,7 +368,7 @@ var _ = Describe("Manifest", func() {
 				})
 
 				Context("version has an EOL, version line is major", func() {
-					const warning = WARNING + "thing 4.x will no longer be available in new buildpacks released after 2017-03-01"
+					const warning = "**WARNING** thing 4.x will no longer be available in new buildpacks released after 2017-03-01"
 					BeforeEach(func() {
 						tgzContents, err := ioutil.ReadFile("fixtures/thing.tgz")
 						Expect(err).To(BeNil())
@@ -414,7 +412,7 @@ var _ = Describe("Manifest", func() {
 				})
 
 				Context("version has an EOL, version line is major + minor", func() {
-					const warning = WARNING + "thing 6.2.x will no longer be available in new buildpacks released after 2018-04-01"
+					const warning = "**WARNING** thing 6.2.x will no longer be available in new buildpacks released after 2018-04-01"
 					BeforeEach(func() {
 						tgzContents, err := ioutil.ReadFile("fixtures/thing.tgz")
 						Expect(err).To(BeNil())
