@@ -142,13 +142,23 @@ var _ = Describe("Stager", func() {
 
 	Describe("WriteConfigYml", func() {
 		It("creates a file in the <depDir>/idx directory", func() {
-			err := s.WriteConfigYml()
+			err := s.WriteConfigYml(nil)
 			Expect(err).To(BeNil())
 
 			contents, err := ioutil.ReadFile(filepath.Join(s.DepDir(), "config.yml"))
 			Expect(err).To(BeNil())
 
-			Expect(string(contents)).To(Equal("---\nname: dotnet-core\nconfig: {}\n"))
+			Expect(string(contents)).To(Equal("config: {}\nname: dotnet-core\n"))
+		})
+
+		It("writes passed config struct to file", func() {
+			err := s.WriteConfigYml(map[string]string{"key":"value", "a":"b"})
+			Expect(err).To(BeNil())
+
+			contents, err := ioutil.ReadFile(filepath.Join(s.DepDir(), "config.yml"))
+			Expect(err).To(BeNil())
+
+			Expect(string(contents)).To(Equal("config:\n  a: b\n  key: value\nname: dotnet-core\n"))
 		})
 	})
 
