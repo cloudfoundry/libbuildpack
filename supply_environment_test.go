@@ -153,7 +153,7 @@ var _ = Describe("Supply Environment", func() {
 			err = bp.SetLaunchEnvironment(depsDir, buildDir)
 			Expect(err).To(BeNil())
 
-			contents, err := ioutil.ReadFile(filepath.Join(buildDir, ".profile.d", "000-multi-supply.sh"))
+			contents, err := ioutil.ReadFile(filepath.Join(buildDir, ".profile.d", "000_multi-supply.sh"))
 			Expect(err).To(BeNil())
 
 			Expect(string(contents)).To(ContainSubstring("export PATH=$DEPS_DIR/01/bin:$DEPS_DIR/00/bin:$PATH"))
@@ -164,12 +164,12 @@ var _ = Describe("Supply Environment", func() {
 			err = bp.SetLaunchEnvironment(depsDir, buildDir)
 			Expect(err).To(BeNil())
 
-			contents, err := ioutil.ReadFile(filepath.Join(buildDir, ".profile.d", "00-supplied-script.sh"))
+			contents, err := ioutil.ReadFile(filepath.Join(buildDir, ".profile.d", "00_supplied-script.sh"))
 			Expect(err).To(BeNil())
 
 			Expect(string(contents)).To(Equal("first"))
 
-			contents, err = ioutil.ReadFile(filepath.Join(buildDir, ".profile.d", "01-supplied-script.sh"))
+			contents, err = ioutil.ReadFile(filepath.Join(buildDir, ".profile.d", "01_supplied-script.sh"))
 			Expect(err).To(BeNil())
 
 			Expect(string(contents)).To(Equal("second"))
