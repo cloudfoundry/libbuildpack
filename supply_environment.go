@@ -33,7 +33,10 @@ func SetStagingEnvironment(depsDir string) error {
 		}
 
 		if len(depsPaths) != 0 {
-			os.Setenv(envVar, fmt.Sprintf("%s:%s", strings.Join(depsPaths, ":"), oldVal))
+			if len(oldVal) > 0 {
+				depsPaths = append(depsPaths, oldVal)
+			}
+			os.Setenv(envVar, strings.Join(depsPaths, ":"))
 		}
 	}
 

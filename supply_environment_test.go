@@ -81,6 +81,7 @@ var _ = Describe("Supply Environment", func() {
 
 			for _, envVar := range vars {
 				envVars[envVar] = os.Getenv(envVar)
+				os.Setenv(envVar, "existing_"+envVar)
 			}
 		})
 
@@ -96,7 +97,7 @@ var _ = Describe("Supply Environment", func() {
 			Expect(err).To(BeNil())
 
 			newPath := os.Getenv("PATH")
-			Expect(newPath).To(Equal(fmt.Sprintf("%s/01/bin:%s/00/bin:%s", depsDir, depsDir, envVars["PATH"])))
+			Expect(newPath).To(Equal(fmt.Sprintf("%s/01/bin:%s/00/bin:existing_PATH", depsDir, depsDir)))
 		})
 
 		It("sets LD_LIBRARY_PATH based on the supplied deps", func() {
@@ -104,7 +105,7 @@ var _ = Describe("Supply Environment", func() {
 			Expect(err).To(BeNil())
 
 			newPath := os.Getenv("LD_LIBRARY_PATH")
-			Expect(newPath).To(Equal(fmt.Sprintf("%s/02/lib:%s/01/lib:%s", depsDir, depsDir, envVars["LD_LIBRARY_PATH"])))
+			Expect(newPath).To(Equal(fmt.Sprintf("%s/02/lib:%s/01/lib:existing_LD_LIBRARY_PATH", depsDir, depsDir)))
 		})
 
 		It("sets INCLUDE_PATH based on the supplied deps", func() {
@@ -112,7 +113,7 @@ var _ = Describe("Supply Environment", func() {
 			Expect(err).To(BeNil())
 
 			newPath := os.Getenv("INCLUDE_PATH")
-			Expect(newPath).To(Equal(fmt.Sprintf("%s/03/include:%s", depsDir, envVars["INCLUDE_PATH"])))
+			Expect(newPath).To(Equal(fmt.Sprintf("%s/03/include:existing_INCLUDE_PATH", depsDir)))
 		})
 
 		It("sets CPATH based on the supplied deps", func() {
@@ -120,7 +121,7 @@ var _ = Describe("Supply Environment", func() {
 			Expect(err).To(BeNil())
 
 			newPath := os.Getenv("CPATH")
-			Expect(newPath).To(Equal(fmt.Sprintf("%s/03/include:%s", depsDir, envVars["CPATH"])))
+			Expect(newPath).To(Equal(fmt.Sprintf("%s/03/include:existing_CPATH", depsDir)))
 		})
 
 		It("sets CPPPATH based on the supplied deps", func() {
@@ -128,7 +129,7 @@ var _ = Describe("Supply Environment", func() {
 			Expect(err).To(BeNil())
 
 			newPath := os.Getenv("CPPPATH")
-			Expect(newPath).To(Equal(fmt.Sprintf("%s/03/include:%s", depsDir, envVars["CPPPATH"])))
+			Expect(newPath).To(Equal(fmt.Sprintf("%s/03/include:existing_CPPPATH", depsDir)))
 		})
 
 		It("sets PKG_CONFIG_PATH based on the supplied deps", func() {
@@ -136,7 +137,7 @@ var _ = Describe("Supply Environment", func() {
 			Expect(err).To(BeNil())
 
 			newPath := os.Getenv("PKG_CONFIG_PATH")
-			Expect(newPath).To(Equal(fmt.Sprintf("%s/04/pkgconfig:%s", depsDir, envVars["PKG_CONFIG_PATH"])))
+			Expect(newPath).To(Equal(fmt.Sprintf("%s/04/pkgconfig:existing_PKG_CONFIG_PATH", depsDir)))
 		})
 
 		It("sets environment variables from the env/ dir", func() {
@@ -145,6 +146,61 @@ var _ = Describe("Supply Environment", func() {
 
 			newPath := os.Getenv("ENV_VAR")
 			Expect(newPath).To(Equal("value"))
+		})
+
+		Context("relevant env variable is empty", func() {
+			BeforeEach(func() {
+				for key, _ := range envVars {
+					os.Setenv(key, "")
+				}
+			})
+			It("sets PATH based on the supplied deps", func() {
+				err = bp.SetStagingEnvironment(depsDir)
+				Expect(err).To(BeNil())
+
+				newPath := os.Getenv("PATH")
+				Expect(newPath).To(Equal(fmt.Sprintf("%s/01/bin:%s/00/bin", depsDir, depsDir)))
+			})
+
+			It("sets LD_LIBRARY_PATH based on the supplied deps", func() {
+				err = bp.SetStagingEnvironment(depsDir)
+				Expect(err).To(BeNil())
+
+				newPath := os.Getenv("LD_LIBRARY_PATH")
+				Expect(newPath).To(Equal(fmt.Sprintf("%s/02/lib:%s/01/lib", depsDir, depsDir)))
+			})
+
+			It("sets INCLUDE_PATH based on the supplied deps", func() {
+				err = bp.SetStagingEnvironment(depsDir)
+				Expect(err).To(BeNil())
+
+				newPath := os.Getenv("INCLUDE_PATH")
+				Expect(newPath).To(Equal(fmt.Sprintf("%s/03/include", depsDir)))
+			})
+
+			It("sets CPATH based on the supplied deps", func() {
+				err = bp.SetStagingEnvironment(depsDir)
+				Expect(err).To(BeNil())
+
+				newPath := os.Getenv("CPATH")
+				Expect(newPath).To(Equal(fmt.Sprintf("%s/03/include", depsDir)))
+			})
+
+			It("sets CPPPATH based on the supplied deps", func() {
+				err = bp.SetStagingEnvironment(depsDir)
+				Expect(err).To(BeNil())
+
+				newPath := os.Getenv("CPPPATH")
+				Expect(newPath).To(Equal(fmt.Sprintf("%s/03/include", depsDir)))
+			})
+
+			It("sets PKG_CONFIG_PATH based on the supplied deps", func() {
+				err = bp.SetStagingEnvironment(depsDir)
+				Expect(err).To(BeNil())
+
+				newPath := os.Getenv("PKG_CONFIG_PATH")
+				Expect(newPath).To(Equal(fmt.Sprintf("%s/04/pkgconfig", depsDir)))
+			})
 		})
 	})
 
