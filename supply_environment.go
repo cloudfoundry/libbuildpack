@@ -78,7 +78,7 @@ func SetLaunchEnvironment(depsDir, buildDir string) error {
 		}
 
 		if len(depsPaths) != 0 {
-			scriptContents += fmt.Sprintf("export %s=%s:$%s\n", envVar, strings.Join(depsPaths, ":"), envVar)
+			scriptContents += fmt.Sprintf(`export %[1]s=%[2]s$([[ ! -z "${%[1]s:-}" ]] && echo ":$%[1]s")\n`, envVar, strings.Join(depsPaths, ":"))
 		}
 	}
 

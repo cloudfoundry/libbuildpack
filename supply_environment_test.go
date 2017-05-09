@@ -212,8 +212,8 @@ var _ = Describe("Supply Environment", func() {
 			contents, err := ioutil.ReadFile(filepath.Join(buildDir, ".profile.d", "000_multi-supply.sh"))
 			Expect(err).To(BeNil())
 
-			Expect(string(contents)).To(ContainSubstring("export PATH=$DEPS_DIR/01/bin:$DEPS_DIR/00/bin:$PATH"))
-			Expect(string(contents)).To(ContainSubstring("export LD_LIBRARY_PATH=$DEPS_DIR/02/lib:$DEPS_DIR/01/lib:$LD_LIBRARY_PATH"))
+			Expect(string(contents)).To(ContainSubstring(`export PATH=$DEPS_DIR/01/bin:$DEPS_DIR/00/bin$([[ ! -z "${PATH:-}" ]] && echo ":$PATH")`))
+			Expect(string(contents)).To(ContainSubstring(`export LD_LIBRARY_PATH=$DEPS_DIR/02/lib:$DEPS_DIR/01/lib$([[ ! -z "${LD_LIBRARY_PATH:-}" ]] && echo ":$LD_LIBRARY_PATH")`))
 		})
 
 		It("copies scripts from <deps-dir>/<idx>/profile.d to the .profile.d directory, prepending <idx>", func() {
