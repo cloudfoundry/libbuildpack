@@ -3,6 +3,7 @@ package libbuildpack_test
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -381,10 +382,34 @@ var _ = Describe("Manifest", func() {
 							currentTime, err = time.Parse("2006-01-02", "2017-02-15")
 							Expect(err).To(BeNil())
 						})
+
 						It("warns the user", func() {
 							err = manifest.InstallDependency(bp.Dependency{Name: "thing", Version: "4.6.1"}, outputDir)
 							Expect(err).To(BeNil())
 							Expect(buffer.String()).To(ContainSubstring(warning))
+						})
+
+						Context("dependency EOL has a link associated with it", func() {
+							It("includes the link in the warning", func() {
+								err = manifest.InstallDependency(bp.Dependency{Name: "thing", Version: "4.6.1"}, outputDir)
+								Expect(err).To(BeNil())
+								Expect(buffer.String()).To(ContainSubstring(fmt.Sprintf("%s. See: http://example.com/eol-policy", warning)))
+							})
+						})
+
+						Context("dependency EOL does not have a link associated with it", func() {
+							BeforeEach(func() {
+								tgzContents, err := ioutil.ReadFile("fixtures/thing.tgz")
+								Expect(err).To(BeNil())
+								httpmock.RegisterResponder("GET", "https://example.com/dependencies/thing-5.2.3-linux-x64.tgz",
+									httpmock.NewStringResponder(200, string(tgzContents)))
+							})
+
+							It("does not include the word 'See:' in the warning", func() {
+								err = manifest.InstallDependency(bp.Dependency{Name: "thing", Version: "5.2.3"}, outputDir)
+								Expect(err).To(BeNil())
+								Expect(buffer.String()).ToNot(ContainSubstring("See:"))
+							})
 						})
 					})
 					Context("in the past", func() {
