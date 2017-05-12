@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"time"
 
@@ -152,7 +153,7 @@ var _ = Describe("Stager", func() {
 		})
 
 		It("writes passed config struct to file", func() {
-			err := s.WriteConfigYml(map[string]string{"key":"value", "a":"b"})
+			err := s.WriteConfigYml(map[string]string{"key": "value", "a": "b"})
 			Expect(err).To(BeNil())
 
 			contents, err := ioutil.ReadFile(filepath.Join(s.DepDir(), "config.yml"))
@@ -331,6 +332,47 @@ var _ = Describe("Stager", func() {
 			Expect(err).To(BeNil())
 
 			Expect(link).To(Equal("../some/long/path"))
+		})
+	})
+
+	Describe("LinkDirectoryInDepDir", func() {
+		var destDir string
+
+		BeforeEach(func() {
+			destDir, err = ioutil.TempDir("", "untarred-dependencies")
+			Expect(err).To(BeNil())
+
+			err = ioutil.WriteFile(filepath.Join(destDir, "thing1"), []byte("xxx"), 0644)
+			Expect(err).To(BeNil())
+
+			err = ioutil.WriteFile(filepath.Join(destDir, "thing2"), []byte("yyy"), 0644)
+			Expect(err).To(BeNil())
+		})
+
+		AfterEach(func() {
+			err = os.RemoveAll(destDir)
+			Expect(err).To(BeNil())
+		})
+
+		It("it creates a symlink <depDir>/<depSubDir>/<name> pointing to each file in dest dir", func() {
+			err := s.LinkDirectoryInDepDir(destDir, "include")
+			Expect(err).To(BeNil())
+
+			link, err := os.Readlink(filepath.Join(s.DepDir(), "include", "thing1"))
+			Expect(err).To(BeNil())
+			Expect(link).To(Equal("../../../" + path.Base(destDir) + "/thing1"))
+
+			data, err := ioutil.ReadFile(filepath.Join(s.DepDir(), "include", "thing1"))
+			Expect(err).To(BeNil())
+			Expect(string(data)).To(Equal("xxx"))
+
+			link, err = os.Readlink(filepath.Join(s.DepDir(), "include", "thing2"))
+			Expect(err).To(BeNil())
+			Expect(link).To(Equal("../../../" + path.Base(destDir) + "/thing2"))
+
+			data, err = ioutil.ReadFile(filepath.Join(s.DepDir(), "include", "thing2"))
+			Expect(err).To(BeNil())
+			Expect(string(data)).To(Equal("yyy"))
 		})
 	})
 
