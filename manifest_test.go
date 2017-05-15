@@ -3,7 +3,6 @@ package libbuildpack_test
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -369,7 +368,7 @@ var _ = Describe("Manifest", func() {
 				})
 
 				Context("version has an EOL, version line is major", func() {
-					const warning = "**WARNING** thing 4.x will no longer be available in new buildpacks released after 2017-03-01"
+					const warning = "**WARNING** thing 4.x will no longer be available in new buildpacks released after 2017-03-01."
 					BeforeEach(func() {
 						tgzContents, err := ioutil.ReadFile("fixtures/thing.tgz")
 						Expect(err).To(BeNil())
@@ -393,7 +392,7 @@ var _ = Describe("Manifest", func() {
 							It("includes the link in the warning", func() {
 								err = manifest.InstallDependency(bp.Dependency{Name: "thing", Version: "4.6.1"}, outputDir)
 								Expect(err).To(BeNil())
-								Expect(buffer.String()).To(ContainSubstring(fmt.Sprintf("%s. See: http://example.com/eol-policy", warning)))
+								Expect(buffer.String()).To(ContainSubstring("See: http://example.com/eol-policy"))
 							})
 						})
 
