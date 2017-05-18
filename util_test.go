@@ -6,13 +6,13 @@ import (
 	"path/filepath"
 	"syscall"
 
-	bp "github.com/cloudfoundry/libbuildpack"
+	"github.com/cloudfoundry/libbuildpack"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Util", func() {
-	Describe("Unzip", func() {
+	Describe("ExtractZip", func() {
 		var (
 			tmpdir   string
 			err      error
@@ -26,7 +26,7 @@ var _ = Describe("Util", func() {
 
 		Context("with a valid zip file", func() {
 			It("extracts a file at the root", func() {
-				err = bp.ExtractZip("fixtures/thing.zip", tmpdir)
+				err = libbuildpack.ExtractZip("fixtures/thing.zip", tmpdir)
 				Expect(err).To(BeNil())
 
 				Expect(filepath.Join(tmpdir, "root.txt")).To(BeAnExistingFile())
@@ -34,7 +34,7 @@ var _ = Describe("Util", func() {
 			})
 
 			It("extracts a nested file", func() {
-				err = bp.ExtractZip("fixtures/thing.zip", tmpdir)
+				err = libbuildpack.ExtractZip("fixtures/thing.zip", tmpdir)
 				Expect(err).To(BeNil())
 
 				Expect(filepath.Join(tmpdir, "thing", "bin", "file2.exe")).To(BeAnExistingFile())
@@ -42,7 +42,7 @@ var _ = Describe("Util", func() {
 			})
 
 			It("preserves the file mode", func() {
-				err = bp.ExtractZip("fixtures/thing.zip", tmpdir)
+				err = libbuildpack.ExtractZip("fixtures/thing.zip", tmpdir)
 				Expect(err).To(BeNil())
 
 				Expect(filepath.Join(tmpdir, "thing", "bin", "file2.exe")).To(BeAnExistingFile())
@@ -54,15 +54,61 @@ var _ = Describe("Util", func() {
 
 		Context("with a missing zip file", func() {
 			It("returns an error", func() {
-				err = bp.ExtractZip("fixtures/notexist.zip", tmpdir)
+				err = libbuildpack.ExtractZip("fixtures/notexist.zip", tmpdir)
 				Expect(err).ToNot(BeNil())
 			})
 		})
 
 		Context("with an invalid zip file", func() {
 			It("returns an error", func() {
-				err = bp.ExtractZip("fixtures/manifest.yml", tmpdir)
+				err = libbuildpack.ExtractZip("fixtures/manifest.yml", tmpdir)
 				Expect(err).ToNot(BeNil())
+			})
+		})
+	})
+
+	Describe("GetBuildpackDir", func() {
+		var (
+			parentDir string
+			testBpDir string
+			oldBpDir  string
+			err       error
+		)
+
+		BeforeEach(func() {
+			parentDir, err = filepath.Abs(filepath.Join(filepath.Dir(os.Args[0]), ".."))
+			Expect(err).To(BeNil())
+		})
+
+		JustBeforeEach(func() {
+			oldBpDir = os.Getenv("BUILDPACK_DIR")
+			err = os.Setenv("BUILDPACK_DIR", testBpDir)
+			Expect(err).To(BeNil())
+		})
+
+		AfterEach(func() {
+			err = os.Setenv("BUILDPACK_DIR", oldBpDir)
+			Expect(err).To(BeNil())
+		})
+
+		Context("BUILDPACK_DIR is set", func() {
+			BeforeEach(func() {
+				testBpDir = "buildpack_root_directory"
+			})
+			It("returns the value for BUILDPACK_DIR", func() {
+				dir, err := libbuildpack.GetBuildpackDir()
+				Expect(err).To(BeNil())
+				Expect(dir).To(Equal("buildpack_root_directory"))
+			})
+		})
+		Context("BUILDPACK_DIR is not set", func() {
+			BeforeEach(func() {
+				testBpDir = ""
+			})
+			It("returns the parent of the directory containing the executable", func() {
+				dir, err := libbuildpack.GetBuildpackDir()
+				Expect(err).To(BeNil())
+				Expect(dir).To(Equal(parentDir))
 			})
 		})
 	})
@@ -81,21 +127,21 @@ var _ = Describe("Util", func() {
 
 		Context("with a valid tar file", func() {
 			It("extracts a file at the root", func() {
-				err = bp.ExtractTarGz("fixtures/thing.tgz", tmpdir)
+				err = libbuildpack.ExtractTarGz("fixtures/thing.tgz", tmpdir)
 				Expect(err).To(BeNil())
 
 				Expect(filepath.Join(tmpdir, "root.txt")).To(BeAnExistingFile())
 				Expect(ioutil.ReadFile(filepath.Join(tmpdir, "root.txt"))).To(Equal([]byte("root\n")))
 			})
 			It("extracts a nested file", func() {
-				err = bp.ExtractTarGz("fixtures/thing.tgz", tmpdir)
+				err = libbuildpack.ExtractTarGz("fixtures/thing.tgz", tmpdir)
 				Expect(err).To(BeNil())
 
 				Expect(filepath.Join(tmpdir, "thing", "bin", "file2.exe")).To(BeAnExistingFile())
 				Expect(ioutil.ReadFile(filepath.Join(tmpdir, "thing", "bin", "file2.exe"))).To(Equal([]byte("progam2\n")))
 			})
 			It("preserves the file mode", func() {
-				err = bp.ExtractTarGz("fixtures/thing.tgz", tmpdir)
+				err = libbuildpack.ExtractTarGz("fixtures/thing.tgz", tmpdir)
 				Expect(err).To(BeNil())
 
 				Expect(filepath.Join(tmpdir, "thing", "bin", "file2.exe")).To(BeAnExistingFile())
@@ -104,7 +150,7 @@ var _ = Describe("Util", func() {
 				Expect(fileInfo.Mode()).To(Equal(os.FileMode(0755)))
 			})
 			It("handles symlinks", func() {
-				err = bp.ExtractTarGz("fixtures/symlink.tgz", tmpdir)
+				err = libbuildpack.ExtractTarGz("fixtures/symlink.tgz", tmpdir)
 				Expect(err).To(BeNil())
 
 				path := filepath.Join(tmpdir, "other", "file.txt")
@@ -119,14 +165,14 @@ var _ = Describe("Util", func() {
 
 		Context("with a missing tar file", func() {
 			It("returns an error", func() {
-				err = bp.ExtractTarGz("fixtures/notexist.tgz", tmpdir)
+				err = libbuildpack.ExtractTarGz("fixtures/notexist.tgz", tmpdir)
 				Expect(err).ToNot(BeNil())
 			})
 		})
 
 		Context("with an invalid tar file", func() {
 			It("returns an error", func() {
-				err = bp.ExtractTarGz("fixtures/manifest.yml", tmpdir)
+				err = libbuildpack.ExtractTarGz("fixtures/manifest.yml", tmpdir)
 				Expect(err).ToNot(BeNil())
 			})
 		})
@@ -180,7 +226,7 @@ var _ = Describe("Util", func() {
 
 		Context("with a valid source file", func() {
 			It("copies the file", func() {
-				err = bp.CopyFile("fixtures/source.txt", filepath.Join(tmpdir, "out.txt"))
+				err = libbuildpack.CopyFile("fixtures/source.txt", filepath.Join(tmpdir, "out.txt"))
 				Expect(err).To(BeNil())
 
 				Expect(filepath.Join(tmpdir, "out.txt")).To(BeAnExistingFile())
@@ -188,7 +234,7 @@ var _ = Describe("Util", func() {
 			})
 
 			It("preserves the file mode", func() {
-				err = bp.CopyFile("fixtures/source.txt", filepath.Join(tmpdir, "out.txt"))
+				err = libbuildpack.CopyFile("fixtures/source.txt", filepath.Join(tmpdir, "out.txt"))
 				Expect(err).To(BeNil())
 
 				Expect(filepath.Join(tmpdir, "out.txt")).To(BeAnExistingFile())
@@ -200,7 +246,7 @@ var _ = Describe("Util", func() {
 
 		Context("with a missing file", func() {
 			It("returns an error", func() {
-				err = bp.ExtractTarGz("fixtures/notexist.txt", tmpdir)
+				err = libbuildpack.ExtractTarGz("fixtures/notexist.txt", tmpdir)
 				Expect(err).ToNot(BeNil())
 			})
 		})
@@ -218,7 +264,7 @@ var _ = Describe("Util", func() {
 		})
 
 		It("copies source to destination", func() {
-			err = bp.CopyDirectory("fixtures", destDir)
+			err = libbuildpack.CopyDirectory("fixtures", destDir)
 			Expect(err).To(BeNil())
 
 			Expect(filepath.Join("fixtures", "source.txt")).To(BeAnExistingFile())
@@ -247,7 +293,7 @@ var _ = Describe("Util", func() {
 			})
 
 			It("returns true", func() {
-				exists, err := bp.FileExists(dir)
+				exists, err := libbuildpack.FileExists(dir)
 				Expect(err).To(BeNil())
 				Expect(exists).To(BeTrue())
 			})
@@ -255,7 +301,7 @@ var _ = Describe("Util", func() {
 
 		Context("the file does not exist", func() {
 			It("returns false", func() {
-				exists, err := bp.FileExists("not/exist")
+				exists, err := libbuildpack.FileExists("not/exist")
 				Expect(err).To(BeNil())
 				Expect(exists).To(BeFalse())
 			})

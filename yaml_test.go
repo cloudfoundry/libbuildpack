@@ -5,14 +5,14 @@ import (
 	"os"
 	"path/filepath"
 
-	bp "github.com/cloudfoundry/libbuildpack"
+	"github.com/cloudfoundry/libbuildpack"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("YAML", func() {
 	var (
-		yaml   bp.YAML
+		yaml   *libbuildpack.YAML
 		tmpDir string
 		err    error
 	)
@@ -21,7 +21,7 @@ var _ = Describe("YAML", func() {
 		tmpDir, err = ioutil.TempDir("", "yaml")
 		Expect(err).To(BeNil())
 
-		yaml = bp.NewYAML()
+		yaml = &libbuildpack.YAML{}
 	})
 
 	AfterEach(func() {

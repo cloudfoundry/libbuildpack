@@ -2,13 +2,14 @@ package libbuildpack_test
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
 	"time"
 
-	bp "github.com/cloudfoundry/libbuildpack"
+	"github.com/cloudfoundry/libbuildpack"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -16,13 +17,13 @@ import (
 
 var _ = Describe("Stager", func() {
 	var (
-		manifest    bp.Manifest
+		manifest    *libbuildpack.Manifest
 		buildDir    string
 		cacheDir    string
 		depsDir     string
 		depsIdx     string
-		logger      bp.Logger
-		s           bp.Stager
+		logger      *libbuildpack.Logger
+		s           *libbuildpack.Stager
 		err         error
 		oldCfStack  string
 		buffer      *bytes.Buffer
@@ -45,22 +46,14 @@ var _ = Describe("Stager", func() {
 
 		manifestDir = filepath.Join("fixtures", "manifest", "standard")
 
-		manifest, err = bp.NewManifest(manifestDir, time.Now())
+		manifest, err = libbuildpack.NewManifest(manifestDir, logger, time.Now())
 		Expect(err).To(BeNil())
 
-		logger = bp.NewLogger()
-		logger.SetOutput(ioutil.Discard)
-	})
+		buffer = new(bytes.Buffer)
 
-	JustBeforeEach(func() {
-		s = bp.Stager{
-			BuildDir: buildDir,
-			CacheDir: cacheDir,
-			DepsDir:  depsDir,
-			DepsIdx:  depsIdx,
-			Manifest: manifest,
-			Log:      logger,
-		}
+		logger = libbuildpack.NewLogger(buffer)
+
+		s = libbuildpack.NewStager([]string{buildDir, cacheDir, depsDir, depsIdx}, logger, manifest)
 	})
 
 	AfterEach(func() {
@@ -75,30 +68,16 @@ var _ = Describe("Stager", func() {
 	})
 
 	Describe("NewStager", func() {
-		var (
-			args     []string
-			oldBpDir string
-		)
-
-		BeforeEach(func() {
-			oldBpDir = os.Getenv("BUILDPACK_DIR")
-
-			err := os.Setenv("BUILDPACK_DIR", "fixtures/manifest/standard")
-			Expect(err).To(BeNil())
-		})
-		AfterEach(func() {
-			err := os.Setenv("BUILDPACK_DIR", oldBpDir)
-			Expect(err).To(BeNil())
-		})
+		var args []string
 
 		Context("A deps dir is provided", func() {
 			It("sets it in the Stager struct", func() {
 				args = []string{"buildDir", "cacheDir", "depsDir", "idx"}
-				s, err := bp.NewStager(args, bp.NewLogger())
+				s = libbuildpack.NewStager(args, logger, manifest)
 				Expect(err).To(BeNil())
-				Expect(s.BuildDir).To(Equal("buildDir"))
-				Expect(s.CacheDir).To(Equal("cacheDir"))
-				Expect(s.DepsDir).To(Equal("depsDir"))
+				Expect(s.BuildDir()).To(Equal("buildDir"))
+				Expect(s.CacheDir()).To(Equal("cacheDir"))
+				Expect(s.DepsIdx()).To(Equal("idx"))
 				Expect(s.DepDir()).To(Equal("depsDir/idx"))
 			})
 		})
@@ -106,37 +85,12 @@ var _ = Describe("Stager", func() {
 		Context("A deps dir is not provided", func() {
 			It("sets DepsDir to the empty string", func() {
 				args = []string{"buildDir", "cacheDir"}
-				s, err := bp.NewStager(args, bp.NewLogger())
+				s = libbuildpack.NewStager(args, logger, manifest)
 				Expect(err).To(BeNil())
-				Expect(s.BuildDir).To(Equal("buildDir"))
-				Expect(s.CacheDir).To(Equal("cacheDir"))
-				Expect(s.DepsDir).To(Equal(""))
+				Expect(s.BuildDir()).To(Equal("buildDir"))
+				Expect(s.CacheDir()).To(Equal("cacheDir"))
+				Expect(s.DepsIdx()).To(Equal(""))
 				Expect(s.DepDir()).To(Equal(""))
-			})
-		})
-
-		Context("the buildpack dir is invalid", func() {
-			BeforeEach(func() {
-				oldBpDir = os.Getenv("BUILDPACK_DIR")
-
-				err := os.Setenv("BUILDPACK_DIR", "nothing/here")
-				Expect(err).To(BeNil())
-			})
-			AfterEach(func() {
-				err := os.Setenv("BUILDPACK_DIR", oldBpDir)
-				Expect(err).To(BeNil())
-			})
-
-			It("returns an error and logs that it couldn't load the manifest", func() {
-				args = []string{"buildDir", "cacheDir"}
-				logger := bp.NewLogger()
-				buffer := new(bytes.Buffer)
-				logger.SetOutput(buffer)
-
-				_, err := bp.NewStager(args, logger)
-				Expect(err).NotTo(BeNil())
-
-				Expect(buffer.String()).To(ContainSubstring("Unable to load buildpack manifest"))
 			})
 		})
 	})
@@ -163,51 +117,6 @@ var _ = Describe("Stager", func() {
 		})
 	})
 
-	Describe("GetBuildpackDir", func() {
-		var (
-			parentDir string
-			testBpDir string
-			oldBpDir  string
-		)
-
-		BeforeEach(func() {
-			parentDir, err = filepath.Abs(filepath.Join(filepath.Dir(os.Args[0]), ".."))
-			Expect(err).To(BeNil())
-		})
-
-		JustBeforeEach(func() {
-			oldBpDir = os.Getenv("BUILDPACK_DIR")
-			err = os.Setenv("BUILDPACK_DIR", testBpDir)
-			Expect(err).To(BeNil())
-		})
-
-		AfterEach(func() {
-			err = os.Setenv("BUILDPACK_DIR", oldBpDir)
-			Expect(err).To(BeNil())
-		})
-
-		Context("BUILDPACK_DIR is set", func() {
-			BeforeEach(func() {
-				testBpDir = "buildpack_root_directory"
-			})
-			It("returns the value for BUILDPACK_DIR", func() {
-				dir, err := bp.GetBuildpackDir()
-				Expect(err).To(BeNil())
-				Expect(dir).To(Equal("buildpack_root_directory"))
-			})
-		})
-		Context("BUILDPACK_DIR is not set", func() {
-			BeforeEach(func() {
-				testBpDir = ""
-			})
-			It("returns the parent of the directory containing the executable", func() {
-				dir, err := bp.GetBuildpackDir()
-				Expect(err).To(BeNil())
-				Expect(dir).To(Equal(parentDir))
-			})
-		})
-	})
-
 	Describe("CheckBuildpackValid", func() {
 		BeforeEach(func() {
 			oldCfStack = os.Getenv("CF_STACK")
@@ -216,12 +125,6 @@ var _ = Describe("Stager", func() {
 		})
 
 		Context("buildpack is valid", func() {
-			BeforeEach(func() {
-				buffer = new(bytes.Buffer)
-				logger = bp.NewLogger()
-				logger.SetOutput(buffer)
-			})
-
 			It("it logs the buildpack name and version", func() {
 				err := s.CheckBuildpackValid()
 				Expect(err).To(BeNil())
@@ -442,4 +345,207 @@ var _ = Describe("Stager", func() {
 			Expect(data).To(Equal([]byte("made the dir")))
 		})
 	})
+
+	Describe("Supply Environment", func() {
+		BeforeEach(func() {
+			err = os.MkdirAll(filepath.Join(depsDir, "00", "bin"), 0755)
+			Expect(err).To(BeNil())
+
+			err = os.MkdirAll(filepath.Join(depsDir, "01", "bin"), 0755)
+			Expect(err).To(BeNil())
+
+			err = os.MkdirAll(filepath.Join(depsDir, "01", "lib"), 0755)
+			Expect(err).To(BeNil())
+
+			err = os.MkdirAll(filepath.Join(depsDir, "02", "lib"), 0755)
+			Expect(err).To(BeNil())
+
+			err = os.MkdirAll(filepath.Join(depsDir, "03", "include"), 0755)
+			Expect(err).To(BeNil())
+
+			err = os.MkdirAll(filepath.Join(depsDir, "04", "pkgconfig"), 0755)
+			Expect(err).To(BeNil())
+
+			err = os.MkdirAll(filepath.Join(depsDir, "05", "env"), 0755)
+			Expect(err).To(BeNil())
+
+			err = ioutil.WriteFile(filepath.Join(depsDir, "05", "env", "ENV_VAR"), []byte("value"), 0644)
+			Expect(err).To(BeNil())
+
+			err = os.MkdirAll(filepath.Join(depsDir, "00", "profile.d"), 0755)
+			Expect(err).To(BeNil())
+
+			err = ioutil.WriteFile(filepath.Join(depsDir, "00", "profile.d", "supplied-script.sh"), []byte("first"), 0644)
+			Expect(err).To(BeNil())
+
+			err = os.MkdirAll(filepath.Join(depsDir, "01", "profile.d"), 0755)
+			Expect(err).To(BeNil())
+
+			err = ioutil.WriteFile(filepath.Join(depsDir, "01", "profile.d", "supplied-script.sh"), []byte("second"), 0644)
+			Expect(err).To(BeNil())
+
+			err = ioutil.WriteFile(filepath.Join(depsDir, "some-file.yml"), []byte("things"), 0644)
+			Expect(err).To(BeNil())
+		})
+
+		Describe("SetStagingEnvironment", func() {
+			var envVars = map[string]string{}
+
+			BeforeEach(func() {
+				vars := []string{"PATH", "LD_LIBRARY_PATH", "INCLUDE_PATH", "CPATH", "CPPPATH", "PKG_CONFIG_PATH", "ENV_VAR"}
+
+				for _, envVar := range vars {
+					envVars[envVar] = os.Getenv(envVar)
+					os.Setenv(envVar, "existing_"+envVar)
+				}
+			})
+
+			AfterEach(func() {
+				for key, val := range envVars {
+					err = os.Setenv(key, val)
+					Expect(err).To(BeNil())
+				}
+			})
+
+			It("sets PATH based on the supplied deps", func() {
+				err = s.SetStagingEnvironment()
+				Expect(err).To(BeNil())
+
+				newPath := os.Getenv("PATH")
+				Expect(newPath).To(Equal(fmt.Sprintf("%s/01/bin:%s/00/bin:existing_PATH", depsDir, depsDir)))
+			})
+
+			It("sets LD_LIBRARY_PATH based on the supplied deps", func() {
+				err = s.SetStagingEnvironment()
+				Expect(err).To(BeNil())
+
+				newPath := os.Getenv("LD_LIBRARY_PATH")
+				Expect(newPath).To(Equal(fmt.Sprintf("%s/02/lib:%s/01/lib:existing_LD_LIBRARY_PATH", depsDir, depsDir)))
+			})
+
+			It("sets INCLUDE_PATH based on the supplied deps", func() {
+				err = s.SetStagingEnvironment()
+				Expect(err).To(BeNil())
+
+				newPath := os.Getenv("INCLUDE_PATH")
+				Expect(newPath).To(Equal(fmt.Sprintf("%s/03/include:existing_INCLUDE_PATH", depsDir)))
+			})
+
+			It("sets CPATH based on the supplied deps", func() {
+				err = s.SetStagingEnvironment()
+				Expect(err).To(BeNil())
+
+				newPath := os.Getenv("CPATH")
+				Expect(newPath).To(Equal(fmt.Sprintf("%s/03/include:existing_CPATH", depsDir)))
+			})
+
+			It("sets CPPPATH based on the supplied deps", func() {
+				err = s.SetStagingEnvironment()
+				Expect(err).To(BeNil())
+
+				newPath := os.Getenv("CPPPATH")
+				Expect(newPath).To(Equal(fmt.Sprintf("%s/03/include:existing_CPPPATH", depsDir)))
+			})
+
+			It("sets PKG_CONFIG_PATH based on the supplied deps", func() {
+				err = s.SetStagingEnvironment()
+				Expect(err).To(BeNil())
+
+				newPath := os.Getenv("PKG_CONFIG_PATH")
+				Expect(newPath).To(Equal(fmt.Sprintf("%s/04/pkgconfig:existing_PKG_CONFIG_PATH", depsDir)))
+			})
+
+			It("sets environment variables from the env/ dir", func() {
+				err = s.SetStagingEnvironment()
+				Expect(err).To(BeNil())
+
+				newPath := os.Getenv("ENV_VAR")
+				Expect(newPath).To(Equal("value"))
+			})
+
+			Context("relevant env variable is empty", func() {
+				BeforeEach(func() {
+					for key, _ := range envVars {
+						os.Setenv(key, "")
+					}
+				})
+				It("sets PATH based on the supplied deps", func() {
+					err = s.SetStagingEnvironment()
+					Expect(err).To(BeNil())
+
+					newPath := os.Getenv("PATH")
+					Expect(newPath).To(Equal(fmt.Sprintf("%s/01/bin:%s/00/bin", depsDir, depsDir)))
+				})
+
+				It("sets LD_LIBRARY_PATH based on the supplied deps", func() {
+					err = s.SetStagingEnvironment()
+					Expect(err).To(BeNil())
+
+					newPath := os.Getenv("LD_LIBRARY_PATH")
+					Expect(newPath).To(Equal(fmt.Sprintf("%s/02/lib:%s/01/lib", depsDir, depsDir)))
+				})
+
+				It("sets INCLUDE_PATH based on the supplied deps", func() {
+					err = s.SetStagingEnvironment()
+					Expect(err).To(BeNil())
+
+					newPath := os.Getenv("INCLUDE_PATH")
+					Expect(newPath).To(Equal(fmt.Sprintf("%s/03/include", depsDir)))
+				})
+
+				It("sets CPATH based on the supplied deps", func() {
+					err = s.SetStagingEnvironment()
+					Expect(err).To(BeNil())
+
+					newPath := os.Getenv("CPATH")
+					Expect(newPath).To(Equal(fmt.Sprintf("%s/03/include", depsDir)))
+				})
+
+				It("sets CPPPATH based on the supplied deps", func() {
+					err = s.SetStagingEnvironment()
+					Expect(err).To(BeNil())
+
+					newPath := os.Getenv("CPPPATH")
+					Expect(newPath).To(Equal(fmt.Sprintf("%s/03/include", depsDir)))
+				})
+
+				It("sets PKG_CONFIG_PATH based on the supplied deps", func() {
+					err = s.SetStagingEnvironment()
+					Expect(err).To(BeNil())
+
+					newPath := os.Getenv("PKG_CONFIG_PATH")
+					Expect(newPath).To(Equal(fmt.Sprintf("%s/04/pkgconfig", depsDir)))
+				})
+			})
+		})
+
+		Describe("SetLaunchEnvironment", func() {
+			It("writes a .profile.d script allowing the runtime container to use the supplied deps", func() {
+				err = s.SetLaunchEnvironment()
+				Expect(err).To(BeNil())
+
+				contents, err := ioutil.ReadFile(filepath.Join(buildDir, ".profile.d", "000_multi-supply.sh"))
+				Expect(err).To(BeNil())
+
+				Expect(string(contents)).To(ContainSubstring(`export PATH=$DEPS_DIR/01/bin:$DEPS_DIR/00/bin$([[ ! -z "${PATH:-}" ]] && echo ":$PATH")`))
+				Expect(string(contents)).To(ContainSubstring(`export LD_LIBRARY_PATH=$DEPS_DIR/02/lib:$DEPS_DIR/01/lib$([[ ! -z "${LD_LIBRARY_PATH:-}" ]] && echo ":$LD_LIBRARY_PATH")`))
+			})
+
+			It("copies scripts from <deps-dir>/<idx>/profile.d to the .profile.d directory, prepending <idx>", func() {
+				err = s.SetLaunchEnvironment()
+				Expect(err).To(BeNil())
+
+				contents, err := ioutil.ReadFile(filepath.Join(buildDir, ".profile.d", "00_supplied-script.sh"))
+				Expect(err).To(BeNil())
+
+				Expect(string(contents)).To(Equal("first"))
+
+				contents, err = ioutil.ReadFile(filepath.Join(buildDir, ".profile.d", "01_supplied-script.sh"))
+				Expect(err).To(BeNil())
+
+				Expect(string(contents)).To(Equal("second"))
+			})
+		})
+	})
+
 })

@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
-	bp "github.com/cloudfoundry/libbuildpack"
+	"github.com/cloudfoundry/libbuildpack"
 	"github.com/cloudfoundry/libbuildpack/ansicleaner"
 
 	. "github.com/onsi/ginkgo"
@@ -18,20 +18,26 @@ import (
 
 var _ = Describe("Manifest", func() {
 	var (
-		manifest    bp.Manifest
+		manifest    *libbuildpack.Manifest
 		manifestDir string
 		err         error
 		version     string
 		currentTime time.Time
+		buffer      *bytes.Buffer
+		logger      *libbuildpack.Logger
 	)
 
 	BeforeEach(func() {
 		manifestDir = "fixtures/manifest/standard"
 		currentTime = time.Now()
 		httpmock.Reset()
+
+		buffer = new(bytes.Buffer)
+		logger = libbuildpack.NewLogger(ansicleaner.New(buffer))
 	})
+
 	JustBeforeEach(func() {
-		manifest, err = bp.NewManifest(manifestDir, currentTime)
+		manifest, err = libbuildpack.NewManifest(manifestDir, logger, currentTime)
 		Expect(err).To(BeNil())
 	})
 
@@ -146,7 +152,7 @@ var _ = Describe("Manifest", func() {
 				})
 
 				It("downloads the file to the requested location", func() {
-					err = manifest.FetchDependency(bp.Dependency{Name: "thing", Version: "1"}, outputFile)
+					err = manifest.FetchDependency(libbuildpack.Dependency{Name: "thing", Version: "1"}, outputFile)
 
 					Expect(err).To(BeNil())
 					Expect(ioutil.ReadFile(outputFile)).To(Equal([]byte("exciting binary data")))
@@ -154,7 +160,7 @@ var _ = Describe("Manifest", func() {
 
 				It("makes intermediate directories", func() {
 					outputFile = filepath.Join(tmpdir, "notexist", "out.tgz")
-					err = manifest.FetchDependency(bp.Dependency{Name: "thing", Version: "1"}, outputFile)
+					err = manifest.FetchDependency(libbuildpack.Dependency{Name: "thing", Version: "1"}, outputFile)
 
 					Expect(err).To(BeNil())
 					Expect(ioutil.ReadFile(outputFile)).To(Equal([]byte("exciting binary data")))
@@ -167,23 +173,20 @@ var _ = Describe("Manifest", func() {
 						httpmock.NewStringResponder(404, "exciting binary data"))
 				})
 				It("raises error", func() {
-					err = manifest.FetchDependency(bp.Dependency{Name: "thing", Version: "1"}, outputFile)
+					err = manifest.FetchDependency(libbuildpack.Dependency{Name: "thing", Version: "1"}, outputFile)
 
 					Expect(err).ToNot(BeNil())
 				})
 
 				It("alerts the user that the url could not be downloaded", func() {
-					buf := new(bytes.Buffer)
-					bp.Log.SetOutput(ansicleaner.New(buf))
-
-					err = manifest.FetchDependency(bp.Dependency{Name: "thing", Version: "1"}, outputFile)
-
-					Expect(buf.String()).To(ContainSubstring("**ERROR** Could not download: 404"))
-					Expect(buf.String()).ToNot(ContainSubstring("to ["))
+					err = manifest.FetchDependency(libbuildpack.Dependency{Name: "thing", Version: "1"}, outputFile)
+					Expect(err).NotTo(BeNil())
+					Expect(err.Error()).To(ContainSubstring("could not download: 404"))
+					Expect(buffer.String()).ToNot(ContainSubstring("to ["))
 				})
 
 				It("outputfile does not exist", func() {
-					err = manifest.FetchDependency(bp.Dependency{Name: "thing", Version: "1"}, outputFile)
+					err = manifest.FetchDependency(libbuildpack.Dependency{Name: "thing", Version: "1"}, outputFile)
 
 					Expect(outputFile).ToNot(BeAnExistingFile())
 				})
@@ -195,12 +198,12 @@ var _ = Describe("Manifest", func() {
 						httpmock.NewStringResponder(200, "other data"))
 				})
 				It("raises error", func() {
-					err = manifest.FetchDependency(bp.Dependency{Name: "thing", Version: "1"}, outputFile)
+					err = manifest.FetchDependency(libbuildpack.Dependency{Name: "thing", Version: "1"}, outputFile)
 
 					Expect(err).ToNot(BeNil())
 				})
 				It("outputfile does not exist", func() {
-					err = manifest.FetchDependency(bp.Dependency{Name: "thing", Version: "1"}, outputFile)
+					err = manifest.FetchDependency(libbuildpack.Dependency{Name: "thing", Version: "1"}, outputFile)
 
 					Expect(outputFile).ToNot(BeAnExistingFile())
 				})
@@ -233,14 +236,14 @@ var _ = Describe("Manifest", func() {
 					ioutil.WriteFile(filepath.Join(dependenciesDir, "https___example.com_dependencies_thing-2-linux-x64.tgz"), []byte("awesome binary data"), 0644)
 				})
 				It("copies the cached file to outputFile", func() {
-					err = manifest.FetchDependency(bp.Dependency{Name: "thing", Version: "2"}, outputFile)
+					err = manifest.FetchDependency(libbuildpack.Dependency{Name: "thing", Version: "2"}, outputFile)
 
 					Expect(err).To(BeNil())
 					Expect(ioutil.ReadFile(outputFile)).To(Equal([]byte("awesome binary data")))
 				})
 				It("makes intermediate directories", func() {
 					outputFile = filepath.Join(tmpdir, "notexist", "out.tgz")
-					err = manifest.FetchDependency(bp.Dependency{Name: "thing", Version: "2"}, outputFile)
+					err = manifest.FetchDependency(libbuildpack.Dependency{Name: "thing", Version: "2"}, outputFile)
 
 					Expect(err).To(BeNil())
 					Expect(ioutil.ReadFile(outputFile)).To(Equal([]byte("awesome binary data")))
@@ -252,12 +255,12 @@ var _ = Describe("Manifest", func() {
 					ioutil.WriteFile(filepath.Join(dependenciesDir, "https___example.com_dependencies_thing-2-linux-x64.tgz"), []byte("different binary data"), 0644)
 				})
 				It("raises error", func() {
-					err = manifest.FetchDependency(bp.Dependency{Name: "thing", Version: "2"}, outputFile)
+					err = manifest.FetchDependency(libbuildpack.Dependency{Name: "thing", Version: "2"}, outputFile)
 
 					Expect(err).ToNot(BeNil())
 				})
 				It("outputfile does not exist", func() {
-					err = manifest.FetchDependency(bp.Dependency{Name: "thing", Version: "2"}, outputFile)
+					err = manifest.FetchDependency(libbuildpack.Dependency{Name: "thing", Version: "2"}, outputFile)
 
 					Expect(outputFile).ToNot(BeAnExistingFile())
 				})
@@ -265,7 +268,7 @@ var _ = Describe("Manifest", func() {
 
 			Context("url is not cached on disk", func() {
 				It("raises error", func() {
-					err = manifest.FetchDependency(bp.Dependency{Name: "thing", Version: "2"}, outputFile)
+					err = manifest.FetchDependency(libbuildpack.Dependency{Name: "thing", Version: "2"}, outputFile)
 
 					Expect(err).ToNot(BeNil())
 				})
@@ -274,22 +277,17 @@ var _ = Describe("Manifest", func() {
 	})
 
 	Describe("InstallDependency", func() {
-		var (
-			outputDir string
-			buffer    *bytes.Buffer
-		)
+		var outputDir string
 
 		BeforeEach(func() {
 			manifestDir = "fixtures/manifest/fetch"
 			outputDir, err = ioutil.TempDir("", "downloads")
 			Expect(err).To(BeNil())
-			buffer = new(bytes.Buffer)
-			bp.Log.SetOutput(ansicleaner.New(buffer))
 		})
+
 		AfterEach(func() {
 			err = os.RemoveAll(outputDir)
 			Expect(err).To(BeNil())
-			bp.Log.SetOutput(ioutil.Discard)
 		})
 
 		Context("uncached", func() {
@@ -302,14 +300,14 @@ var _ = Describe("Manifest", func() {
 				})
 
 				It("logs the name and version of the dependency", func() {
-					err = manifest.InstallDependency(bp.Dependency{Name: "real_tar_file", Version: "3"}, outputDir)
+					err = manifest.InstallDependency(libbuildpack.Dependency{Name: "real_tar_file", Version: "3"}, outputDir)
 					Expect(err).To(BeNil())
 
 					Expect(buffer.String()).To(ContainSubstring("-----> Installing real_tar_file 3"))
 				})
 
 				It("extracts a file at the root", func() {
-					err = manifest.InstallDependency(bp.Dependency{Name: "real_tar_file", Version: "3"}, outputDir)
+					err = manifest.InstallDependency(libbuildpack.Dependency{Name: "real_tar_file", Version: "3"}, outputDir)
 					Expect(err).To(BeNil())
 
 					Expect(filepath.Join(outputDir, "root.txt")).To(BeAnExistingFile())
@@ -317,7 +315,7 @@ var _ = Describe("Manifest", func() {
 				})
 
 				It("extracts a nested file", func() {
-					err = manifest.InstallDependency(bp.Dependency{Name: "real_tar_file", Version: "3"}, outputDir)
+					err = manifest.InstallDependency(libbuildpack.Dependency{Name: "real_tar_file", Version: "3"}, outputDir)
 					Expect(err).To(BeNil())
 
 					Expect(filepath.Join(outputDir, "thing", "bin", "file2.exe")).To(BeAnExistingFile())
@@ -326,7 +324,7 @@ var _ = Describe("Manifest", func() {
 
 				It("makes intermediate directories", func() {
 					outputDir = filepath.Join(outputDir, "notexist")
-					err = manifest.InstallDependency(bp.Dependency{Name: "real_tar_file", Version: "3"}, outputDir)
+					err = manifest.InstallDependency(libbuildpack.Dependency{Name: "real_tar_file", Version: "3"}, outputDir)
 					Expect(err).To(BeNil())
 
 					Expect(filepath.Join(outputDir, "thing", "bin", "file2.exe")).To(BeAnExistingFile())
@@ -346,7 +344,7 @@ var _ = Describe("Manifest", func() {
 							"Please adjust your app to use version 6.2.3 instead of version 6.2.2 as soon as possible. " +
 							"Old versions of thing are only provided to assist in migrating to newer versions.\n"
 
-						err = manifest.InstallDependency(bp.Dependency{Name: "thing", Version: "6.2.2"}, outputDir)
+						err = manifest.InstallDependency(libbuildpack.Dependency{Name: "thing", Version: "6.2.2"}, outputDir)
 						Expect(err).To(BeNil())
 						Expect(buffer.String()).To(ContainSubstring(patchWarning))
 					})
@@ -361,7 +359,7 @@ var _ = Describe("Manifest", func() {
 					})
 
 					It("does not warn the user", func() {
-						err = manifest.InstallDependency(bp.Dependency{Name: "thing", Version: "6.2.3"}, outputDir)
+						err = manifest.InstallDependency(libbuildpack.Dependency{Name: "thing", Version: "6.2.3"}, outputDir)
 						Expect(err).To(BeNil())
 						Expect(buffer.String()).NotTo(ContainSubstring("newer version"))
 					})
@@ -383,14 +381,14 @@ var _ = Describe("Manifest", func() {
 						})
 
 						It("warns the user", func() {
-							err = manifest.InstallDependency(bp.Dependency{Name: "thing", Version: "4.6.1"}, outputDir)
+							err = manifest.InstallDependency(libbuildpack.Dependency{Name: "thing", Version: "4.6.1"}, outputDir)
 							Expect(err).To(BeNil())
 							Expect(buffer.String()).To(ContainSubstring(warning))
 						})
 
 						Context("dependency EOL has a link associated with it", func() {
 							It("includes the link in the warning", func() {
-								err = manifest.InstallDependency(bp.Dependency{Name: "thing", Version: "4.6.1"}, outputDir)
+								err = manifest.InstallDependency(libbuildpack.Dependency{Name: "thing", Version: "4.6.1"}, outputDir)
 								Expect(err).To(BeNil())
 								Expect(buffer.String()).To(ContainSubstring("See: http://example.com/eol-policy"))
 							})
@@ -405,7 +403,7 @@ var _ = Describe("Manifest", func() {
 							})
 
 							It("does not include the word 'See:' in the warning", func() {
-								err = manifest.InstallDependency(bp.Dependency{Name: "thing", Version: "5.2.3"}, outputDir)
+								err = manifest.InstallDependency(libbuildpack.Dependency{Name: "thing", Version: "5.2.3"}, outputDir)
 								Expect(err).To(BeNil())
 								Expect(buffer.String()).ToNot(ContainSubstring("See:"))
 							})
@@ -417,7 +415,7 @@ var _ = Describe("Manifest", func() {
 							Expect(err).To(BeNil())
 						})
 						It("warns the user", func() {
-							err = manifest.InstallDependency(bp.Dependency{Name: "thing", Version: "4.6.1"}, outputDir)
+							err = manifest.InstallDependency(libbuildpack.Dependency{Name: "thing", Version: "4.6.1"}, outputDir)
 							Expect(err).To(BeNil())
 							Expect(buffer.String()).To(ContainSubstring(warning))
 						})
@@ -428,7 +426,7 @@ var _ = Describe("Manifest", func() {
 							Expect(err).To(BeNil())
 						})
 						It("does not warn the user", func() {
-							err = manifest.InstallDependency(bp.Dependency{Name: "thing", Version: "4.6.1"}, outputDir)
+							err = manifest.InstallDependency(libbuildpack.Dependency{Name: "thing", Version: "4.6.1"}, outputDir)
 							Expect(err).To(BeNil())
 							Expect(buffer.String()).ToNot(ContainSubstring(warning))
 						})
@@ -450,7 +448,7 @@ var _ = Describe("Manifest", func() {
 							Expect(err).To(BeNil())
 						})
 						It("warns the user", func() {
-							err = manifest.InstallDependency(bp.Dependency{Name: "thing", Version: "6.2.3"}, outputDir)
+							err = manifest.InstallDependency(libbuildpack.Dependency{Name: "thing", Version: "6.2.3"}, outputDir)
 							Expect(err).To(BeNil())
 							Expect(buffer.String()).To(ContainSubstring(warning))
 						})
@@ -461,7 +459,7 @@ var _ = Describe("Manifest", func() {
 							Expect(err).To(BeNil())
 						})
 						It("warns the user", func() {
-							err = manifest.InstallDependency(bp.Dependency{Name: "thing", Version: "6.2.3"}, outputDir)
+							err = manifest.InstallDependency(libbuildpack.Dependency{Name: "thing", Version: "6.2.3"}, outputDir)
 							Expect(err).To(BeNil())
 							Expect(buffer.String()).To(ContainSubstring(warning))
 						})
@@ -472,7 +470,7 @@ var _ = Describe("Manifest", func() {
 							Expect(err).To(BeNil())
 						})
 						It("does not warn the user", func() {
-							err = manifest.InstallDependency(bp.Dependency{Name: "thing", Version: "6.2.3"}, outputDir)
+							err = manifest.InstallDependency(libbuildpack.Dependency{Name: "thing", Version: "6.2.3"}, outputDir)
 							Expect(err).To(BeNil())
 							Expect(buffer.String()).ToNot(ContainSubstring(warning))
 						})
@@ -489,7 +487,7 @@ var _ = Describe("Manifest", func() {
 					})
 
 					It("does not warn the user", func() {
-						err = manifest.InstallDependency(bp.Dependency{Name: "real_tar_file", Version: "3"}, outputDir)
+						err = manifest.InstallDependency(libbuildpack.Dependency{Name: "real_tar_file", Version: "3"}, outputDir)
 						Expect(err).To(BeNil())
 						Expect(buffer.String()).ToNot(ContainSubstring(warning))
 					})
@@ -503,14 +501,14 @@ var _ = Describe("Manifest", func() {
 				})
 
 				It("logs the name and version of the dependency", func() {
-					err = manifest.InstallDependency(bp.Dependency{Name: "thing", Version: "1"}, outputDir)
+					err = manifest.InstallDependency(libbuildpack.Dependency{Name: "thing", Version: "1"}, outputDir)
 					Expect(err).ToNot(BeNil())
 
 					Expect(buffer.String()).To(ContainSubstring("-----> Installing thing 1"))
 				})
 
 				It("outputfile does not exist", func() {
-					err = manifest.InstallDependency(bp.Dependency{Name: "thing", Version: "1"}, outputDir)
+					err = manifest.InstallDependency(libbuildpack.Dependency{Name: "thing", Version: "1"}, outputDir)
 					Expect(err).ToNot(BeNil())
 
 					Expect(filepath.Join(outputDir, "root.txt")).ToNot(BeAnExistingFile())
@@ -543,18 +541,18 @@ var _ = Describe("Manifest", func() {
 
 			Context("url exists cached on disk and matches md5", func() {
 				BeforeEach(func() {
-					bp.CopyFile("fixtures/thing.zip", filepath.Join(dependenciesDir, "https___example.com_dependencies_real_zip_file-3-linux-x64.zip"))
+					libbuildpack.CopyFile("fixtures/thing.zip", filepath.Join(dependenciesDir, "https___example.com_dependencies_real_zip_file-3-linux-x64.zip"))
 				})
 
 				It("logs the name and version of the dependency", func() {
-					err = manifest.InstallDependency(bp.Dependency{Name: "real_zip_file", Version: "3"}, outputDir)
+					err = manifest.InstallDependency(libbuildpack.Dependency{Name: "real_zip_file", Version: "3"}, outputDir)
 					Expect(err).To(BeNil())
 
 					Expect(buffer.String()).To(ContainSubstring("-----> Installing real_zip_file 3"))
 				})
 
 				It("extracts a file at the root", func() {
-					err = manifest.InstallDependency(bp.Dependency{Name: "real_zip_file", Version: "3"}, outputDir)
+					err = manifest.InstallDependency(libbuildpack.Dependency{Name: "real_zip_file", Version: "3"}, outputDir)
 					Expect(err).To(BeNil())
 
 					Expect(filepath.Join(outputDir, "root.txt")).To(BeAnExistingFile())
@@ -562,7 +560,7 @@ var _ = Describe("Manifest", func() {
 				})
 
 				It("extracts a nested file", func() {
-					err = manifest.InstallDependency(bp.Dependency{Name: "real_zip_file", Version: "3"}, outputDir)
+					err = manifest.InstallDependency(libbuildpack.Dependency{Name: "real_zip_file", Version: "3"}, outputDir)
 					Expect(err).To(BeNil())
 
 					Expect(filepath.Join(outputDir, "thing", "bin", "file2.exe")).To(BeAnExistingFile())
@@ -571,7 +569,7 @@ var _ = Describe("Manifest", func() {
 
 				It("makes intermediate directories", func() {
 					outputDir = filepath.Join(outputDir, "notexist")
-					err = manifest.InstallDependency(bp.Dependency{Name: "real_zip_file", Version: "3"}, outputDir)
+					err = manifest.InstallDependency(libbuildpack.Dependency{Name: "real_zip_file", Version: "3"}, outputDir)
 					Expect(err).To(BeNil())
 
 					Expect(filepath.Join(outputDir, "thing", "bin", "file2.exe")).To(BeAnExistingFile())
@@ -634,7 +632,7 @@ var _ = Describe("Manifest", func() {
 				dep, err := manifest.DefaultVersion("node")
 				Expect(err).To(BeNil())
 
-				Expect(dep).To(Equal(bp.Dependency{Name: "node", Version: "6.9.4"}))
+				Expect(dep).To(Equal(libbuildpack.Dependency{Name: "node", Version: "6.9.4"}))
 			})
 		})
 
@@ -656,21 +654,15 @@ var _ = Describe("Manifest", func() {
 	})
 
 	Describe("CheckBuildpackVersion", func() {
-		var (
-			cacheDir string
-			buffer   *bytes.Buffer
-		)
+		var cacheDir string
+
 		BeforeEach(func() {
 			cacheDir, err = ioutil.TempDir("", "cache")
-
-			buffer = new(bytes.Buffer)
-			bp.Log.SetOutput(buffer)
 		})
+
 		AfterEach(func() {
 			err = os.RemoveAll(cacheDir)
 			Expect(err).To(BeNil())
-
-			bp.Log.SetOutput(ioutil.Discard)
 		})
 
 		Context("BUILDPACK_METADATA exists", func() {
@@ -724,21 +716,15 @@ var _ = Describe("Manifest", func() {
 	})
 
 	Describe("StoreBuildpackMetadata", func() {
-		var (
-			cacheDir string
-			buffer   *bytes.Buffer
-		)
+		var cacheDir string
+
 		BeforeEach(func() {
 			cacheDir, err = ioutil.TempDir("", "cache")
-
-			buffer = new(bytes.Buffer)
-			bp.Log.SetOutput(buffer)
 		})
+
 		AfterEach(func() {
 			err = os.RemoveAll(cacheDir)
 			Expect(err).To(BeNil())
-
-			bp.Log.SetOutput(ioutil.Discard)
 		})
 
 		Context("VERSION file exists", func() {
@@ -746,9 +732,10 @@ var _ = Describe("Manifest", func() {
 				It("writes to the BUILDPACK_METADATA file", func() {
 					manifest.StoreBuildpackMetadata(cacheDir)
 
-					var md bp.BuildpackMetadata
+					var md libbuildpack.BuildpackMetadata
 
-					err = bp.NewYAML().Load(filepath.Join(cacheDir, "BUILDPACK_METADATA"), &md)
+					y := &libbuildpack.YAML{}
+					err = y.Load(filepath.Join(cacheDir, "BUILDPACK_METADATA"), &md)
 					Expect(err).To(BeNil())
 
 					Expect(md.Language).To(Equal("dotnet-core"))

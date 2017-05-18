@@ -2,6 +2,7 @@ package libbuildpack_test
 
 import (
 	"bytes"
+	"os/exec"
 
 	bp "github.com/cloudfoundry/libbuildpack"
 	. "github.com/onsi/ginkgo"
@@ -13,18 +14,11 @@ var _ = Describe("Command", func() {
 		buffer *bytes.Buffer
 		exe    string
 		args   []string
-		cmd    bp.CommandRunner
+		cmd    bp.Command
 	)
 
-	JustBeforeEach(func() {
+	BeforeEach(func() {
 		buffer = new(bytes.Buffer)
-
-		cmd = bp.NewCommandRunner()
-		cmd.SetOutput(buffer)
-	})
-
-	AfterEach(func() {
-		cmd.Reset()
 	})
 
 	Context("valid command", func() {
@@ -34,7 +28,7 @@ var _ = Describe("Command", func() {
 		})
 
 		It("runs the command with the output in the right location", func() {
-			err := cmd.Run(exe, args...)
+			err := cmd.Execute("", buffer, buffer, exe, args...)
 			Expect(err).To(BeNil())
 
 			Expect(buffer.String()).To(ContainSubstring("thing.tgz"))
@@ -47,25 +41,10 @@ var _ = Describe("Command", func() {
 		})
 
 		It("runs the command with the output in the right location", func() {
-			cmd.SetDir("fixtures")
-			err := cmd.Run(exe, args...)
+			err := cmd.Execute("fixtures", buffer, buffer, exe, args...)
 			Expect(err).To(BeNil())
 
 			Expect(buffer.String()).To(ContainSubstring("libbuildpack/fixtures"))
-		})
-	})
-
-	Context("capturing output", func() {
-		BeforeEach(func() {
-			exe = "ls"
-			args = []string{"-l", "fixtures"}
-		})
-
-		It("returns the output as a string", func() {
-			output, err := cmd.CaptureOutput(exe, args...)
-			Expect(err).To(BeNil())
-
-			Expect(output).To(ContainSubstring("thing.tgz"))
 		})
 	})
 
@@ -77,8 +56,10 @@ var _ = Describe("Command", func() {
 		})
 
 		It("runs the command and returns an eror", func() {
-			err := cmd.Run(exe, args...)
+			err := cmd.Execute("", buffer, buffer, exe, args...)
 			Expect(err).NotTo(BeNil())
+			_, ok := err.(*exec.ExitError)
+			Expect(ok).To(BeTrue())
 
 			Expect(buffer.String()).To(ContainSubstring("No such file or directory"))
 		})

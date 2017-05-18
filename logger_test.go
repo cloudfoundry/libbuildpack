@@ -13,14 +13,13 @@ var _ = Describe("Logger", func() {
 
 	var (
 		err    error
-		logger libbuildpack.Logger
+		logger *libbuildpack.Logger
 		buffer *bytes.Buffer
 	)
 
 	BeforeEach(func() {
 		buffer = new(bytes.Buffer)
-		logger = libbuildpack.NewLogger()
-		logger.SetOutput(buffer)
+		logger = libbuildpack.NewLogger(buffer)
 	})
 
 	Describe("Debug", func() {

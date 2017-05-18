@@ -5,14 +5,14 @@ import (
 	"os"
 	"path/filepath"
 
-	bp "github.com/cloudfoundry/libbuildpack"
+	"github.com/cloudfoundry/libbuildpack"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("JSON", func() {
 	var (
-		json   bp.JSON
+		json   *libbuildpack.JSON
 		tmpDir string
 		err    error
 	)
@@ -21,7 +21,7 @@ var _ = Describe("JSON", func() {
 		tmpDir, err = ioutil.TempDir("", "json")
 		Expect(err).To(BeNil())
 
-		json = bp.NewJSON()
+		json = &libbuildpack.JSON{}
 	})
 
 	AfterEach(func() {
