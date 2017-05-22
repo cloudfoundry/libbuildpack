@@ -10,6 +10,10 @@ import (
 type YAML struct {
 }
 
+func NewYAML() *YAML {
+	return &YAML{}
+}
+
 func (y *YAML) Load(file string, obj interface{}) error {
 	data, err := ioutil.ReadFile(file)
 	if err != nil {

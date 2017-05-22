@@ -9,6 +9,10 @@ import (
 type JSON struct {
 }
 
+func NewJSON() *JSON {
+	return &JSON{}
+}
+
 func (j *JSON) Load(file string, obj interface{}) error {
 	data, err := ioutil.ReadFile(file)
 	if err != nil {
