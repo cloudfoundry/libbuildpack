@@ -9,6 +9,10 @@ default_versions:
   version: 6.9.4
 - name: bower
   version: 1.9.0
+- name: ruby
+  version: 2.x
+- name: jruby
+  version: 9.3.x
 url_to_dependency_map:
 - match: libunwind-(.*)-(\d+\.\d+)
   name: libunwind
@@ -26,6 +30,36 @@ url_to_dependency_map:
   name: bower
   version: "$1"
 dependencies:
+- name: ruby
+  version: 2.2.4
+  cf_stacks:
+  - cflinuxfs2
+  uri: https://buildpacks.cloudfoundry.org/dependencies/manual-binaries/dotnet/libunwind-1.2-linux-x64.tgz
+  md5: f56347d4e83c27658a4181ceacd93b35
+- name: ruby
+  version: 2.3.3
+  cf_stacks:
+  - cflinuxfs2
+  uri: https://buildpacks.cloudfoundry.org/dependencies/manual-binaries/dotnet/libunwind-1.2-linux-x64.tgz
+  md5: f56347d4e83c27658a4181ceacd93b35
+- name: jruby
+  version: 9.3.4
+  cf_stacks:
+  - cflinuxfs2
+  uri: https://buildpacks.cloudfoundry.org/dependencies/manual-binaries/dotnet/libunwind-1.2-linux-x64.tgz
+  md5: f56347d4e83c27658a4181ceacd93b35
+- name: jruby
+  version: 9.3.5
+  cf_stacks:
+  - cflinuxfs2
+  uri: https://buildpacks.cloudfoundry.org/dependencies/manual-binaries/dotnet/libunwind-1.2-linux-x64.tgz
+  md5: f56347d4e83c27658a4181ceacd93b35
+- name: jruby
+  version: 9.4.4
+  cf_stacks:
+  - cflinuxfs2
+  uri: https://buildpacks.cloudfoundry.org/dependencies/manual-binaries/dotnet/libunwind-1.2-linux-x64.tgz
+  md5: f56347d4e83c27658a4181ceacd93b35
 - name: libunwind
   version: 1.2
   cf_stacks:

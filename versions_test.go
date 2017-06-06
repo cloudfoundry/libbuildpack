@@ -14,16 +14,22 @@ var _ = Describe("versions", func() {
 		var versions []string
 
 		BeforeEach(func() {
-			versions = []string{"1.2.3", "1.2.4", "1.2.2", "1.3.3", "1.3.4", "1.3.2"}
+			versions = []string{"1.2.3", "1.2.4", "1.2.2", "1.3.3", "1.3.4", "1.3.2", "2.0.0"}
 		})
 
 		It("returns the greatest version", func() {
 			ver, err := bp.FindMatchingVersion("*", versions)
 			Expect(err).To(BeNil())
+			Expect(ver).To(Equal("2.0.0"))
+		})
+
+		It("returns the greatest version in a minor line", func() {
+			ver, err := bp.FindMatchingVersion("1.x", versions)
+			Expect(err).To(BeNil())
 			Expect(ver).To(Equal("1.3.4"))
 		})
 
-		It("returns the greatest version in a line", func() {
+		It("returns the greatest version in a patch line", func() {
 			ver, err := bp.FindMatchingVersion("1.2.x", versions)
 			Expect(err).To(BeNil())
 			Expect(ver).To(Equal("1.2.4"))

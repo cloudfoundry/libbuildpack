@@ -627,7 +627,7 @@ var _ = Describe("Manifest", func() {
 	})
 
 	Describe("DefaultVersion", func() {
-		Context("requested name exists (once)", func() {
+		Context("requested name exists and default version is locked to the patch", func() {
 			It("returns the default", func() {
 				dep, err := manifest.DefaultVersion("node")
 				Expect(err).To(BeNil())
@@ -636,7 +636,25 @@ var _ = Describe("Manifest", func() {
 			})
 		})
 
-		Context("requested name exists (twice)", func() {
+		Context("requested name exists multiple times in dependencies and default version is locked to minor line", func() {
+			It("returns the default", func() {
+				dep, err := manifest.DefaultVersion("jruby")
+				Expect(err).To(BeNil())
+
+				Expect(dep).To(Equal(libbuildpack.Dependency{Name: "jruby", Version: "9.3.5"}))
+			})
+		})
+
+		Context("requested name exists multiple times in dependencies and default version is locked to major line", func() {
+			It("returns the default", func() {
+				dep, err := manifest.DefaultVersion("ruby")
+				Expect(err).To(BeNil())
+
+				Expect(dep).To(Equal(libbuildpack.Dependency{Name: "ruby", Version: "2.3.3"}))
+			})
+		})
+
+		Context("requested name exists (twice) in default version section", func() {
 			BeforeEach(func() { manifestDir = "fixtures/manifest/duplicate" })
 			It("returns an error", func() {
 				_, err := manifest.DefaultVersion("bower")
@@ -644,6 +662,7 @@ var _ = Describe("Manifest", func() {
 				Expect(err.Error()).To(Equal("found 2 default versions for bower"))
 			})
 		})
+
 		Context("requested name does not exist", func() {
 			It("returns an error", func() {
 				_, err := manifest.DefaultVersion("notexist")
