@@ -18,7 +18,7 @@ var _ = Describe("versions", func() {
 		})
 
 		It("returns the greatest version", func() {
-			ver, err := bp.FindMatchingVersion("*", versions)
+			ver, err := bp.FindMatchingVersion("x", versions)
 			Expect(err).To(BeNil())
 			Expect(ver).To(Equal("2.0.0"))
 		})
@@ -31,6 +31,24 @@ var _ = Describe("versions", func() {
 
 		It("returns the greatest version in a patch line", func() {
 			ver, err := bp.FindMatchingVersion("1.2.x", versions)
+			Expect(err).To(BeNil())
+			Expect(ver).To(Equal("1.2.4"))
+		})
+
+		It("returns the greatest version less than the above", func() {
+			ver, err := bp.FindMatchingVersion(">=1.2.0, <1.2.4", versions)
+			Expect(err).To(BeNil())
+			Expect(ver).To(Equal("1.2.3"))
+		})
+
+		It("returns the greatest version less than the above (without comma)", func() {
+			ver, err := bp.FindMatchingVersion(">=1.2.0 <1.2.4", versions)
+			Expect(err).To(BeNil())
+			Expect(ver).To(Equal("1.2.3"))
+		})
+
+		It("returns the greatest version less or equal than the above (without comma)", func() {
+			ver, err := bp.FindMatchingVersion(">1.2.0 <=1.2.4", versions)
 			Expect(err).To(BeNil())
 			Expect(ver).To(Equal("1.2.4"))
 		})
