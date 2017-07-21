@@ -392,7 +392,7 @@ var _ = Describe("Stager", func() {
 			var envVars = map[string]string{}
 
 			BeforeEach(func() {
-				vars := []string{"PATH", "LD_LIBRARY_PATH", "INCLUDE_PATH", "CPATH", "CPPPATH", "PKG_CONFIG_PATH", "ENV_VAR"}
+				vars := []string{"PATH", "LD_LIBRARY_PATH", "LIBRARY_PATH", "INCLUDE_PATH", "CPATH", "CPPPATH", "PKG_CONFIG_PATH", "ENV_VAR"}
 
 				for _, envVar := range vars {
 					envVars[envVar] = os.Getenv(envVar)
@@ -421,6 +421,14 @@ var _ = Describe("Stager", func() {
 
 				newPath := os.Getenv("LD_LIBRARY_PATH")
 				Expect(newPath).To(Equal(fmt.Sprintf("%s/02/lib:%s/01/lib:existing_LD_LIBRARY_PATH", depsDir, depsDir)))
+			})
+
+			It("sets LIBRARY_PATH based on the supplied deps", func() {
+				err = s.SetStagingEnvironment()
+				Expect(err).To(BeNil())
+
+				newPath := os.Getenv("LIBRARY_PATH")
+				Expect(newPath).To(Equal(fmt.Sprintf("%s/02/lib:%s/01/lib:existing_LIBRARY_PATH", depsDir, depsDir)))
 			})
 
 			It("sets INCLUDE_PATH based on the supplied deps", func() {
@@ -485,6 +493,14 @@ var _ = Describe("Stager", func() {
 					Expect(newPath).To(Equal(fmt.Sprintf("%s/02/lib:%s/01/lib", depsDir, depsDir)))
 				})
 
+				It("sets LIBRARY_PATH based on the supplied deps", func() {
+					err = s.SetStagingEnvironment()
+					Expect(err).To(BeNil())
+
+					newPath := os.Getenv("LIBRARY_PATH")
+					Expect(newPath).To(Equal(fmt.Sprintf("%s/02/lib:%s/01/lib", depsDir, depsDir)))
+				})
+
 				It("sets INCLUDE_PATH based on the supplied deps", func() {
 					err = s.SetStagingEnvironment()
 					Expect(err).To(BeNil())
@@ -529,6 +545,7 @@ var _ = Describe("Stager", func() {
 
 				Expect(string(contents)).To(ContainSubstring(`export PATH=$DEPS_DIR/01/bin:$DEPS_DIR/00/bin$([[ ! -z "${PATH:-}" ]] && echo ":$PATH")`))
 				Expect(string(contents)).To(ContainSubstring(`export LD_LIBRARY_PATH=$DEPS_DIR/02/lib:$DEPS_DIR/01/lib$([[ ! -z "${LD_LIBRARY_PATH:-}" ]] && echo ":$LD_LIBRARY_PATH")`))
+				Expect(string(contents)).To(ContainSubstring(`export LIBRARY_PATH=$DEPS_DIR/02/lib:$DEPS_DIR/01/lib$([[ ! -z "${LIBRARY_PATH:-}" ]] && echo ":$LIBRARY_PATH")`))
 			})
 
 			It("copies scripts from <deps-dir>/<idx>/profile.d to the .profile.d directory, prepending <idx>", func() {
