@@ -231,7 +231,7 @@ var _ = Describe("Manifest", func() {
 				outputFile = filepath.Join(tmpdir, "out.tgz")
 			})
 
-			Context("url exists cached on disk and matches md5", func() {
+			Context("url exists cached on disk under old format and matches md5", func() {
 				BeforeEach(func() {
 					ioutil.WriteFile(filepath.Join(dependenciesDir, "https___example.com_dependencies_thing-2-linux-x64.tgz"), []byte("awesome binary data"), 0644)
 				})
@@ -250,9 +250,46 @@ var _ = Describe("Manifest", func() {
 				})
 			})
 
-			Context("url exists cached on disk and does not match md5", func() {
+			Context("url exists cached on disk under new format and matches md5", func() {
+				BeforeEach(func() {
+					os.MkdirAll(filepath.Join(dependenciesDir, "c4fef5682adf1c19c7f9b76fde9d0ecb"), 0755)
+					Expect(ioutil.WriteFile(filepath.Join(dependenciesDir, "c4fef5682adf1c19c7f9b76fde9d0ecb", "thing-2-linux-x64.tgz"), []byte("awesome binary data"), 0644)).To(Succeed())
+				})
+				It("copies the cached file to outputFile", func() {
+					err = manifest.FetchDependency(libbuildpack.Dependency{Name: "thing", Version: "2"}, outputFile)
+
+					Expect(err).To(BeNil())
+					Expect(ioutil.ReadFile(outputFile)).To(Equal([]byte("awesome binary data")))
+				})
+				It("makes intermediate directories", func() {
+					outputFile = filepath.Join(tmpdir, "notexist", "out.tgz")
+					err = manifest.FetchDependency(libbuildpack.Dependency{Name: "thing", Version: "2"}, outputFile)
+
+					Expect(err).To(BeNil())
+					Expect(ioutil.ReadFile(outputFile)).To(Equal([]byte("awesome binary data")))
+				})
+			})
+
+			Context("url exists cached on disk under old format and does not match md5", func() {
 				BeforeEach(func() {
 					ioutil.WriteFile(filepath.Join(dependenciesDir, "https___example.com_dependencies_thing-2-linux-x64.tgz"), []byte("different binary data"), 0644)
+				})
+				It("raises error", func() {
+					err = manifest.FetchDependency(libbuildpack.Dependency{Name: "thing", Version: "2"}, outputFile)
+
+					Expect(err).ToNot(BeNil())
+				})
+				It("outputfile does not exist", func() {
+					err = manifest.FetchDependency(libbuildpack.Dependency{Name: "thing", Version: "2"}, outputFile)
+
+					Expect(outputFile).ToNot(BeAnExistingFile())
+				})
+			})
+
+			Context("url exists cached on disk under new format and does not match md5", func() {
+				BeforeEach(func() {
+					os.MkdirAll(filepath.Join(dependenciesDir, "c4fef5682adf1c19c7f9b76fde9d0ecb"), 0755)
+					Expect(ioutil.WriteFile(filepath.Join(dependenciesDir, "c4fef5682adf1c19c7f9b76fde9d0ecb", "thing-2-linux-x64.tgz"), []byte("different binary data"), 0644)).To(Succeed())
 				})
 				It("raises error", func() {
 					err = manifest.FetchDependency(libbuildpack.Dependency{Name: "thing", Version: "2"}, outputFile)
