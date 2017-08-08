@@ -85,6 +85,15 @@ func DeleteOrphanedRoutes() error {
 	return nil
 }
 
+func DeleteBuildpack(language string) error {
+	command := exec.Command("cf", "delete-buildpack", "-f", fmt.Sprintf("%s_buildpack", language))
+	if data, err := command.CombinedOutput(); err != nil {
+		fmt.Println(string(data))
+		return err
+	}
+	return nil
+}
+
 func UpdateBuildpack(language, file string) error {
 	command := exec.Command("cf", "update-buildpack", fmt.Sprintf("%s_buildpack", language), "-p", file, "--enable")
 	if data, err := command.CombinedOutput(); err != nil {
