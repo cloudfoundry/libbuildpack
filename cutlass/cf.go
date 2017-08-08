@@ -120,6 +120,16 @@ func (a *App) ConfirmBuildpack(version string) error {
 	return nil
 }
 
+func (a *App) RunTask(command string) ([]byte, error) {
+	cmd := exec.Command("cf", "run-task", a.Name, command)
+	cmd.Stderr = DefaultStdoutStderr
+	bytes, err := cmd.Output()
+	if err != nil {
+		return bytes, err
+	}
+	return bytes, nil
+}
+
 func (a *App) SetEnv(key, value string) {
 	a.env[key] = value
 }
