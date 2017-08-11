@@ -288,11 +288,23 @@ func (m *Manifest) FetchDependency(dep Dependency, outputFile string) error {
 	return nil
 }
 
+func (m *Manifest) checkEntryStack(entry *ManifestEntry) bool {
+	stack := os.Getenv("CF_STACK")
+
+	for _, s := range entry.CFStacks {
+		if s == stack {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (m *Manifest) AllDependencyVersions(depName string) []string {
 	var depVersions []string
 
 	for _, e := range m.ManifestEntries {
-		if e.Dependency.Name == depName {
+		if e.Dependency.Name == depName && m.checkEntryStack(&e) {
 			depVersions = append(depVersions, e.Dependency.Version)
 		}
 	}
@@ -315,7 +327,7 @@ func (m *Manifest) InstallOnlyVersion(depName string, installDir string) error {
 
 func (m *Manifest) getEntry(dep Dependency) (*ManifestEntry, error) {
 	for _, e := range m.ManifestEntries {
-		if e.Dependency == dep {
+		if e.Dependency == dep && m.checkEntryStack(&e) {
 			return &e, nil
 		}
 	}
