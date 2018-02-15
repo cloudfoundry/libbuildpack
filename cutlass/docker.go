@@ -77,7 +77,7 @@ func dockerfile(fixture_path, buildpack_path string, envs []string, network_comm
 		"ADD " + buildpack_path + " /tmp/\n" +
 		"RUN mkdir -p /buildpack\n" +
 		"RUN mkdir -p /tmp/cache\n" +
-		"RUN unzip /tmp/" + filepath.Base(buildpack_path) + " -d /buildpack\n" +
+		"RUN unzip -o /tmp/" + filepath.Base(buildpack_path) + " -d /buildpack\n" +
 		"# HACK around https://github.com/dotcloud/docker/issues/5490\n" +
 		"RUN mv /usr/sbin/tcpdump /usr/bin/tcpdump\n" +
 		"RUN " + network_command + "\n"
