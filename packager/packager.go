@@ -158,9 +158,15 @@ func Scaffold(bpDir string, languageName string) error {
 	if err := os.Rename(filepath.Join(bpDir, "src", "github.com"), filepath.Join(bpDir, "src", languageName, "vendor", "github.com")); err != nil {
 		return err
 	}
-	fmt.Println("Running dep ensure")
-	c := libbuildpack.Command{}
-	c.Execute(filepath.Join(bpDir, "src", languageName), os.Stdout, os.Stderr, "dep", "ensure")
+	fmt.Println("Running dep ensure", bpDir)
+	cmd = exec.Command(filepath.Join(bpDir, ".bin", "dep"), "ensure")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Env = append(os.Environ(), fmt.Sprintf("GOBIN=%s/.bin", bpDir), fmt.Sprintf("GOPATH=%s", bpDir))
+	cmd.Dir = filepath.Join(bpDir, "src", languageName)
+	if err := cmd.Run(); err != nil {
+		return err
+	}
 
 	return nil
 }
