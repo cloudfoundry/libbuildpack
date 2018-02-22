@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -16,6 +17,7 @@ import (
 	"github.com/cloudfoundry/libbuildpack/packager"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gexec"
 )
 
 var _ = Describe("Packager", func() {
@@ -101,6 +103,17 @@ var _ = Describe("Packager", func() {
 			By("creates a finalize src file", checkfileexists("bpdir/src/mylanguage/finalize/finalize.go"))
 			By("creates a finalize test file", checkfileexists("bpdir/src/mylanguage/finalize/finalize.go"))
 			By("creates a finalize cli src file", checkfileexists("bpdir/src/mylanguage/finalize/cli/main.go"))
+
+			By("creating unit tests that pass", func() {
+				command := exec.Command("./scripts/unit.sh")
+				command.Dir = filepath.Join(baseDir, "bpdir")
+				session, err := gexec.Start(command, GinkgoWriter, GinkgoWriter)
+				Expect(err).ToNot(HaveOccurred())
+
+				Eventually(session, 10*time.Second).Should(gexec.Exit(0))
+				Expect(string(session.Out.Contents())).To(ContainSubstring("Supply Suite"))
+				Expect(string(session.Out.Contents())).To(ContainSubstring("Finalize Suite"))
+			})
 		})
 	})
 
