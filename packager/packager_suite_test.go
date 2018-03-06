@@ -23,6 +23,23 @@ var _ = BeforeSuite(func() {
 	packager.Stderr = GinkgoWriter
 })
 
+// Returns the list of files in a zip archive.
+func ZipFiles(zipFile string) []string {
+	r, err := zip.OpenReader(zipFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer r.Close()
+
+	filePaths := make([]string, 0, len(r.File))
+
+	for _, f := range r.File {
+		filePaths = append(filePaths, f.Name)
+	}
+
+	return filePaths
+}
+
 func ZipContents(zipFile, file string) (string, error) {
 	r, err := zip.OpenReader(zipFile)
 	if err != nil {

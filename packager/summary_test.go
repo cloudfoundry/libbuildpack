@@ -35,6 +35,7 @@ var _ = Describe("Packager", func() {
 | name | version | cf_stacks |
 |-|-|-|
 | ruby | 1.2.3 | cflinuxfs2 |
+| ruby | 1.2.3 | opensuse42 |
 
 Default binary versions:
 
