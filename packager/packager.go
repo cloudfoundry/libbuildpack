@@ -4,7 +4,6 @@ package packager
 
 import (
 	"archive/zip"
-	"bytes"
 	"crypto/md5"
 	"crypto/sha256"
 	"encoding/hex"
@@ -17,10 +16,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"time"
 
 	"github.com/cloudfoundry/libbuildpack"
-	"github.com/cloudfoundry/libbuildpack/ansicleaner"
 )
 
 var CacheDir = filepath.Join(os.Getenv("HOME"), ".buildpack-packager", "cache")
@@ -73,41 +70,22 @@ func CompileExtensionPackage(bpDir, version string, cached bool) (string, error)
 	return filepath.Join(dir, zipFile), nil
 }
 
-func hasStack(manifest *libbuildpack.Manifest, stack string) bool {
-	for _, e := range manifest.ManifestEntries {
-		for _, s := range e.CFStacks {
-			if s == stack {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 func validateStack(stack, bpDir string) error {
 	if stack == "" {
 		return nil
 	}
 
-	buffer := new(bytes.Buffer)
-	logger := libbuildpack.NewLogger(ansicleaner.New(buffer))
-	manifest, err := libbuildpack.NewManifest(bpDir, logger, time.Now())
+	manifest, err := readManifest(bpDir)
 	if err != nil {
 		return err
 	}
 
-	if !hasStack(manifest, stack) {
+	if !manifest.hasStack(stack) {
 		return fmt.Errorf("Stack `%s` not found in manifest", stack)
 	}
 
-	//TODO: PLZ NOT use the env for this???
-	if err = os.Setenv("CF_STACK", stack); err != nil {
-		return err
-	}
-	defer os.Unsetenv("CF_STACK")
-
-	for _, d := range manifest.DefaultVersions {
-		if _, err := manifest.DefaultVersion(d.Name); err != nil {
+	for _, d := range manifest.Defaults {
+		if _, err := libbuildpack.FindMatchingVersion(d.Version, manifest.versionsOfDependencyWithStack(d.Name, stack)); err != nil {
 			return fmt.Errorf("No matching default dependency `%s` for stack `%s`", d.Name, stack)
 		}
 	}
