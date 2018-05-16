@@ -4,6 +4,7 @@ package packager
 
 import (
 	"archive/zip"
+	"bytes"
 	"crypto/md5"
 	"crypto/sha256"
 	"encoding/hex"
@@ -16,8 +17,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
 
 	"github.com/cloudfoundry/libbuildpack"
+	"github.com/cloudfoundry/libbuildpack/ansicleaner"
 )
 
 var CacheDir = filepath.Join(os.Getenv("HOME"), ".buildpack-packager", "cache")
@@ -70,8 +73,54 @@ func CompileExtensionPackage(bpDir, version string, cached bool) (string, error)
 	return filepath.Join(dir, zipFile), nil
 }
 
-func Package(bpDir, cacheDir, version string, cached bool) (string, error) {
+func hasStack(manifest *libbuildpack.Manifest, stack string) bool {
+	for _, e := range manifest.ManifestEntries {
+		for _, s := range e.CFStacks {
+			if s == stack {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func validateStack(stack, bpDir string) error {
+	if stack == "" {
+		return nil
+	}
+
+	buffer := new(bytes.Buffer)
+	logger := libbuildpack.NewLogger(ansicleaner.New(buffer))
+	manifest, err := libbuildpack.NewManifest(bpDir, logger, time.Now())
+	if err != nil {
+		return err
+	}
+
+	if !hasStack(manifest, stack) {
+		return fmt.Errorf("Stack `%s` not found in manifest", stack)
+	}
+
+	//TODO: PLZ NOT use the env for this???
+	if err = os.Setenv("CF_STACK", stack); err != nil {
+		return err
+	}
+	defer os.Unsetenv("CF_STACK")
+
+	for _, d := range manifest.DefaultVersions {
+		if _, err := manifest.DefaultVersion(d.Name); err != nil {
+			return fmt.Errorf("No matching default dependency `%s` for stack `%s`", d.Name, stack)
+		}
+	}
+
+	return nil
+}
+
+func Package(bpDir, cacheDir, version, stack string, cached bool) (string, error) {
 	bpDir, err := filepath.Abs(bpDir)
+	if err != nil {
+		return "", err
+	}
+	err = validateStack(stack, bpDir)
 	if err != nil {
 		return "", err
 	}
@@ -105,35 +154,58 @@ func Package(bpDir, cacheDir, version string, cached bool) (string, error) {
 		files = append(files, File{name, filepath.Join(dir, name)})
 	}
 
-	if cached {
-		var m map[string]interface{}
-		if err := libbuildpack.NewYAML().Load(filepath.Join(dir, "manifest.yml"), &m); err != nil {
-			return "", err
-		}
-		if err := os.MkdirAll(cacheDir, 0755); err != nil {
-			log.Fatalf("error: %v", err)
-		}
-		for idx, d := range manifest.Dependencies {
-			file := filepath.Join("dependencies", fmt.Sprintf("%x", md5.Sum([]byte(d.URI))), filepath.Base(d.URI))
-			if err := setFileOnDep(m, idx, file); err != nil {
-				return "", err
-			}
+	var m map[string]interface{}
+	if err := libbuildpack.NewYAML().Load(filepath.Join(dir, "manifest.yml"), &m); err != nil {
+		return "", err
+	}
 
-			if _, err := os.Stat(filepath.Join(cacheDir, file)); err != nil {
-				if err := downloadFromURI(d.URI, filepath.Join(cacheDir, file)); err != nil {
-					return "", err
+	if stack != "" {
+		m["stack"] = stack
+	}
+
+	if deps, ok := m["dependencies"].([]interface{}); !ok {
+		return "", fmt.Errorf("Could not cast dependencies to []interface{}")
+	} else {
+		dependenciesForStack := []interface{}{}
+		for idx, d := range manifest.Dependencies {
+			for _, s := range d.Stacks {
+				if stack == "" || s == stack {
+					dependencyMap := deps[idx]
+					if cached {
+						file := filepath.Join("dependencies", fmt.Sprintf("%x", md5.Sum([]byte(d.URI))), filepath.Base(d.URI))
+						if dep, ok := dependencyMap.(map[interface{}]interface{}); ok {
+							dep["file"] = file
+						} else {
+							return "", fmt.Errorf("Could not cast deps[idx] to map[interface{}]interface{}")
+						}
+
+						if err := os.MkdirAll(cacheDir, 0755); err != nil {
+							log.Fatalf("error: %v", err)
+						}
+
+						if _, err := os.Stat(filepath.Join(cacheDir, file)); err != nil {
+							if err := downloadFromURI(d.URI, filepath.Join(cacheDir, file)); err != nil {
+								return "", err
+							}
+						}
+
+						if err := checkSha256(filepath.Join(cacheDir, file), d.SHA256); err != nil {
+							return "", err
+						}
+
+						files = append(files, File{file, filepath.Join(cacheDir, file)})
+					}
+
+					dependenciesForStack = append(dependenciesForStack, dependencyMap)
+					break
 				}
 			}
-
-			if err := checkSha256(filepath.Join(cacheDir, file), d.SHA256); err != nil {
-				return "", err
-			}
-
-			files = append(files, File{file, filepath.Join(cacheDir, file)})
 		}
-		if err := libbuildpack.NewYAML().Write(filepath.Join(dir, "manifest.yml"), m); err != nil {
-			return "", err
-		}
+		m["dependencies"] = dependenciesForStack
+	}
+
+	if err := libbuildpack.NewYAML().Write(filepath.Join(dir, "manifest.yml"), m); err != nil {
+		return "", err
 	}
 
 	zipFile := fmt.Sprintf("%s_buildpack-v%s.zip", manifest.Language, version)

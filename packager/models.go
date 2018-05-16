@@ -13,6 +13,7 @@ type Dependencies []struct {
 }
 type Manifest struct {
 	Language     string       `yaml:"language"`
+	Stack        string       `yaml:"stack"`
 	IncludeFiles []string     `yaml:"include_files"`
 	PrePackage   string       `yaml:"pre_package"`
 	Dependencies Dependencies `yaml:"dependencies"`
