@@ -2,7 +2,7 @@ package packager
 
 import "github.com/Masterminds/semver"
 
-type Dependencies []struct {
+type Dependency struct {
 	URI     string   `yaml:"uri"`
 	File    string   `yaml:"file"`
 	SHA256  string   `yaml:"sha256"`
@@ -11,6 +11,9 @@ type Dependencies []struct {
 	Stacks  []string `yaml:"cf_stacks"`
 	Modules []string `yaml:"modules"`
 }
+
+type Dependencies []Dependency
+
 type Manifest struct {
 	Language     string       `yaml:"language"`
 	Stack        string       `yaml:"stack"`
