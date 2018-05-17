@@ -55,7 +55,11 @@ var _ = Describe("Packager", func() {
 
 				It("removes dependencies for other stacks from the manifest", func() {
 					Expect(len(manifest.Dependencies)).To(Equal(1))
-					Expect(manifest.Dependencies[0].Stacks).To(Equal([]string{"cflinuxfs2"}))
+					Expect(manifest.Dependencies[0].SHA256).To(Equal("b11329c3fd6dbe9dddcb8dd90f18a4bf441858a6b5bfaccae5f91e5c7d2b3596"))
+				})
+
+				It("removes cfstacks from the remaining dependencies", func() {
+					Expect(manifest.Dependencies[0].Stacks).To(BeNil())
 				})
 
 				It("adds a top-level stack: key to the manifest", func() {
@@ -87,6 +91,15 @@ var _ = Describe("Packager", func() {
 				})
 			})
 		}
+
+		Context("manifest.yml was already packaged", func() {
+			BeforeEach(func() { stack = "cflinuxfs2" })
+
+			It("returns an error", func() {
+				_, err := packager.Package("./fixtures/prepackaged", cacheDir, version, stack, cached)
+				Expect(err).To(MatchError("Cannot package from already packaged buildpack manifest"))
+			})
+		})
 
 		Context("stack is invalid", func() {
 			Context("stack not found in any dependencies", func() {

@@ -80,6 +80,11 @@ func validateStack(stack, bpDir string) error {
 		return err
 	}
 
+	if manifest.Stack != "" {
+		return fmt.Errorf("Cannot package from already packaged buildpack manifest")
+	}
+
+
 	if !manifest.hasStack(stack) {
 		return fmt.Errorf("Stack `%s` not found in manifest", stack)
 	}
@@ -186,7 +191,7 @@ func Package(bpDir, cacheDir, version, stack string, cached bool) (string, error
 						files = append(files, file)
 					}
 				}
-
+				delete(dependencyMap.(map[interface{}]interface{}), "cf_stacks")
 				dependenciesForStack = append(dependenciesForStack, dependencyMap)
 				break
 			}
