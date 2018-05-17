@@ -229,8 +229,17 @@ func ZipFiles(filename string, files []File) error {
 	zipWriter := zip.NewWriter(newfile)
 	defer zipWriter.Close()
 
-	// Add files to zip
+	uniqueFileNamesMap := make(map[string]bool)
+	filesSet := []File{}
 	for _, file := range files {
+		if _, exists := uniqueFileNamesMap[file.Name]; !exists {
+			uniqueFileNamesMap[file.Name] = true
+			filesSet = append(filesSet, file)
+		}
+	}
+
+	// Add files to zip
+	for _, file := range filesSet {
 
 		zipfile, err := os.Open(file.Path)
 		if err != nil {

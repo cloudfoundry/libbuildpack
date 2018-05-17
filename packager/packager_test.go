@@ -104,6 +104,23 @@ var _ = Describe("Packager", func() {
 				Expect(ZipContents(zipFile, "bin/filename")).To(Equal("awesome content"))
 			})
 
+			It("does not contain the same file more than once", func() {
+				files := ZipFiles(zipFile)
+				filesCount := make(map[string]int)
+
+				duplicatesExist := false
+				for _, f := range files {
+					if _, exists := filesCount[f]; exists {
+						duplicatesExist = true
+						break
+					} else {
+						filesCount[f] = 1
+					}
+				}
+
+				Expect(duplicatesExist).To(Equal(false))
+			})
+
 			It("overrides VERSION", func() {
 				Expect(ZipContents(zipFile, "VERSION")).To(Equal(version))
 			})
