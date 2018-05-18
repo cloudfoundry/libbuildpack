@@ -147,16 +147,40 @@ ruby:
 					Expect(manifest.CheckStackSupport()).To(Succeed())
 				})
 			})
+
+			Context("by the whole manifest", func() {
+				BeforeEach(func() {
+					manifestDir = "fixtures/manifest/packaged-with-stack"
+					err = os.Setenv("CF_STACK", "cflinuxfs2")
+					Expect(err).To(BeNil())
+				})
+				It("returns nil", func() {
+					Expect(manifest.CheckStackSupport()).To(Succeed())
+				})
+			})
 		})
 
 		Context("Stack is not supported", func() {
-			BeforeEach(func() {
-				err = os.Setenv("CF_STACK", "notastack")
-				Expect(err).To(BeNil())
-			})
+			Context("stacks specified in dependencies", func() {
+				BeforeEach(func() {
+					err = os.Setenv("CF_STACK", "notastack")
+					Expect(err).To(BeNil())
+				})
 
-			It("returns nil", func() {
-				Expect(manifest.CheckStackSupport()).To(MatchError(errors.New("required stack notastack was not found")))
+				It("returns nil", func() {
+					Expect(manifest.CheckStackSupport()).To(MatchError(errors.New("required stack notastack was not found")))
+				})
+			})
+			Context("stacks specified in top-level of manifest", func() {
+				BeforeEach(func() {
+					manifestDir = "fixtures/manifest/packaged-with-stack"
+					err = os.Setenv("CF_STACK", "notastack")
+					Expect(err).To(BeNil())
+				})
+
+				It("returns nil", func() {
+					Expect(manifest.CheckStackSupport()).To(MatchError(errors.New("required stack notastack was not found")))
+				})
 			})
 		})
 	})

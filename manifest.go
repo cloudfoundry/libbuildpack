@@ -191,6 +191,10 @@ func (m *Manifest) Version() (string, error) {
 func (m *Manifest) CheckStackSupport() error {
 	requiredStack := os.Getenv("CF_STACK")
 
+	if m.Stack != "" && m.Stack == requiredStack {
+		return nil
+	}
+
 	if len(m.ManifestEntries) == 0 {
 		return nil
 	}
