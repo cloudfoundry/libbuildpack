@@ -181,21 +181,30 @@ func (m *Manifest) Version() (string, error) {
 func (m *Manifest) CheckStackSupport() error {
 	requiredStack := os.Getenv("CF_STACK")
 
-	if m.Stack != "" && m.Stack == requiredStack {
+	if m.manifestSupportsStack(requiredStack) {
 		return nil
 	}
 
-	if len(m.ManifestEntries) == 0 {
-		return nil
+	return fmt.Errorf("required stack %s was not found", requiredStack)
+}
+
+func (m *Manifest) manifestSupportsStack(stack string) bool {
+
+	if m.Stack != "" {
+		return m.Stack == stack
 	}
+
+	if len(m.ManifestEntries) == 0 {
+		return true
+	}
+
 	for _, entry := range m.ManifestEntries {
-		for _, stack := range entry.CFStacks {
-			if stack == requiredStack {
-				return nil
-			}
+		if m.entrySupportsStack(&entry, stack) {
+			return true
 		}
 	}
-	return fmt.Errorf("required stack %s was not found", requiredStack)
+
+	return false
 }
 
 func (m *Manifest) DefaultVersion(depName string) (Dependency, error) {
@@ -266,10 +275,10 @@ func downloadDependency(entry *ManifestEntry, outputFile string, logger *Logger)
 	return deleteBadFile(entry, outputFile)
 }
 
-func (m *Manifest) entrySupportsCurrentStack(entry *ManifestEntry) bool {
-	stack := os.Getenv("CF_STACK")
-	if stack == "" {
-		return true
+func (m *Manifest) entrySupportsStack(entry *ManifestEntry, stack string) bool {
+
+	if m.Stack != "" {
+		return m.Stack == stack
 	}
 
 	for _, s := range entry.CFStacks {
@@ -283,9 +292,10 @@ func (m *Manifest) entrySupportsCurrentStack(entry *ManifestEntry) bool {
 
 func (m *Manifest) AllDependencyVersions(depName string) []string {
 	var depVersions []string
+	currentStack := os.Getenv("CF_STACK")
 
 	for _, e := range m.ManifestEntries {
-		if e.Dependency.Name == depName && m.entrySupportsCurrentStack(&e) {
+		if e.Dependency.Name == depName && m.entrySupportsStack(&e, currentStack) {
 			depVersions = append(depVersions, e.Dependency.Version)
 		}
 	}
@@ -293,10 +303,11 @@ func (m *Manifest) AllDependencyVersions(depName string) []string {
 	return depVersions
 }
 
-//TODO: test me
 func (m *Manifest) GetEntry(dep Dependency) (*ManifestEntry, error) {
+	currentStack := os.Getenv("CF_STACK")
+
 	for _, e := range m.ManifestEntries {
-		if e.Dependency == dep && m.entrySupportsCurrentStack(&e) {
+		if e.Dependency == dep && m.entrySupportsStack(&e, currentStack) {
 			return &e, nil
 		}
 	}

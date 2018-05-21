@@ -165,18 +165,18 @@ ruby:
 					Expect(err).To(BeNil())
 				})
 
-				It("returns nil", func() {
+				It("returns an error", func() {
 					Expect(manifest.CheckStackSupport()).To(MatchError(errors.New("required stack notastack was not found")))
 				})
 			})
-			Context("stacks specified in top-level of manifest", func() {
+			Context("stack specified in top-level of manifest", func() {
 				BeforeEach(func() {
 					manifestDir = "fixtures/manifest/packaged-with-stack"
 					err = os.Setenv("CF_STACK", "notastack")
 					Expect(err).To(BeNil())
 				})
 
-				It("returns nil", func() {
+				It("returns an error", func() {
 					Expect(manifest.CheckStackSupport()).To(MatchError(errors.New("required stack notastack was not found")))
 				})
 			})
@@ -434,6 +434,85 @@ ruby:
 			It("Does not log anything", func() {
 				manifest.StoreBuildpackMetadata(cacheDir)
 				Expect(buffer.String()).To(Equal(""))
+			})
+		})
+	})
+
+	Describe("GetEntry", func() {
+		var depToFind libbuildpack.Dependency
+
+		Context("dependency matches", func() {
+			BeforeEach(func() {
+			    depToFind = libbuildpack.Dependency{"jruby", "9.3.5"}
+			})
+
+			Context("top-level manifest stack exists", func() {
+				BeforeEach(func() {
+					manifestDir = "fixtures/manifest/packaged-with-stack"
+				})
+
+				Context("top-level manifest stack matches", func() {
+					BeforeEach(func() {
+						os.Setenv("CF_STACK", "cflinuxfs2")
+					})
+
+					It("returns matched dependency", func() {
+						entry, err := manifest.GetEntry(depToFind)
+						Expect(err).To(BeNil())
+						Expect(entry.Dependency).To(Equal(depToFind))
+					})
+				})
+
+				Context("top-level manifest stack does not match", func() {
+					BeforeEach(func() {
+						os.Setenv("CF_STACK", "inanestack")
+					})
+
+					It("returns an error", func() {
+						_, err := manifest.GetEntry(depToFind)
+						Expect(err).To(HaveOccurred())
+					})
+				})
+			})
+
+			Context("top-level manifest stack does not exist", func() {
+				BeforeEach(func() {
+					manifestDir = "fixtures/manifest/standard"
+				})
+
+				Context("dependency stack matches", func() {
+					BeforeEach(func() {
+						os.Setenv("CF_STACK", "cflinuxfs2")
+					})
+
+					It("returns matched dependency", func() {
+						entry, err := manifest.GetEntry(depToFind)
+						Expect(err).To(BeNil())
+						Expect(entry.Dependency).To(Equal(depToFind))
+					})
+				})
+
+				Context("dependency stack does not match", func() {
+					BeforeEach(func() {
+						os.Setenv("CF_STACK", "inanestack")
+					})
+
+					It("returns an error", func() {
+						_, err := manifest.GetEntry(depToFind)
+						Expect(err).To(HaveOccurred())
+					})
+				})
+			})
+
+			Context("dependency does not match ", func() {
+				BeforeEach(func() {
+					depToFind = libbuildpack.Dependency{"inanedep", "11"}
+				})
+
+				It("returns an error", func() {
+					_, err := manifest.GetEntry(depToFind)
+					Expect(err).To(HaveOccurred())
+				})
 			})
 		})
 	})
