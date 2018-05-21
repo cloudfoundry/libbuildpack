@@ -246,6 +246,33 @@ ruby:
 				Expect(versions).To(Equal([]string{"1", "2"}))
 			})
 		})
+
+		Context("stack specified in top-level of manifest", func() {
+			BeforeEach(func() {
+				manifestDir = "fixtures/manifest/packaged-with-stack"
+			})
+
+			Context("stack matches", func() {
+				BeforeEach(func() {
+					os.Setenv("CF_STACK", "cflinuxfs2")
+				})
+			    It("returns all versions of the dependency", func() {
+					versions := manifest.AllDependencyVersions("jruby")
+					Expect(versions).To(Equal([]string{"9.3.4", "9.3.5", "9.4.4"}))
+			    })
+			})
+
+			Context("stack does not match", func() {
+				BeforeEach(func() {
+					os.Setenv("CF_STACK", "inanestack")
+				})
+
+				It("returns an empty list", func() {
+					versions := manifest.AllDependencyVersions("jruby")
+					Expect(versions).To(BeEmpty())
+				})
+			})
+		})
 	})
 
 	Describe("IsCached", func() {
@@ -313,7 +340,6 @@ ruby:
 			BeforeEach(func() { manifestDir = "fixtures/manifest/duplicate" })
 			It("returns an error", func() {
 				_, err := manifest.DefaultVersion("bower")
-				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("found 2 default versions for bower"))
 			})
 		})
@@ -321,8 +347,35 @@ ruby:
 		Context("requested name does not exist", func() {
 			It("returns an error", func() {
 				_, err := manifest.DefaultVersion("notexist")
-				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("no default version for notexist"))
+			})
+		})
+
+		Context("stack specified in top-level of manifest", func() {
+			BeforeEach(func() {
+				manifestDir = "fixtures/manifest/packaged-with-stack"
+			})
+
+			Context("stack matches", func() {
+				BeforeEach(func() {
+					os.Setenv("CF_STACK", "cflinuxfs2")
+				})
+				It("returns all versions of the dependency", func() {
+					dep, err := manifest.DefaultVersion("jruby")
+					Expect(err).To(BeNil())
+					Expect(dep).To(Equal(libbuildpack.Dependency{Name: "jruby", Version: "9.3.5"}))
+				})
+			})
+
+			Context("stack does not match", func() {
+				BeforeEach(func() {
+					os.Setenv("CF_STACK", "inanestack")
+				})
+
+				It("returns an error", func() {
+					_, err := manifest.DefaultVersion("jruby")
+					Expect(err.Error()).To(Equal("no match found for 9.3.x in []"))
+				})
 			})
 		})
 	})

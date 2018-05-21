@@ -189,7 +189,6 @@ func (m *Manifest) CheckStackSupport() error {
 }
 
 func (m *Manifest) manifestSupportsStack(stack string) bool {
-
 	if m.Stack != "" {
 		return m.Stack == stack
 	}
