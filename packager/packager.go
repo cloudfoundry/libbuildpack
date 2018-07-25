@@ -24,7 +24,7 @@ import (
 var CacheDir = filepath.Join(os.Getenv("HOME"), ".buildpack-packager", "cache")
 var Stdout, Stderr io.Writer = os.Stdout, os.Stderr
 
-func CompileExtensionPackage(bpDir, version string, cached bool) (string, error) {
+func CompileExtensionPackage(bpDir, version string, cached bool, stack string) (string, error) {
 	bpDir, err := filepath.Abs(bpDir)
 	if err != nil {
 		return "", fmt.Errorf("Failed to get the absolute path of %s: %v", bpDir, err)
@@ -43,7 +43,11 @@ func CompileExtensionPackage(bpDir, version string, cached bool) (string, error)
 	if cached {
 		isCached = "--cached"
 	}
-	cmd := exec.Command("bundle", "exec", "buildpack-packager", isCached)
+	stackArg := "--stack=" + stack
+	if stack == "any" {
+		stackArg = "--any-stack"
+	}
+	cmd := exec.Command("bundle", "exec", "buildpack-packager", isCached, stackArg)
 	cmd.Stdout = Stdout
 	cmd.Stderr = Stderr
 	cmd.Env = append(os.Environ(), "BUNDLE_GEMFILE=cf.Gemfile")
@@ -60,9 +64,13 @@ func CompileExtensionPackage(bpDir, version string, cached bool) (string, error)
 		return "", fmt.Errorf("Failed to load manifest.yml: %v", err)
 	}
 
-	zipFile := fmt.Sprintf("%s_buildpack-v%s.zip", manifest.Language, version)
+	stackName := fmt.Sprintf("-%s", stack)
+	if stackName == "any" {
+		stackName = ""
+	}
+	zipFile := fmt.Sprintf("%s_buildpack%s-v%s.zip", manifest.Language, stackName, version)
 	if cached {
-		zipFile = fmt.Sprintf("%s_buildpack-cached-v%s.zip", manifest.Language, version)
+		zipFile = fmt.Sprintf("%s_buildpack%s-cached-v%s.zip", manifest.Language, stackName, version)
 	}
 	if err := libbuildpack.CopyFile(filepath.Join(dir, zipFile), filepath.Join(bpDir, zipFile)); err != nil {
 		return "", fmt.Errorf("Failed to copy %s from %s to %s: %v", zipFile, dir, bpDir, err)

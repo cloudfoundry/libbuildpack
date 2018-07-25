@@ -49,7 +49,7 @@ func PackageUniquelyVersionedBuildpackExtra(name, version, stack string, cached,
 	if compileExtension, err := isCompileExtensionBuildpack(bpDir); err != nil {
 		return VersionedBuildpackPackage{}, fmt.Errorf("Failed to decide if this is a compile extension buildpack: %v", err)
 	} else if compileExtension {
-		file, err = packager.CompileExtensionPackage(bpDir, version, cached)
+		file, err = packager.CompileExtensionPackage(bpDir, version, cached, stack)
 		if err != nil {
 			return VersionedBuildpackPackage{}, fmt.Errorf("Failed to package as a compile extension buildpack: %v", err)
 		}
