@@ -16,6 +16,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/cloudfoundry/libbuildpack"
 )
@@ -26,16 +27,16 @@ var Stdout, Stderr io.Writer = os.Stdout, os.Stderr
 func CompileExtensionPackage(bpDir, version string, cached bool) (string, error) {
 	bpDir, err := filepath.Abs(bpDir)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("Failed to get the absolute path of %s: %v", bpDir, err)
 	}
 	dir, err := copyDirectory(bpDir)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("Failed to copy %s: %v", bpDir, err)
 	}
 
 	err = ioutil.WriteFile(filepath.Join(dir, "VERSION"), []byte(version), 0644)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("Failed to write VERSION file: %v", err)
 	}
 
 	isCached := "--uncached"
@@ -48,7 +49,7 @@ func CompileExtensionPackage(bpDir, version string, cached bool) (string, error)
 	cmd.Env = append(os.Environ(), "BUNDLE_GEMFILE=cf.Gemfile")
 	cmd.Dir = dir
 	if err := cmd.Run(); err != nil {
-		return "", err
+		return "", fmt.Errorf("Failed to run %s %s: %v", cmd.Path, strings.Join(cmd.Args, " "), err)
 	}
 
 	var manifest struct {
@@ -56,7 +57,7 @@ func CompileExtensionPackage(bpDir, version string, cached bool) (string, error)
 	}
 
 	if err := libbuildpack.NewYAML().Load(filepath.Join(bpDir, "manifest.yml"), &manifest); err != nil {
-		return "", err
+		return "", fmt.Errorf("Failed to load manifest.yml: %v", err)
 	}
 
 	zipFile := fmt.Sprintf("%s_buildpack-v%s.zip", manifest.Language, version)
@@ -64,7 +65,7 @@ func CompileExtensionPackage(bpDir, version string, cached bool) (string, error)
 		zipFile = fmt.Sprintf("%s_buildpack-cached-v%s.zip", manifest.Language, version)
 	}
 	if err := libbuildpack.CopyFile(filepath.Join(dir, zipFile), filepath.Join(bpDir, zipFile)); err != nil {
-		return "", err
+		return "", fmt.Errorf("Failed to copy %s from %s to %s: %v", zipFile, dir, bpDir, err)
 	}
 
 	return filepath.Join(dir, zipFile), nil
@@ -210,7 +211,7 @@ func Package(bpDir, cacheDir, version, stack string, cached bool) (string, error
 	}
 
 	cachedPart := ""
-	if cached  {
+	if cached {
 		cachedPart = "-cached"
 	}
 
