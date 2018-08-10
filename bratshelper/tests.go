@@ -259,16 +259,6 @@ func StagingWithCustomBuildpackWithCredentialsInDependencies(depRegexp string, c
 				Expect(app.Stdout.String()).ToNot(ContainSubstring(password))
 			})
 		})
-		Context("using a cached buildpack", func() {
-			BeforeEach(func() {
-				buildpackFile = Data.UncachedFile
-			})
-			It("does not include credentials in logged dependency file paths", func() {
-				Expect(app.Stdout.String()).To(MatchRegexp(depRegexp))
-				Expect(app.Stdout.String()).ToNot(ContainSubstring(username))
-				Expect(app.Stdout.String()).ToNot(ContainSubstring(password))
-			})
-		})
 	})
 }
 
