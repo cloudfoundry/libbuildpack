@@ -290,8 +290,8 @@ var _ = Describe("Stager", func() {
 				Expect(os.SameFile(f1, f2)).To(BeTrue())
 			} else {
 				link, err := os.Readlink(linkSource)
-				Expect(link).To(Equal(filepath.Join("..", "some", "long", "path")))
 				Expect(err).To(BeNil())
+				Expect(link).To(Equal(filepath.Join("..", "some", "long", "path")))
 			}
 		})
 	})
