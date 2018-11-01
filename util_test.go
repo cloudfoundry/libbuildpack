@@ -139,6 +139,7 @@ var _ = Describe("Util", func() {
 				Expect(filepath.Join(tmpdir, "root.txt")).To(BeAnExistingFile())
 				Expect(ioutil.ReadFile(filepath.Join(tmpdir, "root.txt"))).To(Equal([]byte("root\n")))
 			})
+
 			It("extracts a nested file", func() {
 				err = libbuildpack.ExtractTarGz("fixtures/thing.tgz", tmpdir)
 				Expect(err).To(BeNil())
@@ -146,6 +147,7 @@ var _ = Describe("Util", func() {
 				Expect(filepath.Join(tmpdir, "thing", "bin", "file2.exe")).To(BeAnExistingFile())
 				Expect(ioutil.ReadFile(filepath.Join(tmpdir, "thing", "bin", "file2.exe"))).To(Equal([]byte("progam2\n")))
 			})
+
 			It("preserves the file mode", func() {
 				if runtime.GOOS == "windows" {
 					Skip(windowsFileModeWarning)
@@ -159,6 +161,7 @@ var _ = Describe("Util", func() {
 
 				Expect(fileInfo.Mode()).To(Equal(os.FileMode(0755)))
 			})
+
 			It("handles symlinks", func() {
 				err = libbuildpack.ExtractTarGz("fixtures/symlink.tgz", tmpdir)
 				Expect(err).To(BeNil())
@@ -183,6 +186,13 @@ var _ = Describe("Util", func() {
 		Context("with an invalid tar file", func() {
 			It("returns an error", func() {
 				err = libbuildpack.ExtractTarGz("fixtures/manifest.yml", tmpdir)
+				Expect(err).ToNot(BeNil())
+			})
+		})
+
+		Context("when a tar file contains path traversal", func() {
+			It("returns an error", func() {
+				err = libbuildpack.ExtractTarGz("fixtures/path_traversal.tgz", tmpdir)
 				Expect(err).ToNot(BeNil())
 			})
 		})
