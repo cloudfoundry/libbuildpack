@@ -77,7 +77,7 @@ func ExtractZip(zipfile, destDir string) error {
 	defer r.Close()
 
 	for _, f := range r.File {
-		path := filepath.Join(destDir, f.Name)
+		path := filepath.Join(destDir, filepath.Clean(f.Name))
 
 		rc, err := f.Open()
 		if err != nil {

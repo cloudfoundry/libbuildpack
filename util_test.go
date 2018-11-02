@@ -71,6 +71,20 @@ var _ = Describe("Util", func() {
 				Expect(err).ToNot(BeNil())
 			})
 		})
+		Context("with a malicious local symlink", func(){
+			It("writes all symlinks as empty directory", func(){
+				err := libbuildpack.ExtractZip("fixtures/maliciousRelativeSymlink.zip", tmpdir)
+				Expect(err).To(BeNil())
+				Expect(filepath.Join(tmpdir, "link")).To(BeADirectory())
+			})
+		})
+		Context("with a malicious global symlink", func(){
+			It("writes symlink as empty directory",func(){
+				err := libbuildpack.ExtractZip("fixtures/maliciousGlobalSymlink.zip", tmpdir)
+				Expect(err).To(BeNil())
+				Expect(filepath.Join(tmpdir, "passwdLink")).To(BeADirectory())
+			})
+		})
 	})
 
 	Describe("GetBuildpackDir", func() {
@@ -173,6 +187,10 @@ var _ = Describe("Util", func() {
 				fi, err := os.Lstat(path)
 				Expect(err).To(BeNil())
 				Expect(fi.Mode() & os.ModeSymlink).ToNot(Equal(0))
+			})
+			It("handles malicious global symlinks", func() {
+				err = libbuildpack.ExtractTarGz("fixtures/maliciousGlobalSymlink.tar.gz", tmpdir)
+				Expect(err).ToNot(BeNil())
 			})
 		})
 
