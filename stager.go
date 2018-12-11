@@ -303,6 +303,14 @@ func (s *Stager) SetLaunchEnvironment() error {
 	return nil
 }
 
+func (s *Stager) BuildpackLanguage() string {
+	return s.manifest.Language()
+}
+
+func (s *Stager) BuildpackVersion() (string, error) {
+	return s.manifest.Version()
+}
+
 func existingDepsDirs(depsDir, subDir, prefix string) ([]string, error) {
 	files, err := ioutil.ReadDir(depsDir)
 	if err != nil {

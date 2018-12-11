@@ -610,6 +610,20 @@ var _ = Describe("Stager", func() {
 			})
 		})
 
+		Describe("BuildpackLanguage", func() {
+			It("gets buildpack language", func() {
+				Expect(s.BuildpackLanguage()).To(Equal("dotnet-core"))
+			})
+		})
+
+		Describe("BuildpackVersion", func() {
+			It("gets buildpack version", func() {
+				ver, err := s.BuildpackVersion()
+				Expect(err).To(BeNil())
+				Expect(ver).To(Equal("99.99"))
+			})
+		})
+
 		Describe("SetLaunchEnvironment", func() {
 			It("writes a .profile.d script allowing the runtime container to use the supplied deps", func() {
 				err = s.SetLaunchEnvironment()
