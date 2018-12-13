@@ -361,7 +361,6 @@ var _ = Describe("Packager", func() {
 		Context("packaging with missing included_files", func() {
 			It("returns an error", func() {
 				zipFile, err = packager.Package("./fixtures/missing_included_files", cacheDir, version, stack, cached)
-
 				Expect(err.Error()).To(MatchRegexp("failed to open included_file: .*/DOESNOTEXIST.txt"))
 			})
 		})

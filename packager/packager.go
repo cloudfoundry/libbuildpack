@@ -307,7 +307,12 @@ func ZipFiles(filename string, files []File) error {
 
 		zipfile, err := os.Open(file.Path)
 		if err != nil {
-			return fmt.Errorf("failed to open included_file: %s, %v", file.Path, err)
+			returnErr := fmt.Errorf("failed to open included_file: %s, %v", file.Path, err)
+			err = os.Remove(filename)
+			if err != nil{
+				returnErr = fmt.Errorf("%s. Failed to remove broken buildpack file: %s", returnErr.Error(), filename)
+			}
+			return returnErr
 		}
 		defer zipfile.Close()
 
