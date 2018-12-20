@@ -101,6 +101,38 @@ var _ = Describe("Shims", func() {
 			Expect(os.RemoveAll(tempDir)).To(Succeed())
 		})
 
+		Context("EnsureNoV2AfterV3", func() {
+			It("does not return an error when there are no V2 buildpacks", func() {
+				Expect(supplier.EnsureNoV2AfterV3()).To(Succeed())
+			})
+
+			Context("when there are V2 buildacks that have already run", func() {
+				BeforeEach(func() {
+					depsIndex = "1"
+					Expect(os.MkdirAll(filepath.Join(v2BuildpacksDir, "0"), 0777)).To(Succeed())
+					Expect(os.MkdirAll(filepath.Join(depsDir, "0"), 0777)).To(Succeed())
+				})
+
+				It("does not return an error", func() {
+					Expect(supplier.EnsureNoV2AfterV3()).To(Succeed())
+				})
+			})
+
+			Context("when there are V2 buildpacks that have not run yet", func() {
+				BeforeEach(func() {
+					depsIndex = "1"
+					Expect(os.MkdirAll(filepath.Join(v2BuildpacksDir, "0"), 0777)).To(Succeed())
+					Expect(ioutil.WriteFile(filepath.Join(v2BuildpacksDir, "0", "order.toml"), []byte(""), 0777)).To(Succeed())
+					Expect(os.MkdirAll(filepath.Join(v2BuildpacksDir, "2"), 0777)).To(Succeed())
+					Expect(os.MkdirAll(filepath.Join(depsDir, "2"), 0777)).To(Succeed())
+				})
+
+				It("returns an error", func() {
+					Expect(supplier.EnsureNoV2AfterV3()).To(MatchError("Cannot follow a v3 buildpack by a v2 buildpack."))
+				})
+			})
+		})
+
 		Context("GetDetectorOutput", func() {
 			It("runs detection when group or plan metadata does not exist", func() {
 				mockDetector.

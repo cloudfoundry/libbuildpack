@@ -1,11 +1,13 @@
 package shims
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strconv"
 
 	"github.com/cloudfoundry/libbuildpack"
@@ -38,6 +40,10 @@ type Supplier struct {
 }
 
 func (s *Supplier) Supply() error {
+	if err := s.EnsureNoV2AfterV3(); err != nil {
+		return err
+	}
+
 	if err := s.Installer.InstallOnlyVersion("v3-builder", s.BinDir); err != nil {
 		return err
 	}
@@ -75,6 +81,67 @@ func (s *Supplier) Supply() error {
 	}
 
 	return s.MoveV3Layers()
+}
+
+func (s *Supplier) EnsureNoV2AfterV3() error {
+	allBuildpacks, err := filepath.Glob(filepath.Join(s.V2BuildpackDir, "..", "*"))
+	if err != nil {
+		return err
+	}
+
+	v3Buildpacks, err := filepath.Glob(filepath.Join(s.V2BuildpackDir, "..", "*", "order.toml"))
+	if err != nil {
+		return err
+	}
+
+	buildpacksDownloaded, err := filepath.Glob(filepath.Join(string(filepath.Separator), "tmp", "buildpackdownloads", "*"))
+	if err != nil {
+		return err
+	}
+
+	v3BuildpacksDownloaded, err := filepath.Glob(filepath.Join(string(filepath.Separator), "tmp", "buildpackdownloads", "*", "order.toml"))
+	if err != nil {
+		return err
+	}
+
+	numberOfV2Buildpacks := len(allBuildpacks) + len(buildpacksDownloaded) - len(v3Buildpacks) - len(v3BuildpacksDownloaded)
+
+	v2DepsIndexes, err := filepath.Glob(filepath.Join(s.V2DepsDir, "*"))
+	if err != nil {
+		return err
+	}
+
+	numberOfV2BuildpacksRun := 0
+	numberOfIndexes := 0
+	for _, v2DepsIndex := range v2DepsIndexes {
+		re := regexp.MustCompile(`.*\/(\d+)(\/.*)?$`)
+		matches := re.FindStringSubmatch(v2DepsIndex)
+		if len(matches) > 1 {
+			numberOfIndexes += 1
+			index, err := strconv.Atoi(matches[1])
+			if err != nil {
+				return nil
+			}
+
+			intDepsIndex, err := strconv.Atoi(s.DepsIndex)
+			if err != nil {
+				return nil
+			}
+			if intDepsIndex > index {
+				numberOfV2BuildpacksRun += 1
+			}
+		}
+	}
+
+	if numberOfIndexes == 1 {
+		return nil
+	}
+
+	if numberOfV2Buildpacks > numberOfV2BuildpacksRun {
+		return errors.New("Cannot follow a v3 buildpack by a v2 buildpack.")
+	}
+
+	return nil
 }
 
 func (s *Supplier) MoveV3Layers() error {
