@@ -4,9 +4,13 @@ require (
 	github.com/BurntSushi/toml v0.3.1
 	github.com/Masterminds/semver v1.4.2
 	github.com/blang/semver v3.5.1+incompatible
-	github.com/golang/mock v1.1.1
+	github.com/elazarl/goproxy v0.0.0-20181111060418-2ce16c963a8a
+	github.com/golang/mock v1.2.0
+	github.com/google/subcommands v0.0.0-20181012225330-46f0354f6315
 	github.com/onsi/ginkgo v1.7.0
 	github.com/onsi/gomega v1.4.3
+	github.com/tidwall/gjson v1.1.3
+	github.com/tidwall/match v1.0.1 // indirect
 	gopkg.in/jarcoal/httpmock.v1 v1.0.0-20181025172632-c463961d8bfe
 	gopkg.in/yaml.v2 v2.2.1
 )

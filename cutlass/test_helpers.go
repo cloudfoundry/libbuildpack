@@ -175,7 +175,6 @@ func readVersionFromZip(filePath string) (string, error) {
 
 		}
 
-
 		return fmt.Sprintf("%s", out), nil
 	}
 	return "", fmt.Errorf("Could not find VERSION file from buildpack artifact: %s", filePath)

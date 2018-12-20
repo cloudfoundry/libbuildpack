@@ -5,8 +5,9 @@
 package shims_test
 
 import (
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockDetector is a mock of Detector interface
@@ -34,6 +35,7 @@ func (m *MockDetector) EXPECT() *MockDetectorMockRecorder {
 
 // Detect mocks base method
 func (m *MockDetector) Detect() error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Detect")
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -41,5 +43,6 @@ func (m *MockDetector) Detect() error {
 
 // Detect indicates an expected call of Detect
 func (mr *MockDetectorMockRecorder) Detect() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Detect", reflect.TypeOf((*MockDetector)(nil).Detect))
 }

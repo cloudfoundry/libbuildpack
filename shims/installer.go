@@ -2,14 +2,15 @@ package shims
 
 import (
 	"fmt"
-	"github.com/BurntSushi/toml"
-	"github.com/cloudfoundry/libbuildpack"
 	"os"
 	"path/filepath"
+
+	"github.com/BurntSushi/toml"
+	"github.com/cloudfoundry/libbuildpack"
 )
 
 type buildpack struct {
-	Id      string `toml:"id"`
+	ID      string `toml:"id"`
 	Version string `toml:"version"`
 }
 
@@ -41,7 +42,7 @@ func (c *CNBInstaller) InstallCNBS(orderFile string, installDir string) error {
 	bpSet := make(map[string]interface{})
 	for _, group := range o.Groups {
 		for _, bp := range group.Buildpacks {
-			bpSet[bp.Id] = nil
+			bpSet[bp.ID] = nil
 		}
 	}
 
