@@ -1,13 +1,11 @@
 package shims
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"strconv"
 
 	"github.com/cloudfoundry/libbuildpack"
@@ -84,64 +82,15 @@ func (s *Supplier) Supply() error {
 }
 
 func (s *Supplier) EnsureNoV2AfterV3() error {
-	allBuildpacks, err := filepath.Glob(filepath.Join(s.V2BuildpackDir, "..", "*"))
+	cfPath := filepath.Join(s.V2AppDir, ".cloudfoundry")
+	err := os.MkdirAll(cfPath, 0777)
 	if err != nil {
+		fmt.Println("could not open the cloudfoundry dir")
 		return err
 	}
 
-	v3Buildpacks, err := filepath.Glob(filepath.Join(s.V2BuildpackDir, "..", "*", "order.toml"))
-	if err != nil {
-		return err
-	}
-
-	buildpacksDownloaded, err := filepath.Glob(filepath.Join(string(filepath.Separator), "tmp", "buildpackdownloads", "*"))
-	if err != nil {
-		return err
-	}
-
-	v3BuildpacksDownloaded, err := filepath.Glob(filepath.Join(string(filepath.Separator), "tmp", "buildpackdownloads", "*", "order.toml"))
-	if err != nil {
-		return err
-	}
-
-	numberOfV2Buildpacks := len(allBuildpacks) + len(buildpacksDownloaded) - len(v3Buildpacks) - len(v3BuildpacksDownloaded)
-
-	v2DepsIndexes, err := filepath.Glob(filepath.Join(s.V2DepsDir, "*"))
-	if err != nil {
-		return err
-	}
-
-	numberOfV2BuildpacksRun := 0
-	numberOfIndexes := 0
-	for _, v2DepsIndex := range v2DepsIndexes {
-		re := regexp.MustCompile(`.*\/(\d+)(\/.*)?$`)
-		matches := re.FindStringSubmatch(v2DepsIndex)
-		if len(matches) > 1 {
-			numberOfIndexes += 1
-			index, err := strconv.Atoi(matches[1])
-			if err != nil {
-				return nil
-			}
-
-			intDepsIndex, err := strconv.Atoi(s.DepsIndex)
-			if err != nil {
-				return nil
-			}
-			if intDepsIndex > index {
-				numberOfV2BuildpacksRun += 1
-			}
-		}
-	}
-
-	if numberOfIndexes == 1 {
-		return nil
-	}
-
-	if numberOfV2Buildpacks > numberOfV2BuildpacksRun {
-		return errors.New("Cannot follow a v3 buildpack by a v2 buildpack.")
-	}
-
-	return nil
+	_, err = os.OpenFile(filepath.Join(cfPath, "sentinal"), os.O_RDONLY|os.O_CREATE, 0666)
+	return err
 }
 
 func (s *Supplier) MoveV3Layers() error {
@@ -156,7 +105,7 @@ func (s *Supplier) MoveV3Layers() error {
 				return err
 			}
 
-			if err := os.Mkdir(filepath.Join(s.V2AppDir, ".cloudfoundry"), 0777); err != nil {
+			if err := os.MkdirAll(filepath.Join(s.V2AppDir, ".cloudfoundry"), 0777); err != nil {
 				return err
 			}
 
