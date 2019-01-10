@@ -128,7 +128,8 @@ var _ = Describe("Shims", func() {
 				})
 
 				It("returns an error", func() {
-					Expect(supplier.EnsureNoV2AfterV3()).To(MatchError("Cannot follow a v3 buildpack by a v2 buildpack."))
+					Expect(supplier.EnsureNoV2AfterV3()).To(Succeed())
+					Expect(filepath.Join(supplier.V2AppDir, ".cloudfoundry", "sentinal")).To(BeAnExistingFile())
 				})
 			})
 		})
