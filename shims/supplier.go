@@ -78,7 +78,17 @@ func (s *Supplier) Supply() error {
 		return err
 	}
 
-	return s.MoveV3Layers()
+	if err := s.MoveV3Layers(); err != nil {
+		return err
+	}
+
+	// We do this so that any V2B buildpacks that come later fail
+	if err := os.Rename(s.V2AppDir, s.V3AppDir); err != nil {
+		return err
+	}
+
+	// We create a symlink to a place that doesn't exist so we error on v2 buildpacks, we get rid of the symlink in finalize
+	return os.Symlink(filepath.Join(string(filepath.Separator), libbuildpack.RandString(8), "error_v2_buildpack_after_v3_buildpack"), s.V2AppDir)
 }
 
 func (s *Supplier) EnsureNoV2AfterV3() error {
