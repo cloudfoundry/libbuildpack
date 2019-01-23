@@ -9,7 +9,7 @@ import (
 
 	"github.com/cloudfoundry/libbuildpack"
 	"github.com/cloudfoundry/libbuildpack/ansicleaner"
-	httpmock "gopkg.in/jarcoal/httpmock.v1"
+	"gopkg.in/jarcoal/httpmock.v1"
 
 	"github.com/cloudfoundry/libbuildpack/shims"
 	"github.com/golang/mock/gomock"
@@ -292,8 +292,8 @@ var _ = Describe("Shims", func() {
 
 	Describe("Finalizer", func() {
 		var (
-			finalizer             shims.Finalizer
-			profileDir, depsIndex string
+			finalizer                                          shims.Finalizer
+			tempDir, v2AppDir, v3AppDir, profileDir, depsIndex string
 		)
 
 		BeforeEach(func() {
@@ -301,18 +301,29 @@ var _ = Describe("Shims", func() {
 
 			depsIndex = "0"
 
-			Expect(os.Setenv("CF_STACK", "some-stack")).To(Succeed())
-			profileDir, err = ioutil.TempDir("", "profile")
+			tempDir, err = ioutil.TempDir("", "tmp")
 			Expect(err).NotTo(HaveOccurred())
+
+			v2AppDir = filepath.Join(tempDir, "v2_app")
+			Expect(os.MkdirAll(v2AppDir, 0777)).To(Succeed())
+
+			v3AppDir = filepath.Join(tempDir, "v3_app")
+			Expect(os.MkdirAll(v3AppDir, 0777)).To(Succeed())
+
+			profileDir = filepath.Join(tempDir, "profile")
+			Expect(os.MkdirAll(profileDir, 0777)).To(Succeed())
+
+			Expect(os.Setenv("CF_STACK", "some-stack")).To(Succeed())
+
 		})
 
 		JustBeforeEach(func() {
-			finalizer = shims.Finalizer{DepsIndex: depsIndex, ProfileDir: profileDir}
+			finalizer = shims.Finalizer{V2AppDir: v2AppDir, V3AppDir: v3AppDir, DepsIndex: depsIndex, ProfileDir: profileDir}
 		})
 
 		AfterEach(func() {
 			Expect(os.Unsetenv("CF_STACK")).To(Succeed())
-			Expect(os.RemoveAll(profileDir)).To(Succeed())
+			Expect(os.RemoveAll(tempDir)).To(Succeed())
 		})
 
 		It("writes a profile.d script for the V2 lifecycle to exec which calls the v3-launcher", func() {
