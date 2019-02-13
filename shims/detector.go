@@ -12,9 +12,9 @@ type Installer interface {
 }
 
 type DefaultDetector struct {
-	BinDir string
+	V3LifecycleDir string
 
-	V2AppDir string
+	AppDir string
 
 	V3BuildpacksDir string
 
@@ -26,26 +26,26 @@ type DefaultDetector struct {
 }
 
 func (d DefaultDetector) Detect() error {
-	err := d.Installer.InstallOnlyVersion("v3-detector", d.BinDir)
-	if err != nil {
+	if err := d.Installer.InstallCNBS(d.OrderMetadata, d.V3BuildpacksDir); err != nil {
 		return err
 	}
 
-	err = d.Installer.InstallCNBS(d.OrderMetadata, d.V3BuildpacksDir)
-	if err != nil {
+	return d.RunLifecycleDetect()
+}
+
+func (d DefaultDetector) RunLifecycleDetect() error {
+	if err := d.Installer.InstallOnlyVersion(V3_DETECTOR_DEP, d.V3LifecycleDir); err != nil {
 		return err
 	}
 
 	cmd := exec.Command(
-		filepath.Join(d.BinDir, "v3-detector"),
-		"-app", d.V2AppDir,
+		filepath.Join(d.V3LifecycleDir, V3_DETECTOR_DEP),
+		"-app", d.AppDir,
 		"-buildpacks", d.V3BuildpacksDir,
 		"-order", d.OrderMetadata,
 		"-group", d.GroupMetadata,
 		"-plan", d.PlanMetadata,
 	)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
 	cmd.Env = append(os.Environ(), "PACK_STACK_ID=org.cloudfoundry.stacks."+os.Getenv("CF_STACK"))
 	return cmd.Run()
 }

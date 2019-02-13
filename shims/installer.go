@@ -10,8 +10,10 @@ import (
 )
 
 type buildpack struct {
-	ID      string `toml:"id"`
-	Version string `toml:"version"`
+	ID       string `toml:"id"`
+	Name     string `toml:"name,omitempty"`
+	Version  string `toml:"version"`
+	Optional bool   `toml:"optional,omitempty"`
 }
 
 type group struct {
@@ -21,6 +23,10 @@ type group struct {
 
 type order struct {
 	Groups []group `toml:"groups"`
+}
+
+type stack struct {
+	ID string `toml:"id"`
 }
 
 type CNBInstaller struct {

@@ -2,26 +2,18 @@ package shims
 
 import (
 	"fmt"
-	"github.com/BurntSushi/toml"
-	"gopkg.in/yaml.v2"
 	"io"
 	"os"
+
+	"github.com/BurntSushi/toml"
+	"gopkg.in/yaml.v2"
 )
 
 type inputMetadata struct {
 	Processes []struct {
-		Type    string
-		Command string
+		Type    string `toml:"type"`
+		Command string `toml:"command"`
 	}
-}
-
-func (i *inputMetadata) findCommand(processType string) (string, error) {
-	for _, p := range i.Processes {
-		if p.Type == processType {
-			return p.Command, nil
-		}
-	}
-	return "", fmt.Errorf("unable to find process with type %s in launch metadata %v", processType, i.Processes)
 }
 
 type defaultProcessTypes struct {
@@ -49,4 +41,13 @@ func (r *Releaser) Release() error {
 
 	output := outputMetadata{DefaultProcessTypes: defaultProcessTypes{Web: webCommand}}
 	return yaml.NewEncoder(r.Writer).Encode(output)
+}
+
+func (i *inputMetadata) findCommand(processType string) (string, error) {
+	for _, p := range i.Processes {
+		if p.Type == processType {
+			return p.Command, nil
+		}
+	}
+	return "", fmt.Errorf("unable to find process with type %s in launch metadata %v", processType, i.Processes)
 }

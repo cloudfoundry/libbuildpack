@@ -14,3 +14,10 @@ dependencies:
     cf_stacks:
       - cflinuxfs2
       - cflinuxfs3
+  - name: this.is.a.fake.bpC
+    version: 1.0.2
+    uri: https://a-fake-url.com/bpC.tgz
+    sha256: 8668893f50179fc340a24b2ab131ed655fc61326b3e98c1c9eaf6def29c5e110
+    cf_stacks:
+      - cflinuxfs2
+      - cflinuxfs3

@@ -1,59 +1,81 @@
 package main
 
 import (
-	"github.com/cloudfoundry/libbuildpack"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
 
+	"github.com/pkg/errors"
+
+	"github.com/cloudfoundry/libbuildpack"
 	"github.com/cloudfoundry/libbuildpack/shims"
 )
 
-func main() {
-	logger := libbuildpack.NewLogger(os.Stderr)
+var logger = libbuildpack.NewLogger(os.Stderr)
 
+func init() {
 	if len(os.Args) != 2 {
 		logger.Error("Incorrect number of arguments")
 		os.Exit(1)
 	}
+}
 
-	appDir := os.Args[1]
+func main() {
+	exit(detect(logger))
+}
 
-	buildpackDir, err := libbuildpack.GetBuildpackDir()
+func exit(err error) {
+	if err == nil {
+		os.Exit(0)
+	}
+	logger.Error("Failed detect step: %s", err.Error())
+	os.Exit(1)
+}
+
+func detect(logger *libbuildpack.Logger) error {
+	v2AppDir := os.Args[1]
+
+	v2BuildpackDir, err := libbuildpack.GetBuildpackDir()
 	if err != nil {
-		logger.Error("Unable to find buildpack directory: %s", err.Error())
-		os.Exit(1)
+		return err
 	}
 
-	workspaceDir, err := filepath.Abs(filepath.Join(appDir, ".."))
+	tempDir, err := ioutil.TempDir("", "temp")
 	if err != nil {
-		logger.Error("Unable to find workspace directory: %s", err.Error())
-		os.Exit(1)
+		return errors.Wrap(err, "unable to create temp dir")
+	}
+	defer os.RemoveAll(tempDir)
+
+	v3BuildpacksDir := shims.V3BuildpacksDir
+	if err := os.MkdirAll(v3BuildpacksDir, 0777); err != nil {
+		return err
 	}
 
-	manifest, err := libbuildpack.NewManifest(buildpackDir, logger, time.Now())
-	if err != nil {
-		logger.Error("Unable to load buildpack manifest: %s", err.Error())
-		os.Exit(1)
+	metadataDir := shims.V3MetadataDir
+	if err := os.MkdirAll(metadataDir, 0777); err != nil {
+		return err
 	}
+	orderMetadata := filepath.Join(v2BuildpackDir, "order.toml")
+	groupMetadata := filepath.Join(metadataDir, "group.toml")
+	planMetadata := filepath.Join(metadataDir, "plan.toml")
+
+	manifest, err := libbuildpack.NewManifest(v2BuildpackDir, logger, time.Now())
+	if err != nil {
+		return err
+	}
+
+	installer := shims.NewCNBInstaller(manifest)
 
 	detector := shims.DefaultDetector{
-		BinDir: filepath.Join(workspaceDir, "bin"),
-
-		V2AppDir: appDir,
-
-		V3BuildpacksDir: filepath.Join(workspaceDir, "cnbs"),
-
-		OrderMetadata: filepath.Join(buildpackDir, "order.toml"),
-		GroupMetadata: filepath.Join(workspaceDir, "group.toml"),
-		PlanMetadata:  filepath.Join(workspaceDir, "plan.toml"),
-
-		Installer: shims.NewCNBInstaller(manifest),
+		V3LifecycleDir:  tempDir,
+		AppDir:          v2AppDir,
+		V3BuildpacksDir: v3BuildpacksDir,
+		OrderMetadata:   orderMetadata,
+		GroupMetadata:   groupMetadata,
+		PlanMetadata:    planMetadata,
+		Installer:       installer,
 	}
 
-	err = detector.Detect()
-	if err != nil {
-		logger.Error("Failed detection step: %s", err.Error())
-		os.Exit(1)
-	}
+	return detector.Detect()
 }

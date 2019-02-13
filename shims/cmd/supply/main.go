@@ -1,9 +1,7 @@
 package main
 
 import (
-	"io/ioutil"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/cloudfoundry/libbuildpack"
@@ -41,72 +39,37 @@ func supply(logger *libbuildpack.Logger) error {
 		return err
 	}
 
-	tempDir, err := ioutil.TempDir("", "")
-	if err != nil {
+	v3AppDir := shims.V3AppDir
+	if err := os.MkdirAll(v3AppDir, 0777); err != nil {
 		return err
 	}
-	defer os.RemoveAll(tempDir)
 
-	v3LayersDir := filepath.Join(string(filepath.Separator), "home", "vcap", "deps")
-	err = os.MkdirAll(v3LayersDir, 0777)
-	if err != nil {
+	storedOrderDir := shims.V3StoredOrderDir
+	if err := os.MkdirAll(storedOrderDir, 0777); err != nil {
 		return err
 	}
-	defer os.RemoveAll(v3LayersDir)
 
-	v3AppDir := filepath.Join(string(filepath.Separator), "home", "vcap", "app")
-
-	v3BuildpacksDir := filepath.Join(tempDir, "cnbs")
+	v3BuildpacksDir := shims.V3BuildpacksDir
 	err = os.MkdirAll(v3BuildpacksDir, 0777)
 	if err != nil {
 		return err
 	}
-	defer os.RemoveAll(v3BuildpacksDir)
-
-	orderMetadata := filepath.Join(buildpackDir, "order.toml")
-	groupMetadata := filepath.Join(tempDir, "group.toml")
-	planMetadata := filepath.Join(tempDir, "plan.toml")
-	binDir := filepath.Join(tempDir, "bin")
 
 	manifest, err := libbuildpack.NewManifest(buildpackDir, logger, time.Now())
 	if err != nil {
 		return err
 	}
-
 	installer := shims.NewCNBInstaller(manifest)
 
-	detector := shims.DefaultDetector{
-		BinDir: binDir,
-
-		V2AppDir: v2AppDir,
-
-		V3BuildpacksDir: v3BuildpacksDir,
-
-		OrderMetadata: orderMetadata,
-		GroupMetadata: groupMetadata,
-		PlanMetadata:  planMetadata,
-
-		Installer: installer,
-	}
-
 	supplier := shims.Supplier{
-		BinDir: binDir,
-
-		V2AppDir:       v2AppDir,
-		V2DepsDir:      v2DepsDir,
-		V2BuildpackDir: buildpackDir,
-		DepsIndex:      depsIndex,
-
+		V2AppDir:        v2AppDir,
 		V3AppDir:        v3AppDir,
+		V2DepsDir:       v2DepsDir,
+		DepsIndex:       depsIndex,
+		V2BuildpackDir:  buildpackDir,
 		V3BuildpacksDir: v3BuildpacksDir,
-		V3LayersDir:     v3LayersDir,
-
-		OrderMetadata: orderMetadata,
-		GroupMetadata: groupMetadata,
-		PlanMetadata:  planMetadata,
-
-		Detector:  detector,
-		Installer: installer,
+		OrderDir:        storedOrderDir,
+		Installer:       installer,
 	}
 
 	return supplier.Supply()
