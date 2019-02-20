@@ -10,7 +10,7 @@ import (
 
 	"github.com/cloudfoundry/libbuildpack"
 	"github.com/cloudfoundry/libbuildpack/ansicleaner"
-	"gopkg.in/jarcoal/httpmock.v1"
+	httpmock "gopkg.in/jarcoal/httpmock.v1"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -31,7 +31,6 @@ var _ = Describe("Manifest", func() {
 	BeforeEach(func() {
 		oldCfStack = os.Getenv("CF_STACK")
 		os.Setenv("CF_STACK", "cflinuxfs2")
-
 		manifestDir = "fixtures/manifest/standard"
 		currentTime = time.Now()
 		httpmock.Reset()
@@ -155,6 +154,15 @@ ruby:
 				It("returns nil", func() {
 					Expect(manifest.CheckStackSupport()).To(Succeed())
 				})
+			})
+		})
+
+		Context("stack is CFLINUXFS2", func() {
+			It("prints a warning message", func() {
+				err = os.Setenv("CF_STACK", libbuildpack.CFLINUXFS2)
+				Expect(err).To(BeNil())
+				Expect(manifest.CheckStackSupport()).To(Succeed())
+				Expect(buffer.String()).To(ContainSubstring("Please migrate this application to cflinuxfs3."))
 			})
 		})
 
