@@ -143,14 +143,13 @@ func DeleteBuildpack(language string) error {
 }
 
 func UpdateBuildpack(language, file, stack string) error {
-	var command *exec.Cmd
+	args := []string{fmt.Sprintf("%s_buildpack", language), "-p", file, "--enable"}
 
 	if stack != "" {
-		command = exec.Command("cf", "update-buildpack", fmt.Sprintf("%s_buildpack", language), "-p", file, "--enable", "-s", stack)
-	} else {
-		command = exec.Command("cf", "update-buildpack", fmt.Sprintf("%s_buildpack", language), "-p", file, "--enable")
+		args = append(args, "-s", stack)
 	}
 
+	command := exec.Command("cf update-buildpack", args...)
 	if data, err := command.CombinedOutput(); err != nil {
 		return fmt.Errorf("Failed to update buildpack by running '%s':\n%s\n%v", strings.Join(command.Args, " "), string(data), err)
 	}
