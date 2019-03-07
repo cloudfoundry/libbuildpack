@@ -1,4 +1,5 @@
 ---
+language: SomeName
 dependencies:
   - name: this.is.a.fake.bpA
     version: 1.0.1

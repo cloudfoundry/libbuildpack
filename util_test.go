@@ -341,6 +341,54 @@ var _ = Describe("Util", func() {
 		})
 	})
 
+	Describe("MoveDirectory", func() {
+		var (
+			srcDir  string
+			destDir string
+			err 	error
+		)
+
+		BeforeEach(func() {
+			srcDir, err = ioutil.TempDir("", "dir1")
+			Expect(err).ToNot(HaveOccurred())
+			destDir, err = ioutil.TempDir("", "")
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		Context("destination directory does not exist", func() {
+			Context("source directory does exist", func() {
+				It("should move source to dest", func(){
+					innerDir := filepath.Join(srcDir, "inner_dir")
+					innerDestDir := filepath.Join(destDir, "inner_dir")
+					Expect(os.MkdirAll(innerDir, os.ModePerm)).ToNot(HaveOccurred())
+					Expect(libbuildpack.MoveDirectory(srcDir,destDir)).To(Succeed())
+					Expect(innerDestDir).To(BeADirectory())
+				})
+			})
+		})
+
+		Context("destination directory does exist", func() {
+			Context("source directory does exist", func() {
+				It("should move source to dest but not overwrite existing files", func(){
+					innerDir := filepath.Join(srcDir, "inner_dir")
+					innerDestDir := filepath.Join(destDir, "inner_dir")
+					Expect(os.MkdirAll(innerDir, 0777)).To(Succeed())
+					Expect(os.MkdirAll(innerDestDir, 0777)).To(Succeed())
+					Expect(ioutil.WriteFile(filepath.Join(innerDir, "test_file"), []byte("contentsA"), 0777)).To(Succeed())
+					Expect(ioutil.WriteFile(filepath.Join(innerDestDir, "test_file"), []byte("contentsB"), 0777)).To(Succeed())
+					Expect(os.MkdirAll(innerDir, os.ModePerm)).ToNot(HaveOccurred())
+					Expect(libbuildpack.MoveDirectory(srcDir,destDir)).To(Succeed())
+					Expect(innerDestDir).To(BeADirectory())
+					destFile := filepath.Join(innerDestDir, "test_file")
+					Expect(destFile).To(BeAnExistingFile())
+					contents, err := ioutil.ReadFile(destFile)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(string(contents)).To(ContainSubstring("contentsB"))
+				})
+			})
+		})
+	})
+
 	Describe("FileExists", func() {
 		Context("the file exists", func() {
 			var (

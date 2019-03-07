@@ -31,6 +31,7 @@ func exit(err error) {
 
 func supply(logger *libbuildpack.Logger) error {
 	v2AppDir := os.Args[1]
+	v2CacheDir := os.Args[2]
 	v2DepsDir := os.Args[3]
 	depsIndex := os.Args[4]
 
@@ -65,11 +66,14 @@ func supply(logger *libbuildpack.Logger) error {
 		V2AppDir:        v2AppDir,
 		V3AppDir:        v3AppDir,
 		V2DepsDir:       v2DepsDir,
+		V2CacheDir:      v2CacheDir,
 		DepsIndex:       depsIndex,
 		V2BuildpackDir:  buildpackDir,
 		V3BuildpacksDir: v3BuildpacksDir,
 		OrderDir:        storedOrderDir,
 		Installer:       installer,
+		Manifest:        manifest,
+		Logger:          logger,
 	}
 
 	return supplier.Supply()

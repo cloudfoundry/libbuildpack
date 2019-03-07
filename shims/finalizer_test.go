@@ -1,6 +1,8 @@
 package shims_test
 
 import (
+	"fmt"
+	"github.com/cloudfoundry/libbuildpack"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -23,6 +25,7 @@ var _ = Describe("Finalizer", func() {
 		v2AppDir,
 		v3AppDir,
 		v2DepsDir,
+		v2CacheDir,
 		v3LayersDir,
 		v3BuildpacksDir,
 		orderDir,
@@ -31,7 +34,8 @@ var _ = Describe("Finalizer", func() {
 		groupMetadata,
 		profileDir,
 		binDir,
-		depsIndex string
+		depsIndex    string
+		finalizeLogger *libbuildpack.Logger
 	)
 
 	BeforeEach(func() {
@@ -53,6 +57,9 @@ var _ = Describe("Finalizer", func() {
 
 		v2DepsDir = filepath.Join(tempDir, "deps")
 
+		v2CacheDir = filepath.Join(tempDir, "cache")
+		Expect(os.MkdirAll(tempDir, 0777)).To(Succeed())
+
 		v3LayersDir = filepath.Join(tempDir, "layers")
 		Expect(os.MkdirAll(v3LayersDir, 0777)).To(Succeed())
 
@@ -73,6 +80,8 @@ var _ = Describe("Finalizer", func() {
 		Expect(os.MkdirAll(binDir, 0777)).To(Succeed())
 
 		Expect(os.Setenv("CF_STACK", "some-stack")).To(Succeed())
+
+		finalizeLogger = &libbuildpack.Logger{}
 	})
 
 	JustBeforeEach(func() {
@@ -82,6 +91,7 @@ var _ = Describe("Finalizer", func() {
 			V2AppDir:        v2AppDir,
 			V3AppDir:        v3AppDir,
 			V2DepsDir:       v2DepsDir,
+			V2CacheDir:      v2CacheDir,
 			V3LayersDir:     v3LayersDir,
 			V3BuildpacksDir: v3BuildpacksDir,
 			DepsIndex:       depsIndex,
@@ -92,6 +102,7 @@ var _ = Describe("Finalizer", func() {
 			ProfileDir:      profileDir,
 			V3LifecycleDir:  binDir,
 			Detector:        mockDetector,
+			Logger:          finalizeLogger,
 		}
 	})
 
@@ -292,22 +303,52 @@ var _ = Describe("Finalizer", func() {
 		})
 	})
 
+	Context("RestoreV3Cache", func() {
+		BeforeEach(func() {
+			cloudfoundryV3Cache := filepath.Join(v2CacheDir, "cnb")
+			testLayers := filepath.Join(cloudfoundryV3Cache, "org.cloudfoundry.generic.buildpack")
+			Expect(os.MkdirAll(cloudfoundryV3Cache, 0777)).To(Succeed())
+			Expect(os.MkdirAll(filepath.Join(testLayers, "layer"), 0777)).To(Succeed())
+			Expect(os.MkdirAll(filepath.Join(testLayers, "anotherLayer"), 0777)).To(Succeed())
+			Expect(ioutil.WriteFile(filepath.Join(testLayers, "anotherLayer", "cachedContents"), []byte("cached contents"), 0666)).To(Succeed())
+			Expect(ioutil.WriteFile(filepath.Join(testLayers, "anotherLayer", "anotherLayer.toml"), []byte("cache=true"), 0666)).To(Succeed())
+		})
+
+		It("should restore cache before building", func() {
+			restoredLayers := filepath.Join(finalizer.V3LayersDir, "org.cloudfoundry.generic.buildpack")
+			Expect(finalizer.RestoreV3Cache()).ToNot(HaveOccurred())
+			Expect(filepath.Join(restoredLayers, "layer")).To(BeADirectory())
+			Expect(filepath.Join(restoredLayers, "anotherLayer")).To(BeADirectory())
+			Expect(filepath.Join(restoredLayers, "anotherLayer", "cachedContents")).To(BeAnExistingFile())
+			contents, err := ioutil.ReadFile(filepath.Join(restoredLayers, "anotherLayer", "cachedContents"))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(contents).To(ContainSubstring("cached contents"))
+		})
+	})
+
 	Context("MoveV3Layers", func() {
 		BeforeEach(func() {
 			Expect(os.MkdirAll(filepath.Join(v3LayersDir, "config"), 0777)).To(Succeed())
 			Expect(ioutil.WriteFile(filepath.Join(v3LayersDir, "config", "metadata.toml"), []byte(""), 0666)).To(Succeed())
 
-			Expect(os.MkdirAll(filepath.Join(v3LayersDir, "layer"), 0777)).To(Succeed())
-			Expect(os.MkdirAll(filepath.Join(v3LayersDir, "anotherLayer"), 0777)).To(Succeed())
+			Expect(os.MkdirAll(filepath.Join(v3LayersDir, "layers"), 0777)).To(Succeed())
+			Expect(os.MkdirAll(filepath.Join(v3LayersDir, "anotherLayers", "innerLayer"), 0777)).To(Succeed())
+			Expect(ioutil.WriteFile(filepath.Join(v3LayersDir, "anotherLayers", "innerLayer.toml"), []byte("cache=true"), 0666)).To(Succeed())
 		})
 
 		It("moves the layers to deps dir and metadata to build dir", func() {
 			Expect(finalizer.MoveV3Layers()).To(Succeed())
 			Expect(filepath.Join(v2AppDir, ".cloudfoundry", "metadata.toml")).To(BeAnExistingFile())
-			Expect(filepath.Join(v2DepsDir, "layer")).To(BeAnExistingFile())
-			Expect(filepath.Join(v2DepsDir, "anotherLayer")).To(BeAnExistingFile())
+			Expect(filepath.Join(v2DepsDir, "layers")).To(BeAnExistingFile())
+			Expect(filepath.Join(v2DepsDir, "anotherLayers")).To(BeAnExistingFile())
 		})
 
+		It("copies cacheable layers to the cache/cnb directory", func() {
+			Expect(filepath.Join(v2CacheDir, "cnb")).ToNot(BeADirectory())
+			Expect(finalizer.MoveV3Layers()).To(Succeed())
+			Expect(filepath.Join(v2CacheDir, "cnb", "anotherLayers", "innerLayer")).To(BeADirectory())
+			Expect(filepath.Join(v2CacheDir, "cnb", "anotherLayers", "innerLayer.toml")).NotTo(BeAnExistingFile())
+		})
 	})
 
 	Context("MoveV2Layers", func() {
@@ -357,6 +398,61 @@ var _ = Describe("Finalizer", func() {
   id = "org.cloudfoundry.buildpacks.npm"
   version = "0.0.3"
 `))
+		})
+	})
+
+	Context("In V3 Layers Dir", func() {
+		var (
+			testLayers            string
+			Dep1LayerMetadataPath string
+			Dep2LayerMetadataPath string
+		)
+
+		JustBeforeEach(func() {
+			fmt.Println("V3LayersDir from test finalizer: ", finalizer.V3LayersDir)
+			testLayers = filepath.Join(finalizer.V3LayersDir, "org.cloudfoundry.generic.buildpack")
+			Expect(os.MkdirAll(testLayers, os.ModePerm)).To(Succeed())
+			Dep1LayerMetadataPath = filepath.Join(testLayers, "dep1.toml")
+			Dep2LayerMetadataPath = filepath.Join(testLayers, "dep2.toml")
+			Dep1LayerPath := filepath.Join(testLayers, "dep1")
+			Dep2LayerPath := filepath.Join(testLayers, "dep2")
+			Expect(os.MkdirAll(Dep2LayerPath, os.ModePerm)).To(Succeed())
+			Expect(os.MkdirAll(Dep1LayerPath, os.ModePerm)).To(Succeed())
+
+			Expect(ioutil.WriteFile(Dep1LayerMetadataPath, []byte(`launch = true
+			build = false
+			cache = true
+
+			[metadata]
+			extradata = "shamoo"`), 0777)).To(Succeed())
+
+			Expect(ioutil.WriteFile(Dep2LayerMetadataPath, []byte(`launch = true
+			build = true
+			cache = true
+			[metadata]
+			extradata = "shamwow"`), 0777)).To(Succeed())
+		})
+
+		It("can read layer.toml", func() {
+			dep1Metadata, err := finalizer.ReadLayerMetadata(Dep1LayerMetadataPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dep1Metadata.Launch).To(Equal(true))
+			Expect(dep1Metadata.Build).To(Equal(false))
+			Expect(dep1Metadata.Cache).To(Equal(true))
+
+			dep2Metadata, err := finalizer.ReadLayerMetadata(Dep2LayerMetadataPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dep2Metadata.Launch).To(Equal(true))
+			Expect(dep2Metadata.Build).To(Equal(true))
+			Expect(dep2Metadata.Cache).To(Equal(true))
+		})
+
+		It("can move layer to cache if needed", func() {
+			Expect(finalizer.MoveV3Layers()).To(Succeed())
+			layersCacheDir := filepath.Join(v2CacheDir, "cnb", "org.cloudfoundry.generic.buildpack")
+			Expect(filepath.Join(layersCacheDir, "dep1")).To(BeADirectory())
+			Expect(filepath.Join(layersCacheDir, "dep2")).To(BeADirectory())
+
 		})
 	})
 

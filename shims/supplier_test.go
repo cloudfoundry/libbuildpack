@@ -1,13 +1,14 @@
 package shims_test
 
 import (
+	"bytes"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/cloudfoundry/libbuildpack"
 	"github.com/cloudfoundry/libbuildpack/shims"
-	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -20,11 +21,14 @@ var _ = Describe("Supplier", func() {
 		v3AppDir        string
 		v3BuildpacksDir string
 		v2DepsDir       string
+		v2CacheDir      string
 		depsIndex       string
 		tempDir         string
 		orderDir        string
-		mockInstaller   *MockInstaller
-		mockCtrl        *gomock.Controller
+		installer       *shims.CNBInstaller
+		manifest        *libbuildpack.Manifest
+		buffer          *bytes.Buffer
+		logger          *libbuildpack.Logger
 	)
 
 	BeforeEach(func() {
@@ -42,8 +46,15 @@ var _ = Describe("Supplier", func() {
 		depsIndex = "0"
 		Expect(os.MkdirAll(filepath.Join(v2DepsDir, depsIndex), 0777)).To(Succeed())
 
-		mockCtrl = gomock.NewController(GinkgoT())
-		mockInstaller = NewMockInstaller(mockCtrl)
+		v2CacheDir = filepath.Join(tempDir, "cache")
+		Expect(os.MkdirAll(v2CacheDir, 0777)).To(Succeed())
+
+		buffer = new(bytes.Buffer)
+		logger = libbuildpack.NewLogger(buffer)
+
+		manifest, err = libbuildpack.NewManifest(filepath.Join("fixtures", "buildpack"), logger, time.Now())
+		Expect(err).ToNot(HaveOccurred())
+		installer = shims.NewCNBInstaller(manifest)
 
 		orderDir = filepath.Join(tempDir, "order")
 		Expect(os.MkdirAll(orderDir, 0777)).To(Succeed())
@@ -63,15 +74,17 @@ var _ = Describe("Supplier", func() {
 			V2BuildpackDir:  filepath.Join(v2BuildpacksDir, depsIndex),
 			V3AppDir:        v3AppDir,
 			V2DepsDir:       v2DepsDir,
+			V2CacheDir:      v2CacheDir,
 			DepsIndex:       depsIndex,
 			V3BuildpacksDir: v3BuildpacksDir,
 			OrderDir:        orderDir,
-			Installer:       mockInstaller,
+			Installer:       installer,
+			Manifest:        manifest,
+			Logger:          logger,
 		}
 	})
 
 	AfterEach(func() {
-		mockCtrl.Finish()
 		Expect(os.RemoveAll(tempDir)).To(Succeed())
 	})
 
@@ -115,6 +128,20 @@ var _ = Describe("Supplier", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(orderFile).To(Equal(filepath.Join(orderDir, "order"+depsIndex+".toml")))
 			Expect(orderFile).To(BeAnExistingFile())
+		})
+	})
+
+	Context("CheckBuildpackValid", func() {
+		BeforeEach(func() {
+			Expect(os.Setenv("CF_STACK", "cflinuxfs2")).To(Succeed())
+		})
+
+		Context("buildpack is valid", func() {
+			It("it logs the buildpack name and version", func() {
+				Expect(supplier.CheckBuildpackValid()).To(Succeed())
+
+				Expect(buffer.String()).To(ContainSubstring("-----> SomeName Buildpack version 0.0.1"))
+			})
 		})
 	})
 })

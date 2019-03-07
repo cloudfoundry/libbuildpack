@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 
@@ -14,11 +15,14 @@ type Supplier struct {
 	V2AppDir        string
 	V3AppDir        string
 	V2DepsDir       string
+	V2CacheDir      string
 	DepsIndex       string
 	V2BuildpackDir  string
 	V3BuildpacksDir string
 	OrderDir        string
 	Installer       Installer
+	Manifest        *libbuildpack.Manifest
+	Logger          *libbuildpack.Logger
 }
 
 const (
@@ -26,6 +30,10 @@ const (
 )
 
 func (s *Supplier) Supply() error {
+	if err := s.CheckBuildpackValid(); err != nil {
+		return errors.Wrap(err, "failed to check that buildpack is correct")
+	}
+
 	if err := s.SetUpFirstV3Buildpack(); err != nil {
 		return errors.Wrap(err, "failed to set up first shimmed buildpack")
 	}
@@ -61,8 +69,7 @@ func (s *Supplier) SetUpFirstV3Buildpack() error {
 
 	appCFPath := filepath.Join(s.V3AppDir, ".cloudfoundry")
 	if err := os.MkdirAll(appCFPath, 0777); err != nil {
-		fmt.Println("could not open the cloudfoundry dir")
-		return err
+		return errors.Wrap(err, "could not open the cloudfoundry dir")
 	}
 
 	if _, err := os.OpenFile(filepath.Join(appCFPath, libbuildpack.SENTINEL), os.O_RDONLY|os.O_CREATE, 0666); err != nil {
@@ -82,6 +89,24 @@ func (s *Supplier) SaveOrderToml() (string, error) {
 		return "", err
 	}
 	return orderFile, nil
+}
+
+func (s *Supplier) CheckBuildpackValid() error {
+	version, err := s.Manifest.Version()
+	if err != nil {
+		return errors.Wrap(err, "Could not determine buildpack version")
+	}
+
+	s.Logger.BeginStep("%s Buildpack version %s", strings.Title(s.Manifest.Language()), version)
+
+	err = s.Manifest.CheckStackSupport()
+	if err != nil {
+		return errors.Wrap(err, "Stack not supported by buildpack")
+	}
+
+	s.Manifest.CheckBuildpackVersion(s.V2CacheDir)
+
+	return nil
 }
 
 func moveContent(source, destination string) error {

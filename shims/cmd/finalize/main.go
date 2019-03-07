@@ -34,6 +34,7 @@ func exit(err error) {
 
 func finalize(logger *libbuildpack.Logger) error {
 	v2AppDir := os.Args[1]
+	v2CacheDir := os.Args[2]
 	v2DepsDir := os.Args[3]
 	v2DepsIndex := os.Args[4]
 	profileDir := os.Args[5]
@@ -93,6 +94,7 @@ func finalize(logger *libbuildpack.Logger) error {
 		V2AppDir:        v2AppDir,
 		V3AppDir:        v3AppDir,
 		V2DepsDir:       v2DepsDir,
+		V2CacheDir:      v2CacheDir,
 		V3LayersDir:     v3LayersDir,
 		V3BuildpacksDir: v3BuildpacksDir,
 		DepsIndex:       v2DepsIndex,
@@ -105,6 +107,8 @@ func finalize(logger *libbuildpack.Logger) error {
 		ProfileDir:      profileDir,
 		Detector:        detector,
 		Installer:       installer,
+		Manifest:        manifest,
+		Logger:          logger,
 	}
 
 	return finalizer.Finalize()
