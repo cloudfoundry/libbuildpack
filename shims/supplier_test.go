@@ -52,7 +52,7 @@ var _ = Describe("Supplier", func() {
 		buffer = new(bytes.Buffer)
 		logger = libbuildpack.NewLogger(buffer)
 
-		manifest, err = libbuildpack.NewManifest(filepath.Join("fixtures", "buildpack"), logger, time.Now())
+		manifest, err = libbuildpack.NewManifest(filepath.Join("testdata", "buildpack"), logger, time.Now())
 		Expect(err).ToNot(HaveOccurred())
 		installer = shims.NewCNBInstaller(manifest)
 

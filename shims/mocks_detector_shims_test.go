@@ -5,9 +5,8 @@
 package shims_test
 
 import (
-	reflect "reflect"
-
 	gomock "github.com/golang/mock/gomock"
+	reflect "reflect"
 )
 
 // MockInstaller is a mock of Installer interface
@@ -33,20 +32,9 @@ func (m *MockInstaller) EXPECT() *MockInstallerMockRecorder {
 	return m.recorder
 }
 
-// InstallOnlyVersion mocks base method
-func (m *MockInstaller) InstallOnlyVersion(depName, installDir string) error {
-	ret := m.ctrl.Call(m, "InstallOnlyVersion", depName, installDir)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// InstallOnlyVersion indicates an expected call of InstallOnlyVersion
-func (mr *MockInstallerMockRecorder) InstallOnlyVersion(depName, installDir interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstallOnlyVersion", reflect.TypeOf((*MockInstaller)(nil).InstallOnlyVersion), depName, installDir)
-}
-
 // InstallCNBS mocks base method
 func (m *MockInstaller) InstallCNBS(orderFile, installDir string) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "InstallCNBS", orderFile, installDir)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -54,5 +42,20 @@ func (m *MockInstaller) InstallCNBS(orderFile, installDir string) error {
 
 // InstallCNBS indicates an expected call of InstallCNBS
 func (mr *MockInstallerMockRecorder) InstallCNBS(orderFile, installDir interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstallCNBS", reflect.TypeOf((*MockInstaller)(nil).InstallCNBS), orderFile, installDir)
+}
+
+// InstallLifecycle mocks base method
+func (m *MockInstaller) InstallLifecycle(dst string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InstallLifecycle", dst)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// InstallLifecycle indicates an expected call of InstallLifecycle
+func (mr *MockInstallerMockRecorder) InstallLifecycle(dst interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstallLifecycle", reflect.TypeOf((*MockInstaller)(nil).InstallLifecycle), dst)
 }

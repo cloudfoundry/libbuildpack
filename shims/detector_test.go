@@ -64,9 +64,9 @@ var _ = Describe("Detector", func() {
 	Context("Running Detect", func() {
 		It("should Run v3-detector", func() {
 			mockInstaller.EXPECT().InstallCNBS(orderMetadata, v3BuildpacksDir)
-			mockInstaller.EXPECT().InstallOnlyVersion("v3-detector", v3LifecycleDir).Do(func(name, path string) error {
+			mockInstaller.EXPECT().InstallLifecycle(v3LifecycleDir).Do(func(path string) error {
 				contents := "#!/usr/bin/env bash\nexit 0\n"
-				return ioutil.WriteFile(filepath.Join(path, name), []byte(contents), os.ModePerm)
+				return ioutil.WriteFile(filepath.Join(path, "detector"), []byte(contents), os.ModePerm)
 			})
 			Expect(detector.Detect()).ToNot(HaveOccurred())
 		})

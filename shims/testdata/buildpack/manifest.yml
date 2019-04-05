@@ -22,3 +22,10 @@ dependencies:
     cf_stacks:
       - cflinuxfs2
       - cflinuxfs3
+  - name: lifecycle
+    version: 1.0.3
+    uri: https://a-fake-url.com/lifecycle-bundle.tgz
+    sha256: 9070cf95d6e74266ad0b77bacf8725e9cb616651ccfd6356a2107ec92ee36baa
+    cf_stacks:
+      - cflinuxfs2
+      - cflinuxfs3

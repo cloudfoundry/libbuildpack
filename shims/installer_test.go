@@ -15,54 +15,78 @@ import (
 	"gopkg.in/jarcoal/httpmock.v1"
 )
 
-var _ = Describe("Shims", func() {
-	Describe("Installer", func() {
-		Context("InstallCNBs", func() {
-			BeforeEach(func() {
-				Expect(os.Setenv("CF_STACK", "cflinuxfs3")).To(Succeed())
+var _ = Describe("Installer", func() {
+	var (
+		installer *shims.CNBInstaller
+		tmpDir    string
+		buffer    *bytes.Buffer
+		err       error
+	)
 
-				httpmock.Reset()
+	BeforeEach(func() {
+		Expect(os.Setenv("CF_STACK", "cflinuxfs3")).To(Succeed())
+		httpmock.Reset()
+		tmpDir, err = ioutil.TempDir("", "")
+		Expect(err).ToNot(HaveOccurred())
 
-				contents, err := ioutil.ReadFile(filepath.Join("fixtures", "buildpack", "bpA.tgz"))
-				Expect(err).ToNot(HaveOccurred())
+		buffer = new(bytes.Buffer)
+		logger := libbuildpack.NewLogger(ansicleaner.New(buffer))
 
-				httpmock.RegisterResponder("GET", "https://a-fake-url.com/bpA.tgz",
-					httpmock.NewStringResponder(200, string(contents)))
+		manifest, err := libbuildpack.NewManifest(filepath.Join("testdata", "buildpack"), logger, time.Now())
+		Expect(err).To(BeNil())
 
-				contents, err = ioutil.ReadFile(filepath.Join("fixtures", "buildpack", "bpB.tgz"))
-				Expect(err).ToNot(HaveOccurred())
+		installer = shims.NewCNBInstaller(manifest)
+	})
 
-				httpmock.RegisterResponder("GET", "https://a-fake-url.com/bpB.tgz",
-					httpmock.NewStringResponder(200, string(contents)))
-			})
+	AfterEach(func() {
+		Expect(os.Unsetenv("CF_STACK")).To(Succeed())
+		os.RemoveAll(tmpDir)
+	})
 
-			AfterEach(func() {
-				Expect(os.Unsetenv("CF_STACK")).To(Succeed())
-			})
+	Context("InstallCNBs", func() {
+		BeforeEach(func() {
+			Expect(os.MkdirAll(filepath.Join(tmpDir, "this.is.a.fake.bpC", "1.0.2"), 0777)).To(Succeed())
+			contents, err := ioutil.ReadFile(filepath.Join("testdata", "buildpack", "bpA.tgz"))
+			Expect(err).ToNot(HaveOccurred())
 
-			It("installs the latest/unique buildpacks from an order.toml that are not already installed", func() {
-				tmpDir, err := ioutil.TempDir("", "")
-				Expect(err).ToNot(HaveOccurred())
-				defer os.RemoveAll(tmpDir)
-				Expect(os.MkdirAll(filepath.Join(tmpDir, "this.is.a.fake.bpC", "1.0.2"), 0777)).To(Succeed())
+			httpmock.RegisterResponder("GET", "https://a-fake-url.com/bpA.tgz",
+				httpmock.NewStringResponder(200, string(contents)))
 
-				buffer := new(bytes.Buffer)
-				logger := libbuildpack.NewLogger(ansicleaner.New(buffer))
+			contents, err = ioutil.ReadFile(filepath.Join("testdata", "buildpack", "bpB.tgz"))
+			Expect(err).ToNot(HaveOccurred())
 
-				manifest, err := libbuildpack.NewManifest(filepath.Join("fixtures", "buildpack"), logger, time.Now())
-				Expect(err).To(BeNil())
+			httpmock.RegisterResponder("GET", "https://a-fake-url.com/bpB.tgz",
+				httpmock.NewStringResponder(200, string(contents)))
+		})
 
-				installer := shims.NewCNBInstaller(manifest)
+		It("installs the latest/unique buildpacks from an order.toml that are not already installed", func() {
+			Expect(installer.InstallCNBS(filepath.Join("testdata", "buildpack", "order.toml"), tmpDir)).To(Succeed())
+			Expect(filepath.Join(tmpDir, "this.is.a.fake.bpA", "1.0.1", "a.txt")).To(BeAnExistingFile())
+			Expect(filepath.Join(tmpDir, "this.is.a.fake.bpB", "1.0.2", "b.txt")).To(BeAnExistingFile())
+			Expect(filepath.Join(tmpDir, "this.is.a.fake.bpA", "latest")).To(BeAnExistingFile())
+			Expect(filepath.Join(tmpDir, "this.is.a.fake.bpB", "latest")).To(BeAnExistingFile())
 
-				Expect(installer.InstallCNBS(filepath.Join("fixtures", "buildpack", "order.toml"), tmpDir)).To(Succeed())
-				Expect(filepath.Join(tmpDir, "this.is.a.fake.bpA", "1.0.1", "a.txt")).To(BeAnExistingFile())
-				Expect(filepath.Join(tmpDir, "this.is.a.fake.bpB", "1.0.2", "b.txt")).To(BeAnExistingFile())
-				Expect(filepath.Join(tmpDir, "this.is.a.fake.bpA", "latest")).To(BeAnExistingFile())
-				Expect(filepath.Join(tmpDir, "this.is.a.fake.bpB", "latest")).To(BeAnExistingFile())
+			Expect(buffer.String()).ToNot(ContainSubstring("Installing this.is.a.fake.bpC"))
+			Expect(filepath.Join(tmpDir, "this.is.a.fake.bpC")).To(BeADirectory())
+		})
+	})
 
-				Expect(buffer.String()).ToNot(ContainSubstring("Installing this.is.a.fake.bpC"))
-				Expect(filepath.Join(tmpDir, "this.is.a.fake.bpC")).To(BeADirectory())
-			})
+	Context("InstallLifecycle", func() {
+		BeforeEach(func() {
+			contents, err := ioutil.ReadFile(filepath.Join("testdata", "buildpack", "lifecycle-bundle.tgz"))
+			Expect(err).ToNot(HaveOccurred())
+
+			httpmock.RegisterResponder("GET", "https://a-fake-url.com/lifecycle-bundle.tgz",
+				httpmock.NewStringResponder(200, string(contents)))
+		})
+
+		It("unpacks the lifecycle bundle and globs the contents of the subfolder and copies it somewhere", func() {
+			Expect(installer.InstallLifecycle(tmpDir)).To(Succeed())
+			keepBinaries := []string{"detector", "builder", "launcher"}
+
+			for _, binary := range keepBinaries {
+				Expect(filepath.Join(tmpDir, binary)).To(BeAnExistingFile())
+			}
 		})
 	})
 })

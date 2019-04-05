@@ -2,10 +2,11 @@ package shims_test
 
 import (
 	"fmt"
-	"github.com/cloudfoundry/libbuildpack"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"github.com/cloudfoundry/libbuildpack"
 
 	"github.com/cloudfoundry/libbuildpack/shims"
 	"github.com/golang/mock/gomock"
@@ -27,6 +28,7 @@ var _ = Describe("Finalizer", func() {
 		v2DepsDir,
 		v2CacheDir,
 		v3LayersDir,
+		v3LauncherDir,
 		v3BuildpacksDir,
 		orderDir,
 		orderMetadata,
@@ -34,7 +36,7 @@ var _ = Describe("Finalizer", func() {
 		groupMetadata,
 		profileDir,
 		binDir,
-		depsIndex    string
+		depsIndex string
 		finalizeLogger *libbuildpack.Logger
 	)
 
@@ -62,6 +64,9 @@ var _ = Describe("Finalizer", func() {
 
 		v3LayersDir = filepath.Join(tempDir, "layers")
 		Expect(os.MkdirAll(v3LayersDir, 0777)).To(Succeed())
+
+		v3LauncherDir = filepath.Join(tempDir, "launch")
+		Expect(os.MkdirAll(v3LauncherDir, 0777)).To(Succeed())
 
 		v3BuildpacksDir = filepath.Join(tempDir, "cnbs")
 		Expect(os.MkdirAll(v3BuildpacksDir, 0777)).To(Succeed())
@@ -93,6 +98,7 @@ var _ = Describe("Finalizer", func() {
 			V2DepsDir:       v2DepsDir,
 			V2CacheDir:      v2CacheDir,
 			V3LayersDir:     v3LayersDir,
+			V3LauncherDir:   v3LauncherDir,
 			V3BuildpacksDir: v3BuildpacksDir,
 			DepsIndex:       depsIndex,
 			OrderDir:        orderDir,
@@ -409,7 +415,6 @@ var _ = Describe("Finalizer", func() {
 		)
 
 		JustBeforeEach(func() {
-			fmt.Println("V3LayersDir from test finalizer: ", finalizer.V3LayersDir)
 			testLayers = filepath.Join(finalizer.V3LayersDir, "org.cloudfoundry.generic.buildpack")
 			Expect(os.MkdirAll(testLayers, os.ModePerm)).To(Succeed())
 			Dep1LayerMetadataPath = filepath.Join(testLayers, "dep1.toml")
@@ -472,6 +477,19 @@ var _ = Describe("Finalizer", func() {
 `))
 
 			Expect(filepath.Join(v3BuildpacksDir, "buildpack.0", "latest", "bin", "build")).To(BeAnExistingFile())
+		})
+	})
+
+	Context("WriteProfileLaunch", func() {
+		It("writes a profile script that execs the v3 launcher", func() {
+			Expect(finalizer.WriteProfileLaunch()).To(Succeed())
+			contents, err := ioutil.ReadFile(filepath.Join(profileDir, shims.V3LaunchScript))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(contents)).To(Equal(fmt.Sprintf(`export PACK_STACK_ID="org.cloudfoundry.stacks.%s"
+export PACK_LAYERS_DIR="$DEPS_DIR"
+export PACK_APP_DIR="$HOME"
+exec $DEPS_DIR/launcher/%s "$2"
+`, os.Getenv("CF_STACK"), shims.V3Launcher)))
 		})
 	})
 })

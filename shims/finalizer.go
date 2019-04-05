@@ -2,23 +2,23 @@ package shims
 
 import (
 	"fmt"
-	"github.com/BurntSushi/toml"
-	"github.com/cloudfoundry/libbuildpack"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
-)
 
-const (
-	V3_DETECTOR_DEP = "v3-detector"
-	V3_BUILDER_DEP  = "v3-builder"
-	V3_LAUNCHER_DEP = "v3-launcher"
+	"github.com/BurntSushi/toml"
+	"github.com/cloudfoundry/libbuildpack"
+	"github.com/pkg/errors"
 )
 
 var (
+	V3LifecycleDep   = "lifecycle"
+	V3Detetector     = "detector"
+	V3Builder        = "builder"
+	V3Launcher       = "launcher"
+	V3LaunchScript   = "0_shim.sh"
 	V3AppDir         = filepath.Join(string(filepath.Separator), "home", "vcap", "app")
 	V3LayersDir      = filepath.Join(string(filepath.Separator), "home", "vcap", "deps")
 	V3MetadataDir    = filepath.Join(string(filepath.Separator), "home", "vcap", "metadata")
@@ -74,8 +74,8 @@ func (f *Finalizer) Finalize() error {
 		return errors.Wrap(err, "failed to include previous v2 buildpacks")
 	}
 
-	if err := f.Installer.InstallOnlyVersion(V3_BUILDER_DEP, f.V3LifecycleDir); err != nil {
-		return errors.Wrap(err, "failed to install "+V3_BUILDER_DEP)
+	if err := f.Installer.InstallLifecycle(f.V3LifecycleDir); err != nil {
+		return errors.Wrap(err, "failed to install "+V3Builder)
 	}
 
 	if err := f.RestoreV3Cache(); err != nil {
@@ -86,8 +86,8 @@ func (f *Finalizer) Finalize() error {
 		return errors.Wrap(err, "failed to run v3 lifecycle builder")
 	}
 
-	if err := f.Installer.InstallOnlyVersion(V3_LAUNCHER_DEP, f.V3LauncherDir); err != nil {
-		return errors.Wrap(err, "failed to install "+V3_LAUNCHER_DEP)
+	if err := os.Rename(filepath.Join(f.V3LifecycleDir, V3Launcher), filepath.Join(f.V3LauncherDir, V3Launcher)); err != nil {
+		return errors.Wrap(err, "failed to move launcher")
 	}
 
 	if err := os.Rename(f.V3AppDir, f.V2AppDir); err != nil {
@@ -98,17 +98,9 @@ func (f *Finalizer) Finalize() error {
 		return errors.Wrap(err, "failed to move V3 dependencies")
 	}
 
-	profileContents := fmt.Sprintf(
-		`export PACK_STACK_ID="org.cloudfoundry.stacks.%s"
-export PACK_LAYERS_DIR="$DEPS_DIR"
-export PACK_APP_DIR="$HOME"
-exec $DEPS_DIR/launcher/%s "$2"
-`,
-		os.Getenv("CF_STACK"), V3_LAUNCHER_DEP)
-
 	f.Manifest.StoreBuildpackMetadata(f.V2CacheDir)
 
-	return ioutil.WriteFile(filepath.Join(f.ProfileDir, "0_shim.sh"), []byte(profileContents), 0666)
+	return f.WriteProfileLaunch()
 }
 
 func (f *Finalizer) MergeOrderTOMLs() error {
@@ -299,7 +291,7 @@ func (f *Finalizer) RestoreV3Cache() error {
 
 func (f *Finalizer) RunLifeycleBuild() error {
 	cmd := exec.Command(
-		filepath.Join(f.V3LifecycleDir, V3_BUILDER_DEP),
+		filepath.Join(f.V3LifecycleDir, V3Builder),
 		"-app", f.V3AppDir,
 		"-buildpacks", f.V3BuildpacksDir,
 		"-group", f.GroupMetadata,
@@ -386,6 +378,18 @@ func (f *Finalizer) AddFakeCNBBuildpack(buildpackID string) error {
 	}
 
 	return ioutil.WriteFile(filepath.Join(buildpackPath, "bin", "build"), []byte(`#!/bin/bash`), 0777)
+}
+
+func (f *Finalizer) WriteProfileLaunch() error {
+	profileContents := fmt.Sprintf(
+		`export PACK_STACK_ID="org.cloudfoundry.stacks.%s"
+export PACK_LAYERS_DIR="$DEPS_DIR"
+export PACK_APP_DIR="$HOME"
+exec $DEPS_DIR/launcher/%s "$2"
+`,
+		os.Getenv("CF_STACK"), V3Launcher)
+
+	return ioutil.WriteFile(filepath.Join(f.ProfileDir, V3LaunchScript), []byte(profileContents), 0666)
 }
 
 func encodeTOML(dest string, data interface{}) error {

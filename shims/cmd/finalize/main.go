@@ -65,8 +65,10 @@ func finalize(logger *libbuildpack.Logger) error {
 	groupMetadata := filepath.Join(metadataDir, "group.toml")
 	planMetadata := filepath.Join(metadataDir, "plan.toml")
 
-	v3LifecycleDir := filepath.Join(tempDir, "lifecycle")
-	v3LauncherDir := filepath.Join(v2DepsDir, "launcher")
+	v3LauncherDir := filepath.Join(v2AppDir, ".cloudfoundry") // We need to put the launcher binary somewhere in the droplet so it can run at launch. Can we put this here? If it is in depsDir/launcher could overlap with a v3 buildpack called "launcher"
+	if err := os.MkdirAll(v3LauncherDir, 0777); err != nil {
+		return err
+	}
 
 	buildpackDir, err := libbuildpack.GetBuildpackDir()
 	if err != nil {
@@ -82,7 +84,7 @@ func finalize(logger *libbuildpack.Logger) error {
 
 	detector := shims.DefaultDetector{
 		AppDir:          v3AppDir,
-		V3LifecycleDir:  v3LifecycleDir,
+		V3LifecycleDir:  tempDir,
 		V3BuildpacksDir: v3BuildpacksDir,
 		OrderMetadata:   orderMetadata,
 		GroupMetadata:   groupMetadata,
@@ -102,7 +104,7 @@ func finalize(logger *libbuildpack.Logger) error {
 		OrderMetadata:   orderMetadata,
 		GroupMetadata:   groupMetadata,
 		PlanMetadata:    planMetadata,
-		V3LifecycleDir:  v3LifecycleDir,
+		V3LifecycleDir:  tempDir,
 		V3LauncherDir:   v3LauncherDir,
 		ProfileDir:      profileDir,
 		Detector:        detector,
