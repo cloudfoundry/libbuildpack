@@ -98,7 +98,9 @@ func (f *Finalizer) Finalize() error {
 		return errors.Wrap(err, "failed to move V3 dependencies")
 	}
 
-	f.Manifest.StoreBuildpackMetadata(f.V2CacheDir)
+	if err := f.Manifest.StoreBuildpackMetadata(f.V2CacheDir); err != nil {
+		return err
+	}
 
 	return f.WriteProfileLaunch()
 }
@@ -382,10 +384,10 @@ func (f *Finalizer) AddFakeCNBBuildpack(buildpackID string) error {
 
 func (f *Finalizer) WriteProfileLaunch() error {
 	profileContents := fmt.Sprintf(
-		`export PACK_STACK_ID="org.cloudfoundry.stacks.%s"
-export PACK_LAYERS_DIR="$DEPS_DIR"
-export PACK_APP_DIR="$HOME"
-exec $DEPS_DIR/launcher/%s "$2"
+		`export CNB_STACK_ID="org.cloudfoundry.stacks.%s"
+export CNB_LAYERS_DIR="$DEPS_DIR"
+export CNB_APP_DIR="$HOME"
+exec $HOME/.cloudfoundry/%s "$2"
 `,
 		os.Getenv("CF_STACK"), V3Launcher)
 

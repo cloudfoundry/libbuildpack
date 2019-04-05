@@ -65,7 +65,7 @@ func finalize(logger *libbuildpack.Logger) error {
 	groupMetadata := filepath.Join(metadataDir, "group.toml")
 	planMetadata := filepath.Join(metadataDir, "plan.toml")
 
-	v3LauncherDir := filepath.Join(v2AppDir, ".cloudfoundry") // We need to put the launcher binary somewhere in the droplet so it can run at launch. Can we put this here? If it is in depsDir/launcher could overlap with a v3 buildpack called "launcher"
+	v3LauncherDir := filepath.Join(v3AppDir, ".cloudfoundry") // We need to put the launcher binary somewhere in the droplet so it can run at launch. Can we put this here? If it is in depsDir/launcher could overlap with a v3 buildpack called "launcher"
 	if err := os.MkdirAll(v3LauncherDir, 0777); err != nil {
 		return err
 	}

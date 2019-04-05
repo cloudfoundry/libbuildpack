@@ -485,10 +485,10 @@ var _ = Describe("Finalizer", func() {
 			Expect(finalizer.WriteProfileLaunch()).To(Succeed())
 			contents, err := ioutil.ReadFile(filepath.Join(profileDir, shims.V3LaunchScript))
 			Expect(err).NotTo(HaveOccurred())
-			Expect(string(contents)).To(Equal(fmt.Sprintf(`export PACK_STACK_ID="org.cloudfoundry.stacks.%s"
-export PACK_LAYERS_DIR="$DEPS_DIR"
-export PACK_APP_DIR="$HOME"
-exec $DEPS_DIR/launcher/%s "$2"
+			Expect(string(contents)).To(Equal(fmt.Sprintf(`export CNB_STACK_ID="org.cloudfoundry.stacks.%s"
+export CNB_LAYERS_DIR="$DEPS_DIR"
+export CNB_APP_DIR="$HOME"
+exec $HOME/.cloudfoundry/%s "$2"
 `, os.Getenv("CF_STACK"), shims.V3Launcher)))
 		})
 	})
