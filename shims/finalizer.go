@@ -106,45 +106,40 @@ func (f *Finalizer) Finalize() error {
 }
 
 func (f *Finalizer) MergeOrderTOMLs() error {
-	var tomls []order
-	orderFiles, err := ioutil.ReadDir(f.OrderDir)
+	var orders []order
+
+	if err := parseOrderTOMLs(&orders, f.OrderDir); err != nil {
+		return nil
+	}
+
+	if len(orders) == 0 {
+		return errors.New("no order.toml found")
+	}
+
+	finalOrder := order{}
+	if err := combineOrders(&finalOrder, orders); err != nil {
+		return err
+	}
+
+	return encodeTOML(f.OrderMetadata, finalOrder)
+}
+
+func parseOrderTOMLs(orders *[]order, orderFilesDir string) error {
+	orderFiles, err := ioutil.ReadDir(orderFilesDir)
 	if err != nil {
 		return err
 	}
 
 	for _, file := range orderFiles {
-		orderTOML, err := parseOrderTOML(filepath.Join(f.OrderDir, file.Name()))
+		orderTOML, err := parseOrderTOML(filepath.Join(orderFilesDir, file.Name()))
 		if err != nil {
 			return err
 		}
 
-		tomls = append(tomls, orderTOML)
+		*orders = append(*orders, orderTOML)
 	}
 
-	if len(tomls) == 0 {
-		return errors.New("no order.toml found")
-	}
-	finalToml := tomls[0]
-	finalBuildpacks := &finalToml.Groups[0].Buildpacks
-
-	for i := 1; i < len(tomls); i++ {
-		curToml := tomls[i]
-		curBuildpacks := curToml.Groups[0].Buildpacks
-		*finalBuildpacks = append(*finalBuildpacks, curBuildpacks...)
-	}
-
-	// Filter duplicate buildpacks
-	for i := range *finalBuildpacks {
-		for j := i + 1; j < len(*finalBuildpacks); {
-			if (*finalBuildpacks)[i].ID == (*finalBuildpacks)[j].ID {
-				*finalBuildpacks = append((*finalBuildpacks)[:j], (*finalBuildpacks)[j+1:]...)
-			} else {
-				j++
-			}
-		}
-	}
-
-	return encodeTOML(f.OrderMetadata, finalToml)
+	return nil
 }
 
 func parseOrderTOML(path string) (order, error) {
@@ -153,6 +148,42 @@ func parseOrderTOML(path string) (order, error) {
 		return order, err
 	}
 	return order, nil
+}
+
+func combineOrders(finalOrder *order, orders []order) error {
+	finalLabels := []string{}
+	finalBuildpacks := []buildpack{}
+
+	for _, o := range orders {
+		// For now, we only deal with a single group in an order file
+		curGroup := o.Groups[0]
+		curLabels := curGroup.Labels
+		curBuildpacks := curGroup.Buildpacks
+		finalLabels = append(finalLabels, curLabels...)
+		finalBuildpacks = append(finalBuildpacks, curBuildpacks...)
+	}
+
+	filterDuplicateBuildpacks(&finalBuildpacks)
+
+	finalGroup := group{
+		Labels:     finalLabels,
+		Buildpacks: finalBuildpacks,
+	}
+
+	finalOrder.Groups = []group{finalGroup}
+	return nil
+}
+
+func filterDuplicateBuildpacks(bps *[]buildpack) {
+	for i := range *bps {
+		for j := i + 1; j < len(*bps); {
+			if (*bps)[i].ID == (*bps)[j].ID {
+				*bps = append((*bps)[:j], (*bps)[j+1:]...)
+			} else {
+				j++
+			}
+		}
+	}
 }
 
 func (f *Finalizer) RunV3Detect() error {

@@ -127,7 +127,7 @@ var _ = Describe("Finalizer", func() {
 
 			orderFileA := filepath.Join(orderDir, ORDER1)
 			Expect(ioutil.WriteFile(orderFileA, []byte(`[[groups]]
-	 labels = ["testA"]
+	 labels = ["X"]
 	
 	 [[groups.buildpacks]]
 	   id = "this.is.a.fake.bpA"
@@ -140,7 +140,7 @@ var _ = Describe("Finalizer", func() {
 
 			orderFileB := filepath.Join(orderDir, ORDER2)
 			Expect(ioutil.WriteFile(orderFileB, []byte(`[[groups]]
-	 labels = ["testA"]
+	 labels = ["Y"]
 	
 	 [[groups.buildpacks]]
 	   id = "this.is.a.fake.bpC"
@@ -157,7 +157,7 @@ var _ = Describe("Finalizer", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(string(orderTOML)).To(ContainSubstring(`[[groups]]
-  labels = ["testA"]
+  labels = ["X", "Y"]
 
   [[groups.buildpacks]]
     id = "this.is.a.fake.bpA"
@@ -187,7 +187,7 @@ var _ = Describe("Finalizer", func() {
 
 			orderFileA := filepath.Join(orderDir, ORDER1)
 			Expect(ioutil.WriteFile(orderFileA, []byte(`[[groups]]
-	 labels = ["testA"]
+	 labels = ["X"]
 	
 	 [[groups.buildpacks]]
 	   id = "this.is.a.fake.bpA"
@@ -199,7 +199,7 @@ var _ = Describe("Finalizer", func() {
 
 			orderFileB := filepath.Join(orderDir, ORDER2)
 			Expect(ioutil.WriteFile(orderFileB, []byte(`[[groups]]
-	 labels = ["testA"]
+	 labels = ["Y"]
 	
 	 [[groups.buildpacks]]
 	   id = "this.is.a.fake.bpA"
@@ -216,7 +216,7 @@ var _ = Describe("Finalizer", func() {
 
 			Expect(err).ToNot(HaveOccurred())
 			Expect(string(orderTOML)).To(ContainSubstring(`[[groups]]
-  labels = ["testA"]
+  labels = ["X", "Y"]
 
   [[groups.buildpacks]]
     id = "this.is.a.fake.bpA"
