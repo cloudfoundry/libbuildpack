@@ -36,7 +36,7 @@ var _ = Describe("Finalizer", func() {
 		groupMetadata,
 		profileDir,
 		binDir,
-		depsIndex string
+		depsIndex    string
 		finalizeLogger *libbuildpack.Logger
 	)
 
@@ -118,45 +118,28 @@ var _ = Describe("Finalizer", func() {
 		Expect(os.RemoveAll(tempDir)).To(Succeed())
 	})
 
-	Context("MergeOrderTOMLs with unique buildpacks", func() {
+	Context("MergeOrderTOMLs", func() {
+		var (
+			orderFileA, orderFileB, orderFileC string
+		)
+
 		BeforeEach(func() {
-			const (
-				ORDER1 = "order1.toml"
-				ORDER2 = "order2.toml"
-			)
-
-			orderFileA := filepath.Join(orderDir, ORDER1)
-			Expect(ioutil.WriteFile(orderFileA, []byte(`[[groups]]
-	 labels = ["X"]
-	
-	 [[groups.buildpacks]]
-	   id = "this.is.a.fake.bpA"
-	   version = "latest"
-	
-	 [[groups.buildpacks]]
-	   id = "this.is.a.fake.bpB"
-	   version = "latest"
-		optional = true`), 0777)).To(Succeed())
-
-			orderFileB := filepath.Join(orderDir, ORDER2)
-			Expect(ioutil.WriteFile(orderFileB, []byte(`[[groups]]
-	 labels = ["Y"]
-	
-	 [[groups.buildpacks]]
-	   id = "this.is.a.fake.bpC"
-	   version = "latest"
-	
-	 [[groups.buildpacks]]
-	   id = "this.is.a.fake.bpD"
-	   version = "latest"`), 0777)).To(Succeed())
+			orderFileA = filepath.Join(orderDir, "orderA.toml")
+			orderFileB = filepath.Join(orderDir, "orderB.toml")
 		})
 
-		It("merges the order files", func() {
-			Expect(finalizer.MergeOrderTOMLs()).To(Succeed())
-			orderTOML, err := ioutil.ReadFile(orderMetadata)
-			Expect(err).ToNot(HaveOccurred())
+		Context("group A has one group, group B has one groups", func() {
+			BeforeEach(func() {
+				Expect(ioutil.WriteFile(orderFileA, []byte(generateOrderTOMLGroupString("X", []bp{{id: "bpA", optional: false}, {id: "bpB", optional: true}})), 0777)).To(Succeed())
+				Expect(ioutil.WriteFile(orderFileB, []byte(generateOrderTOMLGroupString("Y", []bp{{id: "bpC", optional: false}, {id: "bpD", optional: false}})), 0777)).To(Succeed())
+			})
 
-			Expect(string(orderTOML)).To(ContainSubstring(`[[groups]]
+			It("merges the order files", func() {
+				Expect(finalizer.MergeOrderTOMLs()).To(Succeed())
+				orderTOML, err := ioutil.ReadFile(orderMetadata)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(string(orderTOML)).To(ContainSubstring(`[[groups]]
   labels = ["X", "Y"]
 
   [[groups.buildpacks]]
@@ -175,47 +158,250 @@ var _ = Describe("Finalizer", func() {
   [[groups.buildpacks]]
     id = "this.is.a.fake.bpD"
     version = "latest"`))
-		})
-	})
-
-	Context("MergeOrderTOMLs with duplicate buildpacks", func() {
-		BeforeEach(func() {
-			const (
-				ORDER1 = "order1.toml"
-				ORDER2 = "order2.toml"
-			)
-
-			orderFileA := filepath.Join(orderDir, ORDER1)
-			Expect(ioutil.WriteFile(orderFileA, []byte(`[[groups]]
-	 labels = ["X"]
-	
-	 [[groups.buildpacks]]
-	   id = "this.is.a.fake.bpA"
-	   version = "latest"
-	
-	 [[groups.buildpacks]]
-	   id = "this.is.a.fake.bpB"
-	   version = "latest"`), 0777)).To(Succeed())
-
-			orderFileB := filepath.Join(orderDir, ORDER2)
-			Expect(ioutil.WriteFile(orderFileB, []byte(`[[groups]]
-	 labels = ["Y"]
-	
-	 [[groups.buildpacks]]
-	   id = "this.is.a.fake.bpA"
-	   version = "latest"
-	
-	 [[groups.buildpacks]]
-	   id = "this.is.a.fake.bpC"
-	   version = "latest"`), 0777)).To(Succeed())
+			})
 		})
 
-		It("merges the order files", func() {
-			Expect(finalizer.MergeOrderTOMLs()).To(Succeed())
-			orderTOML, err := ioutil.ReadFile(orderMetadata)
+		Context("group A has one group, group B has two groups", func() {
+			BeforeEach(func() {
+				Expect(ioutil.WriteFile(orderFileA, []byte(generateOrderTOMLGroupString("X", []bp{{id: "bpA", optional: false}, {id: "bpB", optional: true}})), 0777)).To(Succeed())
+				Expect(ioutil.WriteFile(orderFileB, []byte(
+					generateOrderTOMLGroupString("Y", []bp{{id: "bpC", optional: false}, {id: "bpD", optional: false}})+"\n"+
+						generateOrderTOMLGroupString("Z", []bp{{id: "bpC", optional: false}, {id: "bpE", optional: false}}),
+				), 0777)).To(Succeed())
+			})
 
-			Expect(err).ToNot(HaveOccurred())
-			Expect(string(orderTOML)).To(ContainSubstring(`[[groups]]
+			It("merges the order files", func() {
+				Expect(finalizer.MergeOrderTOMLs()).To(Succeed())
+				orderTOML, err := ioutil.ReadFile(orderMetadata)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(string(orderTOML)).To(ContainSubstring(`[[groups]]
+  labels = ["X", "Y"]
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.bpA"
+    version = "latest"
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.bpB"
+    version = "latest"
+    optional = true
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.bpC"
+    version = "latest"
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.bpD"
+    version = "latest"
+
+[[groups]]
+  labels = ["X", "Z"]
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.bpA"
+    version = "latest"
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.bpB"
+    version = "latest"
+    optional = true
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.bpC"
+    version = "latest"
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.bpE"
+    version = "latest"`))
+			})
+		})
+
+		Context("group A has two group, group B has two groups", func() {
+			BeforeEach(func() {
+				Expect(ioutil.WriteFile(orderFileA, []byte(
+					generateOrderTOMLGroupString("X1", []bp{{id: "bpA", optional: false}, {id: "bpB", optional: false}})+
+					"\n"+
+					generateOrderTOMLGroupString("X2", []bp{{id: "bpA", optional: false}, {id: "bpC", optional: false}}),
+				), 0777)).To(Succeed())
+				Expect(ioutil.WriteFile(orderFileB, []byte(
+					generateOrderTOMLGroupString("Y1", []bp{{id: "bpD", optional: false}, {id: "bpE", optional: false}})+
+					"\n"+
+					generateOrderTOMLGroupString("Y2", []bp{{id: "bpD", optional: false}, {id: "bpF", optional: false}}),
+				), 0777)).To(Succeed())
+			})
+
+			It("merges the order files", func() {
+				Expect(finalizer.MergeOrderTOMLs()).To(Succeed())
+				orderTOML, err := ioutil.ReadFile(orderMetadata)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(string(orderTOML)).To(ContainSubstring(`[[groups]]
+  labels = ["X1", "Y1"]
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.bpA"
+    version = "latest"
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.bpB"
+    version = "latest"
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.bpD"
+    version = "latest"
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.bpE"
+    version = "latest"
+
+[[groups]]
+  labels = ["X1", "Y2"]
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.bpA"
+    version = "latest"
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.bpB"
+    version = "latest"
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.bpD"
+    version = "latest"
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.bpF"
+    version = "latest"
+
+[[groups]]
+  labels = ["X2", "Y1"]
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.bpA"
+    version = "latest"
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.bpC"
+    version = "latest"
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.bpD"
+    version = "latest"
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.bpE"
+    version = "latest"
+
+[[groups]]
+  labels = ["X2", "Y2"]
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.bpA"
+    version = "latest"
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.bpC"
+    version = "latest"
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.bpD"
+    version = "latest"
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.bpF"
+    version = "latest"`))
+			})
+		})
+
+		Context("group A has one group, group B has one groups, groupC has two groups", func() {
+			BeforeEach(func() {
+				Expect(ioutil.WriteFile(orderFileA, []byte(generateOrderTOMLGroupString("X", []bp{{id: "bpA", optional: false}, {id: "bpB", optional: true}})), 0777)).To(Succeed())
+				Expect(ioutil.WriteFile(orderFileB, []byte(generateOrderTOMLGroupString("Y", []bp{{id: "bpC", optional: false}, {id: "bpD", optional: false}})), 0777)).To(Succeed())
+				orderFileC = filepath.Join(orderDir, "orderC.toml")
+				Expect(ioutil.WriteFile(orderFileC, []byte(
+					generateOrderTOMLGroupString("Z1", []bp{{id: "bpE", optional: false}, {id: "bpF", optional: false}})+
+						"\n"+
+						generateOrderTOMLGroupString("Z2", []bp{{id: "bpE", optional: false}, {id: "bpG", optional: false}}),
+				), 0777)).To(Succeed())
+			})
+
+			It("merges the order files", func() {
+				Expect(finalizer.MergeOrderTOMLs()).To(Succeed())
+				orderTOML, err := ioutil.ReadFile(orderMetadata)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(string(orderTOML)).To(ContainSubstring(`[[groups]]
+  labels = ["X", "Y", "Z1"]
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.bpA"
+    version = "latest"
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.bpB"
+    version = "latest"
+    optional = true
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.bpC"
+    version = "latest"
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.bpD"
+    version = "latest"
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.bpE"
+    version = "latest"
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.bpF"
+    version = "latest"
+
+[[groups]]
+  labels = ["X", "Y", "Z2"]
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.bpA"
+    version = "latest"
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.bpB"
+    version = "latest"
+    optional = true
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.bpC"
+    version = "latest"
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.bpD"
+    version = "latest"
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.bpE"
+    version = "latest"
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.bpG"
+    version = "latest"
+`))
+			})
+		})
+
+		Context("group A has one group, group B has one group with a duplicate buildpack", func() {
+			BeforeEach(func() {
+				Expect(ioutil.WriteFile(orderFileA, []byte(generateOrderTOMLGroupString("X", []bp{{id: "bpA", optional: false}, {id: "bpB", optional: false}})), 0777)).To(Succeed())
+				Expect(ioutil.WriteFile(orderFileB, []byte(generateOrderTOMLGroupString("Y", []bp{{id: "bpA", optional: false}, {id: "bpC", optional: false}})), 0777)).To(Succeed())
+			})
+
+			It("merges the order files", func() {
+				Expect(finalizer.MergeOrderTOMLs()).To(Succeed())
+				orderTOML, err := ioutil.ReadFile(orderMetadata)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(string(orderTOML)).To(ContainSubstring(`[[groups]]
   labels = ["X", "Y"]
 
   [[groups.buildpacks]]
@@ -229,6 +415,7 @@ var _ = Describe("Finalizer", func() {
   [[groups.buildpacks]]
     id = "this.is.a.fake.bpC"
     version = "latest"`))
+			})
 		})
 	})
 
@@ -493,3 +680,28 @@ exec $HOME/.cloudfoundry/%s "$2"
 		})
 	})
 })
+
+type bp struct {
+	id       string
+	optional bool
+}
+
+func generateOrderTOMLGroupString(label string, bps []bp) string {
+	orderToml := fmt.Sprintf(`[[groups]]
+	 labels = ["%s"]`, label)
+
+	for _, bp := range bps {
+		orderToml +=
+			fmt.Sprintf(`
+
+  [[groups.buildpacks]]
+    id = "this.is.a.fake.%s"
+    version = "latest"`, bp.id)
+		if bp.optional {
+			orderToml += `
+    optional = true`
+		}
+	}
+
+	return orderToml
+}
