@@ -103,7 +103,7 @@ func (c *CNBInstaller) InstallLifecycle(dst string) error {
 		return errors.Errorf("issue unpacking lifecycle : incorrect dir format : %s", firstDir)
 	}
 
-	for _, binary := range []string{V3Detetector, V3Builder, V3Launcher} {
+	for _, binary := range []string{V3Detector, V3Builder, V3Launcher} {
 		srcBinary := filepath.Join(firstDir[0], binary)
 		dstBinary := filepath.Join(dst, binary)
 		if err := os.Rename(srcBinary, dstBinary); err != nil {

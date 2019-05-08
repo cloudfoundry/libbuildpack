@@ -41,13 +41,15 @@ func (d DefaultDetector) RunLifecycleDetect() error {
 	}
 
 	cmd := exec.Command(
-		filepath.Join(d.V3LifecycleDir, V3Detetector),
+		filepath.Join(d.V3LifecycleDir, V3Detector),
 		"-app", d.AppDir,
 		"-buildpacks", d.V3BuildpacksDir,
 		"-order", d.OrderMetadata,
 		"-group", d.GroupMetadata,
 		"-plan", d.PlanMetadata,
 	)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 	cmd.Env = append(os.Environ(), "PACK_STACK_ID=org.cloudfoundry.stacks."+os.Getenv("CF_STACK"))
 	return cmd.Run()
 }

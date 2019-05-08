@@ -15,7 +15,7 @@ import (
 
 var (
 	V3LifecycleDep   = "lifecycle"
-	V3Detetector     = "detector"
+	V3Detector       = "detector"
 	V3Builder        = "builder"
 	V3Launcher       = "launcher"
 	V3LaunchScript   = "0_shim.sh"
