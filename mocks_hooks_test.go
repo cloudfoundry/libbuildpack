@@ -5,9 +5,10 @@
 package libbuildpack_test
 
 import (
+	reflect "reflect"
+
 	. "github.com/cloudfoundry/libbuildpack"
 	gomock "github.com/golang/mock/gomock"
-	reflect "reflect"
 )
 
 // MockHook is a mock of Hook interface

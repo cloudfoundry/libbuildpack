@@ -4,7 +4,7 @@ import (
 	"github.com/cloudfoundry/libbuildpack/packager"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gopkg.in/jarcoal/httpmock.v1"
+	httpmock "gopkg.in/jarcoal/httpmock.v1"
 )
 
 var _ = Describe("Packager", func() {

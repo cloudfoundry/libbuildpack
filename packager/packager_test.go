@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/jarcoal/httpmock.v1"
-	"gopkg.in/yaml.v2"
+	httpmock "gopkg.in/jarcoal/httpmock.v1"
+	yaml "gopkg.in/yaml.v2"
 
 	"github.com/cloudfoundry/libbuildpack"
 	"github.com/cloudfoundry/libbuildpack/packager"

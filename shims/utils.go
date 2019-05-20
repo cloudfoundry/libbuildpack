@@ -1,10 +1,11 @@
 package shims
 
 import (
-	"github.com/BurntSushi/toml"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"github.com/BurntSushi/toml"
 )
 
 func parseOrderTOMLs(orders *[]order, orderFilesDir string) error {
@@ -87,7 +88,7 @@ func encodeTOML(dest string, data interface{}) error {
 
 func initOrder() order {
 	return order{Groups: []group{{
-		Labels: []string{},
+		Labels:     []string{},
 		Buildpacks: []buildpack{},
 	}}}
 }

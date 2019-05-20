@@ -36,7 +36,7 @@ var _ = Describe("Finalizer", func() {
 		groupMetadata,
 		profileDir,
 		binDir,
-		depsIndex    string
+		depsIndex string
 		finalizeLogger *libbuildpack.Logger
 	)
 
@@ -221,13 +221,13 @@ var _ = Describe("Finalizer", func() {
 			BeforeEach(func() {
 				Expect(ioutil.WriteFile(orderFileA, []byte(
 					generateOrderTOMLGroupString("X1", []bp{{id: "bpA", optional: false}, {id: "bpB", optional: false}})+
-					"\n"+
-					generateOrderTOMLGroupString("X2", []bp{{id: "bpA", optional: false}, {id: "bpC", optional: false}}),
+						"\n"+
+						generateOrderTOMLGroupString("X2", []bp{{id: "bpA", optional: false}, {id: "bpC", optional: false}}),
 				), 0777)).To(Succeed())
 				Expect(ioutil.WriteFile(orderFileB, []byte(
 					generateOrderTOMLGroupString("Y1", []bp{{id: "bpD", optional: false}, {id: "bpE", optional: false}})+
-					"\n"+
-					generateOrderTOMLGroupString("Y2", []bp{{id: "bpD", optional: false}, {id: "bpF", optional: false}}),
+						"\n"+
+						generateOrderTOMLGroupString("Y2", []bp{{id: "bpD", optional: false}, {id: "bpF", optional: false}}),
 				), 0777)).To(Succeed())
 			})
 
