@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 
+	"code.cloudfoundry.org/cli/util/manifest"
 	"github.com/blang/semver"
 	"github.com/tidwall/gjson"
 )
@@ -51,6 +52,7 @@ type App struct {
 	env          map[string]string
 	logCmd       *exec.Cmd
 	HealthCheck  string
+	Manifest     string
 }
 
 func New(fixture string) *App {
@@ -356,23 +358,81 @@ func (a *App) PushNoStart() error {
 	return nil
 }
 
-func (a *App) V3Push() error {
-	if err := a.PushNoStart(); err != nil {
-		return err
-	}
-
-	args := []string{"v3-push", a.Name, "-p", a.Path}
-	if len(a.Buildpacks) > 1 {
-		for _, buildpack := range a.Buildpacks {
-			args = append(args, "-b", buildpack)
-		}
-	}
+func (a *App) V3CreateApp() error {
+	args := []string{"v3-create-app", a.Name}
 	command := exec.Command("cf", args...)
 	command.Stdout = DefaultStdoutStderr
 	command.Stderr = DefaultStdoutStderr
 	if err := command.Run(); err != nil {
 		return err
 	}
+	return nil
+}
+
+func (a *App) V3ApplyManifest() error {
+	// load a.Manifest, modify app name, save tmp file and use that
+	if a.Manifest == "" {
+		return fmt.Errorf("Must set a.Manifest to path of manifest")
+	}
+	apps, err := manifest.ReadAndInterpolateManifest(a.Manifest, nil, nil)
+	if err != nil {
+		return err
+	}
+
+	// modify appname to generated test name
+	app := apps[0]
+	app.Name = a.Name
+
+	tmpManifestFile, err := ioutil.TempFile(os.TempDir(), "manifest-*.yml")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(tmpManifestFile.Name())
+
+	err = manifest.WriteApplicationManifest(app, tmpManifestFile.Name())
+	if err != nil {
+		return err
+	}
+
+	args := []string{"v3-apply-manifest", "-f", tmpManifestFile.Name()}
+	command := exec.Command("cf", args...)
+	command.Stdout = DefaultStdoutStderr
+	command.Stderr = DefaultStdoutStderr
+	if err := command.Run(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// V3Push assumes V3CreateApp has already been run
+func (a *App) V3Push() error {
+	for k, v := range a.env {
+		command := exec.Command("cf", "v3-set-env", a.Name, k, v)
+		command.Stdout = DefaultStdoutStderr
+		command.Stderr = DefaultStdoutStderr
+		if err := command.Run(); err != nil {
+			return err
+		}
+	}
+
+	if a.logCmd == nil {
+		a.logCmd = exec.Command("cf", "logs", a.Name)
+		a.logCmd.Stderr = DefaultStdoutStderr
+		a.Stdout = &Buffer{}
+		a.logCmd.Stdout = a.Stdout
+		if err := a.logCmd.Start(); err != nil {
+			return err
+		}
+	}
+
+	args := []string{"v3-push", a.Name, "-p", a.Path}
+	command := exec.Command("cf", args...)
+	command.Stdout = DefaultStdoutStderr
+	command.Stderr = DefaultStdoutStderr
+	if err := command.Run(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
