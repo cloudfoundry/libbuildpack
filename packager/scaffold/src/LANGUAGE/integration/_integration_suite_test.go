@@ -100,6 +100,9 @@ func ApiHasTask() bool {
 func ApiHasMultiBuildpack() bool {
 	return ApiGreaterThan("2.90.0")
 }
+func ApiHasSidecar() bool {
+	return ApiGreaterThan("2.134.0")
+}
 
 func AssertUsesProxyDuringStagingIfPresent(fixtureName string) {
 	Context("with an uncached buildpack", func() {
