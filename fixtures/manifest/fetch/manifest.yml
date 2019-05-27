@@ -117,3 +117,9 @@ dependencies:
   sha256: 8208480eb849203632239f73bd3c61ed488546d19d29c06d7c2e1649d8950bd1
   cf_stacks:
   - cflinuxfs2
+- name: wp-cli
+  version: 2.2.0
+  uri: https://github.com/wp-cli/wp-cli/releases/download/v2.2.0/wp-cli-2.2.0.phar
+  sha256: da69f286f03c0d2131b3f95afe7c8d31b4f65cbf5ca49a12c41d8bf02d366a34
+  cf_stacks:
+  - cflinuxfs2

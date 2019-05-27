@@ -512,6 +512,23 @@ var _ = Describe("Installer", func() {
 					Expect(ioutil.ReadFile(filepath.Join(outputDir, "thing", "bin", "file2.exe"))).To(Equal([]byte("progam2\n")))
 				})
 
+				Context("file does not need to be unpackaged", func() {
+					BeforeEach(func() {
+						someContents, err := ioutil.ReadFile("fixtures/source.txt")
+						Expect(err).To(BeNil())
+						httpmock.RegisterResponder("GET", "https://github.com/wp-cli/wp-cli/releases/download/v2.2.0/wp-cli-2.2.0.phar",
+							httpmock.NewStringResponder(200, string(someContents)))
+					})
+
+					It("downloads a file at the root", func() {
+						err = installer.InstallDependency(libbuildpack.Dependency{Name: "wp-cli", Version: "2.2.0"}, outputDir)
+						Expect(err).To(BeNil())
+
+						Expect(filepath.Join(outputDir, "wp-cli-2.2.0.phar")).To(BeAnExistingFile())
+						Expect(ioutil.ReadFile(filepath.Join(outputDir, "wp-cli-2.2.0.phar"))).To(Equal([]byte("a file\n")))
+					})
+				})
+
 				Context("by default, the version is NOT latest patch in version line", func() {
 					BeforeEach(func() {
 						tgzContents, err := ioutil.ReadFile("fixtures/thing.tgz")
