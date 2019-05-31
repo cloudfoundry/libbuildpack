@@ -540,7 +540,6 @@ var _ = Describe("Finalizer", func() {
 			Expect(filepath.Join(v2CacheDir, "cnb")).ToNot(BeADirectory())
 			Expect(finalizer.MoveV3Layers()).To(Succeed())
 			Expect(filepath.Join(v2CacheDir, "cnb", "anotherLayers", "innerLayer")).To(BeADirectory())
-			Expect(filepath.Join(v2CacheDir, "cnb", "anotherLayers", "innerLayer.toml")).NotTo(BeAnExistingFile())
 		})
 	})
 

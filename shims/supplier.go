@@ -109,15 +109,36 @@ func (s *Supplier) CheckBuildpackValid() error {
 	return nil
 }
 
-func moveContent(source, destination string) error {
-	if err := os.RemoveAll(destination); err != nil {
+func moveContent(src, dst string) error {
+	if err := os.RemoveAll(dst); err != nil {
 		return err
 	}
 
-	if err := os.Rename(source, destination); err != nil {
+	if err := os.MkdirAll(dst, os.ModePerm); err != nil {
 		return err
 	}
-	return nil
+
+	if err := filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
+		relPath, err := filepath.Rel(src, path)
+
+		dstPath := filepath.Join(dst, relPath)
+		if info.IsDir() {
+			os.MkdirAll(dstPath, 0777)
+
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		if err := os.Rename(path, dstPath); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	return os.RemoveAll(src)
 }
 
 func v3symlinkExists(path string) (bool, error) {
