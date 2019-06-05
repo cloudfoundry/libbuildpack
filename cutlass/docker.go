@@ -23,7 +23,7 @@ func InternetTraffic(bp_dir, fixture_path, buildpack_path string, envs []string)
 
 	output, err := executeDockerFile(bp_dir, fixture_path, buildpack_path, envs, network_command)
 	if err != nil {
-		return nil, false, nil, errors.Wrapf(err, "failed to run docker image: %s", output)
+		return nil, false, nil, errors.Wrapf(err, "failed to build and run docker image: %s", output)
 	}
 
 	var internet_traffic, logs []string
@@ -66,7 +66,7 @@ func executeDockerFile(bp_dir, fixture_path, buildpack_path string, envs []strin
 	var err error
 	buildpack_path, err = filepath.Rel(bp_dir, buildpack_path)
 
-	docker_image_name := "internet_traffic_test"
+	docker_image_name := "internet_traffic_test" + RandStringRunes(8)
 
 	// docker_env_vars += get_app_env_vars(fixture_path)
 	dockerfile_contents := dockerfile(fixture_path, buildpack_path, envs, network_command)

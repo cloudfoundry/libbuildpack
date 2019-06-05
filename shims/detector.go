@@ -50,6 +50,6 @@ func (d DefaultDetector) RunLifecycleDetect() error {
 	)
 
 	cmd.Stderr = os.Stderr
-	cmd.Env = append(os.Environ(), "PACK_STACK_ID=org.cloudfoundry.stacks."+os.Getenv("CF_STACK"))
+	cmd.Env = append(os.Environ(), "CNB_STACK_ID=org.cloudfoundry.stacks."+os.Getenv("CF_STACK"))
 	return cmd.Run()
 }
