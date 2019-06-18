@@ -1,8 +1,8 @@
 ---
 language: {{LANGUAGE}}
-default_versions:
-dependency_deprecation_dates:
-dependencies:
+default_versions: []
+dependency_deprecation_dates: []
+dependencies: []
 
 include_files:
   - README.md
