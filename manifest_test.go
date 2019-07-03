@@ -171,7 +171,7 @@ ruby:
 				err = os.Setenv("CF_STACK", libbuildpack.WINDOWS2016)
 				Expect(err).To(BeNil())
 				Expect(manifest.CheckStackSupport()).To(Succeed())
-				Expect(buffer.String()).To(ContainSubstring("Please migrate this application to the 'windows' stack"))
+				Expect(buffer.String()).To(ContainSubstring("Please restage this application to the 'windows' stack"))
 			})
 		})
 
