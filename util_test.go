@@ -145,6 +145,44 @@ var _ = Describe("Util", func() {
 		})
 		AfterEach(func() { err = os.RemoveAll(tmpdir); Expect(err).To(BeNil()) })
 
+		Context("a tar.xz file", func() {
+			It("extracts the whole file and resolves hard links", func() {
+				Expect(libbuildpack.ExtractTarXz("fixtures/xzarchive.tar.xz", tmpdir)).To(Succeed())
+
+				innerDir := filepath.Join(tmpdir, "innerDir")
+				Expect(innerDir).To(BeADirectory())
+				files, err := ioutil.ReadDir(innerDir)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(files).NotTo(BeEmpty())
+				for _, f := range files {
+					Expect(int(f.Size())).NotTo(Equal(0))
+				}
+
+				nestedFile := filepath.Join(innerDir, "inner_file.txt")
+				Expect(nestedFile).To(BeAnExistingFile())
+				contents, err := ioutil.ReadFile(nestedFile)
+				Expect(contents).To(ContainSubstring("simple inner file"))
+
+				symFile := filepath.Join(tmpdir, "innerDir", "softlink.txt")
+				symStat, err := os.Stat(symFile)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(symStat.Mode() & os.ModeSymlink).NotTo(Equal(0))
+
+				Expect(filepath.Walk(tmpdir, func(path string, info os.FileInfo, err error) error {
+
+					Expect(err).NotTo(HaveOccurred())
+
+					if !info.IsDir() {
+						contents, err := ioutil.ReadFile(path)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(contents).NotTo(BeEmpty())
+					}
+
+					return nil
+				})).To(Succeed())
+			})
+		})
+
 		Context("with a valid tar file", func() {
 			It("extracts a file at the root", func() {
 				err = libbuildpack.ExtractTarGz("fixtures/thing.tgz", tmpdir)
