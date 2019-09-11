@@ -12,7 +12,7 @@ import (
 	"github.com/cloudfoundry/libbuildpack/shims"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	httpmock "gopkg.in/jarcoal/httpmock.v1"
+	httpmock "github.com/jarcoal/httpmock"
 )
 
 var _ = Describe("Installer", func() {

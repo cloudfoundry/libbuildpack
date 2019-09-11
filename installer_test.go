@@ -11,7 +11,7 @@ import (
 
 	"github.com/cloudfoundry/libbuildpack"
 	"github.com/cloudfoundry/libbuildpack/ansicleaner"
-	httpmock "gopkg.in/jarcoal/httpmock.v1"
+	httpmock "github.com/jarcoal/httpmock"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
