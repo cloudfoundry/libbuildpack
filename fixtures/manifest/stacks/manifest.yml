@@ -5,6 +5,7 @@ dependencies:
   version: 4.5.6
   cf_stacks:
   - cflinuxfs2
+  - windows
   uri: https://example.com/dependencies/other_thing-4.5.6-linux-x64.tgz
   md5: 7712b658293ea4b2c8505843b0e15441
 - name: thing
@@ -12,6 +13,7 @@ dependencies:
   cf_stacks:
   - cflinuxfs2
   - xenial
+  - windows2012R2
   uri: https://example.com/dependencies/thing-1-linux-x64.tgz
   md5: 7712b658293ea4b2c8505843b0e15441
 - name: thing
