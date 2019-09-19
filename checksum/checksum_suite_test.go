@@ -9,5 +9,5 @@ import (
 
 func TestChecksum(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Checksum Suite")
+	RunSpecs(t, "checksum")
 }

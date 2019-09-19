@@ -9,11 +9,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cloudfoundry/libbuildpack"
+	"github.com/cloudfoundry/libbuildpack/packager"
 	httpmock "github.com/jarcoal/httpmock"
 	yaml "gopkg.in/yaml.v2"
 
-	"github.com/cloudfoundry/libbuildpack"
-	"github.com/cloudfoundry/libbuildpack/packager"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -121,12 +121,12 @@ var _ = Describe("Packager", func() {
 
 			It("does not include files not in list", func() {
 				_, err := ZipContents(zipFile, "ignoredfile")
-				Expect(err.Error()).To(HavePrefix("ignoredfile not found in"))
+				Expect(err).To(MatchError(HavePrefix("ignoredfile not found in")))
 			})
 
 			It("does not include dependencies", func() {
 				_, err := ZipContents(zipFile, "dependencies/d39cae561ec1f485d1a4a58304e87105/rfc2324.txt")
-				Expect(err.Error()).To(HavePrefix("dependencies/d39cae561ec1f485d1a4a58304e87105/rfc2324.txt not found in"))
+				Expect(err).To(MatchError(HavePrefix("dependencies/d39cae561ec1f485d1a4a58304e87105/rfc2324.txt not found in")))
 			})
 
 			It("does not set file on entries", func() {
@@ -169,7 +169,7 @@ var _ = Describe("Packager", func() {
 
 			It("does not include files not in list", func() {
 				_, err := ZipContents(zipFile, "ignoredfile")
-				Expect(err.Error()).To(HavePrefix("ignoredfile not found in"))
+				Expect(err).To(MatchError(HavePrefix("ignoredfile not found in")))
 			})
 
 			Describe("including dependencies", func() {
@@ -177,7 +177,7 @@ var _ = Describe("Packager", func() {
 					It("includes ONLY dependencies for the specified stack", func() {
 						Expect(ZipContents(zipFile, "dependencies/d39cae561ec1f485d1a4a58304e87105/rfc2324.txt")).To(ContainSubstring("Hyper Text Coffee Pot Control Protocol"))
 						_, err := ZipContents(zipFile, "dependencies/ff1eb131521acf5bc95db59b2a2c29c0/rfc2549.txt")
-						Expect(err.Error()).To(HavePrefix("dependencies/ff1eb131521acf5bc95db59b2a2c29c0/rfc2549.txt not found in"))
+						Expect(err).To(MatchError(HavePrefix("dependencies/ff1eb131521acf5bc95db59b2a2c29c0/rfc2549.txt not found in")))
 					})
 				})
 				Context("when the empty stack is specified", func() {
@@ -323,7 +323,7 @@ var _ = Describe("Packager", func() {
 
 			It("does not include files not in list", func() {
 				_, err := ZipContents(zipFile, "ignoredfile")
-				Expect(err.Error()).To(HavePrefix("ignoredfile not found in"))
+				Expect(err).To(MatchError(HavePrefix("ignoredfile not found in")))
 			})
 		})
 
@@ -334,8 +334,7 @@ var _ = Describe("Packager", func() {
 			})
 			It("includes dependencies", func() {
 				zipFile, err = packager.Package(buildpackDir, cacheDir, version, stack, cached)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("dependency sha256 mismatch: expected sha256 fffffff, actual sha256 b11329c3fd6dbe9dddcb8dd90f18a4bf441858a6b5bfaccae5f91e5c7d2b3596"))
+				Expect(err).To(MatchError(ContainSubstring("dependency sha256 mismatch: expected sha256 fffffff, actual sha256 b11329c3fd6dbe9dddcb8dd90f18a4bf441858a6b5bfaccae5f91e5c7d2b3596")))
 			})
 		})
 
@@ -361,7 +360,7 @@ var _ = Describe("Packager", func() {
 		Context("packaging with missing included_files", func() {
 			It("returns an error", func() {
 				zipFile, err = packager.Package("./fixtures/missing_included_files", cacheDir, version, stack, cached)
-				Expect(err.Error()).To(MatchRegexp("failed to open included_file: .*/DOESNOTEXIST.txt"))
+				Expect(err).To(MatchError(MatchRegexp("failed to open included_file: .*/DOESNOTEXIST.txt")))
 			})
 		})
 	})

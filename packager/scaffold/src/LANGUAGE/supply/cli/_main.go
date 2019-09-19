@@ -15,13 +15,13 @@ func main() {
 
 	buildpackDir, err := libbuildpack.GetBuildpackDir()
 	if err != nil {
-		logger.Error("Unable to determine buildpack directory: %s", err.Error())
+		logger.Error("Unable to determine buildpack directory: %s", err)
 		os.Exit(9)
 	}
 
 	manifest, err := libbuildpack.NewManifest(buildpackDir, logger, time.Now())
 	if err != nil {
-		logger.Error("Unable to load buildpack manifest: %s", err.Error())
+		logger.Error("Unable to load buildpack manifest: %s", err)
 		os.Exit(10)
 	}
 	installer := libbuildpack.NewInstaller(manifest)
@@ -45,18 +45,18 @@ func main() {
 
 	err = libbuildpack.RunBeforeCompile(stager)
 	if err != nil {
-		logger.Error("Before Compile: %s", err.Error())
+		logger.Error("Before Compile: %s", err)
 		os.Exit(12)
 	}
 
 	if err := os.MkdirAll(filepath.Join(stager.DepDir(), "bin"), 0755); err != nil {
-		logger.Error("Unable to create bin directory: %s", err.Error())
+		logger.Error("Unable to create bin directory: %s", err)
 		os.Exit(13)
 	}
 
 	err = stager.SetStagingEnvironment()
 	if err != nil {
-		logger.Error("Unable to setup environment variables: %s", err.Error())
+		logger.Error("Unable to setup environment variables: %s", err)
 		os.Exit(14)
 	}
 
@@ -75,7 +75,7 @@ func main() {
 	}
 
 	if err := stager.WriteConfigYml(nil); err != nil {
-		logger.Error("Error writing config.yml: %s", err.Error())
+		logger.Error("Error writing config.yml: %s", err)
 		os.Exit(16)
 	}
 	if err = installer.CleanupAppCache(); err != nil {

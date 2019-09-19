@@ -1,11 +1,12 @@
 package libbuildpack_test
 
 import (
+	"testing"
+
+	"github.com/jarcoal/httpmock"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	httpmock "github.com/jarcoal/httpmock"
-
-	"testing"
 )
 
 var _ = BeforeSuite(func() {
@@ -18,5 +19,5 @@ var _ = AfterSuite(func() {
 
 func TestLibBuildpackTest(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "LibBuildpackTest Suite")
+	RunSpecs(t, "libbuildpack")
 }

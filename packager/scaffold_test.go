@@ -103,6 +103,7 @@ var _ = Describe("Scaffold", func() {
 
 	Describe("Upgrade", func() {
 		var baseDir string
+
 		BeforeEach(func() {
 			var err error
 			baseDir, err = ioutil.TempDir("", "scaffold-basedir")
@@ -110,27 +111,32 @@ var _ = Describe("Scaffold", func() {
 
 			Expect(libbuildpack.CopyDirectory("fixtures/modified", baseDir)).To(Succeed())
 		})
+
 		AfterEach(func() {
 			os.RemoveAll(baseDir)
 		})
 
-		Context("Force flag not set", func() {
+		Context("force flag not set", func() {
 			BeforeEach(func() {
 				Expect(packager.Upgrade(baseDir, false)).To(Succeed())
 			})
+
 			It("updates files user has NOT modified", func() {
 				file := "src/mylanguage/supply/supply_test.go"
 				current, err := ioutil.ReadFile(filepath.Join(baseDir, file))
 				Expect(err).ToNot(HaveOccurred())
+
 				previous, err := ioutil.ReadFile(filepath.Join("fixtures", "modified", file))
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(string(current)).ToNot(Equal(string(previous)))
 			})
+
 			It("leaves files user HAS modified", func() {
 				file := "src/mylanguage/supply/supply.go"
 				current, err := ioutil.ReadFile(filepath.Join(baseDir, file))
 				Expect(err).ToNot(HaveOccurred())
+
 				previous, err := ioutil.ReadFile(filepath.Join("fixtures", "modified", file))
 				Expect(err).ToNot(HaveOccurred())
 
@@ -142,25 +148,28 @@ var _ = Describe("Scaffold", func() {
 			BeforeEach(func() {
 				Expect(packager.Upgrade(baseDir, true)).To(Succeed())
 			})
+
 			It("updates files user has NOT modified", func() {
 				file := "src/mylanguage/supply/supply_test.go"
 				current, err := ioutil.ReadFile(filepath.Join(baseDir, file))
 				Expect(err).ToNot(HaveOccurred())
+
 				previous, err := ioutil.ReadFile(filepath.Join("fixtures", "modified", file))
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(string(current)).ToNot(Equal(string(previous)))
 			})
+
 			It("updates files user HAS modified", func() {
 				file := "src/mylanguage/supply/supply.go"
 				current, err := ioutil.ReadFile(filepath.Join(baseDir, file))
 				Expect(err).ToNot(HaveOccurred())
+
 				previous, err := ioutil.ReadFile(filepath.Join("fixtures", "modified", file))
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(string(current)).ToNot(Equal(string(previous)))
 			})
 		})
-
 	})
 })

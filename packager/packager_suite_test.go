@@ -5,17 +5,17 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"testing"
 
 	"github.com/cloudfoundry/libbuildpack/packager"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
-	"testing"
 )
 
 func TestPackager(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Packager Suite")
+	RunSpecs(t, "packager")
 }
 
 var _ = BeforeSuite(func() {

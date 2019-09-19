@@ -204,8 +204,7 @@ var _ = Describe("Installer", func() {
 				It("alerts the user that the url could not be downloaded", func() {
 					Expect(inputs.Dependency.Name).To(Equal("thing"))
 					err = installer.FetchDependency(inputs.Dependency, outputFile)
-					Expect(err).NotTo(BeNil())
-					Expect(err.Error()).To(ContainSubstring("could not download: 404"))
+					Expect(err).To(MatchError(ContainSubstring("could not download: 404")))
 					Expect(buffer.String()).ToNot(ContainSubstring("to ["))
 				})
 
@@ -891,8 +890,7 @@ var _ = Describe("Installer", func() {
 			It("fails", func() {
 				outputDir = filepath.Join(outputDir, "notexist")
 				err = installer.InstallOnlyVersion("thing", outputDir)
-				Expect(err).NotTo(BeNil())
-				Expect(err.Error()).To(Equal("more than one version of thing found"))
+				Expect(err).To(MatchError("more than one version of thing found"))
 			})
 		})
 
@@ -900,8 +898,7 @@ var _ = Describe("Installer", func() {
 			It("fails", func() {
 				outputDir = filepath.Join(outputDir, "notexist")
 				err = installer.InstallOnlyVersion("not_a_dependency", outputDir)
-				Expect(err).NotTo(BeNil())
-				Expect(err.Error()).To(Equal("no versions of not_a_dependency found"))
+				Expect(err).To(MatchError("no versions of not_a_dependency found"))
 			})
 		})
 	})

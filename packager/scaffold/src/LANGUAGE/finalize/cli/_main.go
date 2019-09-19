@@ -14,13 +14,13 @@ func main() {
 
 	buildpackDir, err := libbuildpack.GetBuildpackDir()
 	if err != nil {
-		logger.Error("Unable to determine buildpack directory: %s", err.Error())
+		logger.Error("Unable to determine buildpack directory: %s", err)
 		os.Exit(9)
 	}
 
 	manifest, err := libbuildpack.NewManifest(buildpackDir, logger, time.Now())
 	if err != nil {
-		logger.Error("Unable to load buildpack manifest: %s", err.Error())
+		logger.Error("Unable to load buildpack manifest: %s", err)
 		os.Exit(10)
 	}
 
@@ -32,7 +32,7 @@ func main() {
 	}
 
 	if err := stager.SetStagingEnvironment(); err != nil {
-		logger.Error("Unable to setup environment variables: %s", err.Error())
+		logger.Error("Unable to setup environment variables: %s", err)
 		os.Exit(11)
 	}
 
@@ -48,12 +48,12 @@ func main() {
 	}
 
 	if err := libbuildpack.RunAfterCompile(stager); err != nil {
-		logger.Error("After Compile: %s", err.Error())
+		logger.Error("After Compile: %s", err)
 		os.Exit(13)
 	}
 
 	if err := stager.SetLaunchEnvironment(); err != nil {
-		logger.Error("Unable to setup launch environment: %s", err.Error())
+		logger.Error("Unable to setup launch environment: %s", err)
 		os.Exit(14)
 	}
 
