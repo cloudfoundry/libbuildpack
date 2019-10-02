@@ -138,6 +138,7 @@ dependencies:
   sha256: 968fe3e663afa9da22914d48aa683553a4067480a0dd64b9d57941c89503989f
   cf_stacks:
   - windows2012R2
+  - windows2016
   - windows
   source: https://github.com/cloudfoundry/hwc/archive/17.0.0.tar.gz
   source_sha256: b7ba44b12c99aa5f3f725360eddef1d05025f22b04be12e5a7fe149b3529b438

@@ -156,48 +156,6 @@ ruby:
 				})
 			})
 		})
-		Context("Stack is supported windows", func() {
-			BeforeEach(func() {
-				manifestDir = "fixtures/manifest/stacks"
-				err = os.Setenv("CF_STACK", "windows")
-				Expect(err).To(BeNil())
-			})
-
-			It("returns nil", func() {
-				Expect(manifest.CheckStackSupport()).To(Succeed())
-			})
-
-			Context("with no dependencies listed", func() {
-				BeforeEach(func() {
-					manifestDir = "fixtures/manifest/no-deps"
-				})
-				It("returns nil", func() {
-					Expect(manifest.CheckStackSupport()).To(Succeed())
-				})
-			})
-
-			Context("by a single dependency", func() {
-				BeforeEach(func() {
-					manifestDir = "fixtures/manifest/stacks"
-					err = os.Setenv("CF_STACK", "windows2012R2")
-					Expect(err).To(BeNil())
-				})
-				It("returns nil", func() {
-					Expect(manifest.CheckStackSupport()).To(Succeed())
-				})
-			})
-
-			Context("by the whole manifest", func() {
-				BeforeEach(func() {
-					manifestDir = "fixtures/manifest/packaged-with-stack-windows"
-					err = os.Setenv("CF_STACK", "windows")
-					Expect(err).To(BeNil())
-				})
-				It("returns nil", func() {
-					Expect(manifest.CheckStackSupport()).To(Succeed())
-				})
-			})
-		})
 
 		Context("stack is CFLINUXFS2", func() {
 			It("prints a warning message", func() {
@@ -205,6 +163,15 @@ ruby:
 				Expect(err).To(BeNil())
 				Expect(manifest.CheckStackSupport()).To(Succeed())
 				Expect(buffer.String()).To(ContainSubstring("Please migrate this application to cflinuxfs3."))
+			})
+		})
+
+		Context("stack is windows2016", func() {
+			It("prints a warning message", func() {
+				err = os.Setenv("CF_STACK", libbuildpack.WINDOWS2016)
+				Expect(err).To(BeNil())
+				Expect(manifest.CheckStackSupport()).To(Succeed())
+				Expect(buffer.String()).To(ContainSubstring("Please restage this application to the 'windows' stack"))
 			})
 		})
 
