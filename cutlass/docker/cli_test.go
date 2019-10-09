@@ -5,6 +5,7 @@ import (
 
 	"github.com/cloudfoundry/libbuildpack/cutlass/docker"
 	"github.com/cloudfoundry/libbuildpack/cutlass/docker/fakes"
+	"github.com/cloudfoundry/libbuildpack/cutlass/execution"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -118,7 +119,7 @@ var _ = Describe("CLI", func() {
 					"build",
 					"some-context",
 				}))
-				Expect(executable.ExecuteCall.Receives.Options).To(Equal(docker.ExecuteOptions{
+				Expect(executable.ExecuteCall.Receives.Options).To(Equal(execution.Options{
 					Dir: "some-context",
 				}))
 			})

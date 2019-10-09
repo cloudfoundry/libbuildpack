@@ -2,12 +2,9 @@ package docker_test
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
-	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/types"
 
 	. "github.com/onsi/ginkgo"
@@ -18,31 +15,6 @@ func TestDocker(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "cutlass/docker")
 }
-
-var (
-	fakeDockerCLI string
-	existingPath  string
-)
-
-var _ = BeforeSuite(func() {
-	var err error
-	fakeDockerCLI, err = gexec.Build("github.com/cloudfoundry/libbuildpack/cutlass/docker/fakes/docker")
-	Expect(err).NotTo(HaveOccurred())
-
-})
-
-var _ = AfterSuite(func() {
-	gexec.CleanupBuildArtifacts()
-})
-
-var _ = BeforeEach(func() {
-	existingPath = os.Getenv("PATH")
-	os.Setenv("PATH", filepath.Dir(fakeDockerCLI))
-})
-
-var _ = AfterEach(func() {
-	os.Setenv("PATH", existingPath)
-})
 
 func MatchLines(expected string) types.GomegaMatcher {
 	return &matchLinesMatcher{

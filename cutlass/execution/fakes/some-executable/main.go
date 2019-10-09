@@ -5,6 +5,8 @@ import (
 	"os"
 )
 
+var fail string
+
 func main() {
 	fmt.Fprintf(os.Stdout, "Output on stdout\n")
 	fmt.Fprintf(os.Stderr, "Output on stderr\n")
@@ -16,4 +18,10 @@ func main() {
 	}
 
 	fmt.Printf("PWD: %s\n", workingDirectory)
+
+	if fail == "true" {
+		fmt.Fprintf(os.Stdout, "Error on stdout\n")
+		fmt.Fprintf(os.Stderr, "Error on stderr\n")
+		os.Exit(1)
+	}
 }

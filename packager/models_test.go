@@ -4,9 +4,9 @@ import (
 	"sort"
 
 	"github.com/cloudfoundry/libbuildpack/packager"
+	httpmock "github.com/jarcoal/httpmock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	httpmock "github.com/jarcoal/httpmock"
 )
 
 var _ = Describe("Packager", func() {
