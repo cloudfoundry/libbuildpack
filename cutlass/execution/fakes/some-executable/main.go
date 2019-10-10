@@ -12,12 +12,12 @@ func main() {
 	fmt.Fprintf(os.Stderr, "Output on stderr\n")
 	fmt.Printf("Arguments: %v\n", os.Args)
 
-	workingDirectory, err := os.Getwd()
-	if err != nil {
-		panic(err)
-	}
+	pwd, _ := os.Getwd()
+	fmt.Printf("PWD=%s\n", pwd)
 
-	fmt.Printf("PWD: %s\n", workingDirectory)
+	for _, env := range os.Environ() {
+		fmt.Printf("%s\n", env)
+	}
 
 	if fail == "true" {
 		fmt.Fprintf(os.Stdout, "Error on stdout\n")

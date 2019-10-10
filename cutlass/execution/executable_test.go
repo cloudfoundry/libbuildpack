@@ -1,6 +1,7 @@
 package execution_test
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -39,13 +40,50 @@ var _ = Describe("Executable", func() {
 
 	Describe("Execute", func() {
 		It("executes the given arguments against the executable", func() {
-			stdout, stderr, err := executable.Execute(execution.Options{Dir: tmpDir}, "something")
+			stdout, stderr, err := executable.Execute(execution.Options{}, "something")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(stdout).To(ContainSubstring("Output on stdout"))
 			Expect(stderr).To(ContainSubstring("Output on stderr"))
 
 			Expect(stdout).To(ContainSubstring("Arguments: [some-executable something]"))
-			Expect(stdout).To(ContainSubstring(fmt.Sprintf("PWD: %s", tmpDir)))
+		})
+
+		Context("when given a execution directory", func() {
+			It("executes within that directory", func() {
+				stdout, _, err := executable.Execute(execution.Options{
+					Dir: tmpDir,
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(stdout).To(ContainSubstring(fmt.Sprintf("PWD=%s", tmpDir)))
+			})
+		})
+
+		Context("when given an execution environment", func() {
+			It("executes with that environment", func() {
+				stdout, _, err := executable.Execute(execution.Options{
+					Env: []string{"SOME_KEY=some-value"},
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(stdout).To(ContainSubstring("SOME_KEY=some-value"))
+			})
+		})
+
+		Context("when given a writer for stdout and stderr", func() {
+			It("pipes stdout to that writer", func() {
+				stdOutBuffer := bytes.NewBuffer(nil)
+				stdErrBuffer := bytes.NewBuffer(nil)
+
+				stdout, stderr, err := executable.Execute(execution.Options{
+					Stdout: stdOutBuffer,
+					Stderr: stdErrBuffer,
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(stdOutBuffer.String()).To(ContainSubstring("Output on stdout"))
+				Expect(stdOutBuffer.String()).To(Equal(stdout))
+
+				Expect(stdErrBuffer.String()).To(ContainSubstring("Output on stderr"))
+				Expect(stdErrBuffer.String()).To(Equal(stderr))
+			})
 		})
 
 		Context("when cnb2cf errors", func() {
