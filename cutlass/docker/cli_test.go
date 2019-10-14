@@ -5,7 +5,7 @@ import (
 
 	"github.com/cloudfoundry/libbuildpack/cutlass/docker"
 	"github.com/cloudfoundry/libbuildpack/cutlass/docker/fakes"
-	"github.com/cloudfoundry/libbuildpack/cutlass/execution"
+	"github.com/cloudfoundry/packit"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -32,9 +32,8 @@ var _ = Describe("CLI", func() {
 			Expect(stdout).To(Equal("some-stdout-output"))
 			Expect(stderr).To(Equal("some-stderr-output"))
 
-			Expect(executable.ExecuteCall.Receives.Args).To(Equal([]string{
-				"build",
-				".",
+			Expect(executable.ExecuteCall.Receives.Execution).To(Equal(packit.Execution{
+				Args: []string{"build", "."},
 			}))
 		})
 
@@ -47,10 +46,8 @@ var _ = Describe("CLI", func() {
 				Expect(stdout).To(Equal("some-stdout-output"))
 				Expect(stderr).To(Equal("some-stderr-output"))
 
-				Expect(executable.ExecuteCall.Receives.Args).To(Equal([]string{
-					"build",
-					"--rm",
-					".",
+				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(packit.Execution{
+					Args: []string{"build", "--rm", "."},
 				}))
 			})
 		})
@@ -64,10 +61,8 @@ var _ = Describe("CLI", func() {
 				Expect(stdout).To(Equal("some-stdout-output"))
 				Expect(stderr).To(Equal("some-stderr-output"))
 
-				Expect(executable.ExecuteCall.Receives.Args).To(Equal([]string{
-					"build",
-					"--no-cache",
-					".",
+				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(packit.Execution{
+					Args: []string{"build", "--no-cache", "."},
 				}))
 			})
 		})
@@ -81,10 +76,8 @@ var _ = Describe("CLI", func() {
 				Expect(stdout).To(Equal("some-stdout-output"))
 				Expect(stderr).To(Equal("some-stderr-output"))
 
-				Expect(executable.ExecuteCall.Receives.Args).To(Equal([]string{
-					"build",
-					"--tag", "some-tag",
-					".",
+				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(packit.Execution{
+					Args: []string{"build", "--tag", "some-tag", "."},
 				}))
 			})
 		})
@@ -98,10 +91,8 @@ var _ = Describe("CLI", func() {
 				Expect(stdout).To(Equal("some-stdout-output"))
 				Expect(stderr).To(Equal("some-stderr-output"))
 
-				Expect(executable.ExecuteCall.Receives.Args).To(Equal([]string{
-					"build",
-					"--file", "some-file",
-					".",
+				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(packit.Execution{
+					Args: []string{"build", "--file", "some-file", "."},
 				}))
 			})
 		})
@@ -115,12 +106,9 @@ var _ = Describe("CLI", func() {
 				Expect(stdout).To(Equal("some-stdout-output"))
 				Expect(stderr).To(Equal("some-stderr-output"))
 
-				Expect(executable.ExecuteCall.Receives.Args).To(Equal([]string{
-					"build",
-					"some-context",
-				}))
-				Expect(executable.ExecuteCall.Receives.Options).To(Equal(execution.Options{
-					Dir: "some-context",
+				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(packit.Execution{
+					Args: []string{"build", "some-context"},
+					Dir:  "some-context",
 				}))
 			})
 		})
@@ -148,9 +136,8 @@ var _ = Describe("CLI", func() {
 			Expect(stdout).To(Equal("some-stdout-output"))
 			Expect(stderr).To(Equal("some-stderr-output"))
 
-			Expect(executable.ExecuteCall.Receives.Args).To(Equal([]string{
-				"run",
-				"some-image",
+			Expect(executable.ExecuteCall.Receives.Execution).To(Equal(packit.Execution{
+				Args: []string{"run", "some-image"},
 			}))
 		})
 
@@ -162,10 +149,8 @@ var _ = Describe("CLI", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(stdout).To(Equal("some-stdout-output"))
 				Expect(stderr).To(Equal("some-stderr-output"))
-				Expect(executable.ExecuteCall.Receives.Args).To(Equal([]string{
-					"run",
-					"--network", "some-network",
-					"some-image",
+				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(packit.Execution{
+					Args: []string{"run", "--network", "some-network", "some-image"},
 				}))
 			})
 		})
@@ -178,10 +163,8 @@ var _ = Describe("CLI", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(stdout).To(Equal("some-stdout-output"))
 				Expect(stderr).To(Equal("some-stderr-output"))
-				Expect(executable.ExecuteCall.Receives.Args).To(Equal([]string{
-					"run",
-					"--rm",
-					"some-image",
+				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(packit.Execution{
+					Args: []string{"run", "--rm", "some-image"},
 				}))
 			})
 		})
@@ -194,10 +177,8 @@ var _ = Describe("CLI", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(stdout).To(Equal("some-stdout-output"))
 				Expect(stderr).To(Equal("some-stderr-output"))
-				Expect(executable.ExecuteCall.Receives.Args).To(Equal([]string{
-					"run",
-					"--tty",
-					"some-image",
+				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(packit.Execution{
+					Args: []string{"run", "--tty", "some-image"},
 				}))
 			})
 		})
@@ -210,10 +191,8 @@ var _ = Describe("CLI", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(stdout).To(Equal("some-stdout-output"))
 				Expect(stderr).To(Equal("some-stderr-output"))
-				Expect(executable.ExecuteCall.Receives.Args).To(Equal([]string{
-					"run",
-					"some-image",
-					"bash", "-c", "some-command",
+				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(packit.Execution{
+					Args: []string{"run", "some-image", "bash", "-c", "some-command"},
 				}))
 			})
 		})
@@ -241,9 +220,8 @@ var _ = Describe("CLI", func() {
 			Expect(stdout).To(Equal("some-stdout-output"))
 			Expect(stderr).To(Equal("some-stderr-output"))
 
-			Expect(executable.ExecuteCall.Receives.Args).To(Equal([]string{
-				"image", "rm",
-				"some-image",
+			Expect(executable.ExecuteCall.Receives.Execution).To(Equal(packit.Execution{
+				Args: []string{"image", "rm", "some-image"},
 			}))
 		})
 
@@ -256,10 +234,8 @@ var _ = Describe("CLI", func() {
 				Expect(stdout).To(Equal("some-stdout-output"))
 				Expect(stderr).To(Equal("some-stderr-output"))
 
-				Expect(executable.ExecuteCall.Receives.Args).To(Equal([]string{
-					"image", "rm",
-					"--force",
-					"some-image",
+				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(packit.Execution{
+					Args: []string{"image", "rm", "--force", "some-image"},
 				}))
 			})
 		})
