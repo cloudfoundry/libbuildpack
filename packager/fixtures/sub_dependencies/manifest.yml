@@ -7,10 +7,11 @@ dependencies:
   md5: 2ed515dd61fd09206b8f38edf9de6fee
   cf_stacks:
   - cflinuxfs2
-  modules:
-  - gearman
-  - zlib
-  - geoip
+  dependencies:
+  - name: gearman
+  - name: zlib
+  - name: geoip
+    version: 1.5.3
 - name: nginx
   version: 1.7.3
   uri: https://buildpacks.cloudfoundry.org/dependencies/nginx/nginx-1.13.3-linux-x64-53917f43.tgz

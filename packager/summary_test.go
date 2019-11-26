@@ -39,7 +39,7 @@ Default binary versions:
 
 		Context("modules exist", func() {
 			BeforeEach(func() {
-				buildpackDir = "./fixtures/modules"
+				buildpackDir = "./fixtures/sub_dependencies"
 			})
 			It("Renders tables of dependencies (including modules)", func() {
 				Expect(packager.Summary(buildpackDir)).To(Equal(`
