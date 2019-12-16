@@ -5,7 +5,7 @@ import (
 
 	"github.com/cloudfoundry/libbuildpack/cutlass/glow"
 	"github.com/cloudfoundry/libbuildpack/cutlass/glow/fakes"
-	"github.com/cloudfoundry/packit"
+	"github.com/cloudfoundry/packit/pexec"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -32,7 +32,7 @@ var _ = Describe("CLI", func() {
 			Expect(stdout).To(Equal("some-stdout"))
 			Expect(stderr).To(Equal("some-stderr"))
 
-			Expect(executable.ExecuteCall.Receives.Execution).To(Equal(packit.Execution{
+			Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
 				Args: []string{"package", "-stack", "some-stack"},
 				Dir:  "some-dir",
 			}))
@@ -46,7 +46,7 @@ var _ = Describe("CLI", func() {
 			Expect(stdout).To(Equal("some-stdout"))
 			Expect(stderr).To(Equal("some-stderr"))
 
-			Expect(executable.ExecuteCall.Receives.Execution).To(Equal(packit.Execution{
+			Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
 				Args: []string{"package", "-stack", "some-stack", "-version", "some-version"},
 				Dir:  "some-dir",
 			}))
@@ -60,7 +60,7 @@ var _ = Describe("CLI", func() {
 			Expect(stdout).To(Equal("some-stdout"))
 			Expect(stderr).To(Equal("some-stderr"))
 
-			Expect(executable.ExecuteCall.Receives.Execution).To(Equal(packit.Execution{
+			Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
 				Args: []string{"package", "-stack", "some-stack", "-manifestpath", "some-path"},
 				Dir:  "some-dir",
 			}))
@@ -74,7 +74,7 @@ var _ = Describe("CLI", func() {
 			Expect(stdout).To(Equal("some-stdout"))
 			Expect(stderr).To(Equal("some-stderr"))
 
-			Expect(executable.ExecuteCall.Receives.Execution).To(Equal(packit.Execution{
+			Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
 				Args: []string{"package", "-stack", "some-stack", "-dev"},
 				Dir:  "some-dir",
 			}))
@@ -88,7 +88,7 @@ var _ = Describe("CLI", func() {
 			Expect(stdout).To(Equal("some-stdout"))
 			Expect(stderr).To(Equal("some-stderr"))
 
-			Expect(executable.ExecuteCall.Receives.Execution).To(Equal(packit.Execution{
+			Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
 				Args: []string{"package", "-stack", "some-stack", "-cached"},
 				Dir:  "some-dir",
 			}))

@@ -3,7 +3,7 @@ package fakes
 import (
 	"sync"
 
-	"github.com/cloudfoundry/packit"
+	"github.com/cloudfoundry/packit/pexec"
 )
 
 type Executable struct {
@@ -11,18 +11,18 @@ type Executable struct {
 		sync.Mutex
 		CallCount int
 		Receives  struct {
-			Execution packit.Execution
+			Execution pexec.Execution
 		}
 		Returns struct {
 			Stdout string
 			Stderr string
 			Err    error
 		}
-		Stub func(packit.Execution) (string, string, error)
+		Stub func(pexec.Execution) (string, string, error)
 	}
 }
 
-func (f *Executable) Execute(param1 packit.Execution) (string, string, error) {
+func (f *Executable) Execute(param1 pexec.Execution) (string, string, error) {
 	f.ExecuteCall.Lock()
 	defer f.ExecuteCall.Unlock()
 	f.ExecuteCall.CallCount++

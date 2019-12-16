@@ -5,7 +5,7 @@ import (
 
 	"github.com/cloudfoundry/libbuildpack/cutlass/docker"
 	"github.com/cloudfoundry/libbuildpack/cutlass/docker/fakes"
-	"github.com/cloudfoundry/packit"
+	"github.com/cloudfoundry/packit/pexec"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -32,7 +32,7 @@ var _ = Describe("CLI", func() {
 			Expect(stdout).To(Equal("some-stdout-output"))
 			Expect(stderr).To(Equal("some-stderr-output"))
 
-			Expect(executable.ExecuteCall.Receives.Execution).To(Equal(packit.Execution{
+			Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
 				Args: []string{"build", "."},
 			}))
 		})
@@ -46,7 +46,7 @@ var _ = Describe("CLI", func() {
 				Expect(stdout).To(Equal("some-stdout-output"))
 				Expect(stderr).To(Equal("some-stderr-output"))
 
-				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(packit.Execution{
+				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
 					Args: []string{"build", "--rm", "."},
 				}))
 			})
@@ -61,7 +61,7 @@ var _ = Describe("CLI", func() {
 				Expect(stdout).To(Equal("some-stdout-output"))
 				Expect(stderr).To(Equal("some-stderr-output"))
 
-				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(packit.Execution{
+				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
 					Args: []string{"build", "--no-cache", "."},
 				}))
 			})
@@ -76,7 +76,7 @@ var _ = Describe("CLI", func() {
 				Expect(stdout).To(Equal("some-stdout-output"))
 				Expect(stderr).To(Equal("some-stderr-output"))
 
-				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(packit.Execution{
+				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
 					Args: []string{"build", "--tag", "some-tag", "."},
 				}))
 			})
@@ -91,7 +91,7 @@ var _ = Describe("CLI", func() {
 				Expect(stdout).To(Equal("some-stdout-output"))
 				Expect(stderr).To(Equal("some-stderr-output"))
 
-				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(packit.Execution{
+				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
 					Args: []string{"build", "--file", "some-file", "."},
 				}))
 			})
@@ -106,7 +106,7 @@ var _ = Describe("CLI", func() {
 				Expect(stdout).To(Equal("some-stdout-output"))
 				Expect(stderr).To(Equal("some-stderr-output"))
 
-				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(packit.Execution{
+				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
 					Args: []string{"build", "some-context"},
 					Dir:  "some-context",
 				}))
@@ -136,7 +136,7 @@ var _ = Describe("CLI", func() {
 			Expect(stdout).To(Equal("some-stdout-output"))
 			Expect(stderr).To(Equal("some-stderr-output"))
 
-			Expect(executable.ExecuteCall.Receives.Execution).To(Equal(packit.Execution{
+			Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
 				Args: []string{"run", "some-image"},
 			}))
 		})
@@ -149,7 +149,7 @@ var _ = Describe("CLI", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(stdout).To(Equal("some-stdout-output"))
 				Expect(stderr).To(Equal("some-stderr-output"))
-				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(packit.Execution{
+				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
 					Args: []string{"run", "--network", "some-network", "some-image"},
 				}))
 			})
@@ -163,7 +163,7 @@ var _ = Describe("CLI", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(stdout).To(Equal("some-stdout-output"))
 				Expect(stderr).To(Equal("some-stderr-output"))
-				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(packit.Execution{
+				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
 					Args: []string{"run", "--rm", "some-image"},
 				}))
 			})
@@ -177,7 +177,7 @@ var _ = Describe("CLI", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(stdout).To(Equal("some-stdout-output"))
 				Expect(stderr).To(Equal("some-stderr-output"))
-				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(packit.Execution{
+				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
 					Args: []string{"run", "--tty", "some-image"},
 				}))
 			})
@@ -191,7 +191,7 @@ var _ = Describe("CLI", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(stdout).To(Equal("some-stdout-output"))
 				Expect(stderr).To(Equal("some-stderr-output"))
-				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(packit.Execution{
+				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
 					Args: []string{"run", "some-image", "bash", "-c", "some-command"},
 				}))
 			})
@@ -220,7 +220,7 @@ var _ = Describe("CLI", func() {
 			Expect(stdout).To(Equal("some-stdout-output"))
 			Expect(stderr).To(Equal("some-stderr-output"))
 
-			Expect(executable.ExecuteCall.Receives.Execution).To(Equal(packit.Execution{
+			Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
 				Args: []string{"image", "rm", "some-image"},
 			}))
 		})
@@ -234,7 +234,7 @@ var _ = Describe("CLI", func() {
 				Expect(stdout).To(Equal("some-stdout-output"))
 				Expect(stderr).To(Equal("some-stderr-output"))
 
-				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(packit.Execution{
+				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
 					Args: []string{"image", "rm", "--force", "some-image"},
 				}))
 			})
