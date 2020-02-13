@@ -14,15 +14,13 @@ type Executable struct {
 			Execution pexec.Execution
 		}
 		Returns struct {
-			Stdout string
-			Stderr string
-			Err    error
+			Error error
 		}
-		Stub func(pexec.Execution) (string, string, error)
+		Stub func(pexec.Execution) error
 	}
 }
 
-func (f *Executable) Execute(param1 pexec.Execution) (string, string, error) {
+func (f *Executable) Execute(param1 pexec.Execution) error {
 	f.ExecuteCall.Lock()
 	defer f.ExecuteCall.Unlock()
 	f.ExecuteCall.CallCount++
@@ -30,5 +28,5 @@ func (f *Executable) Execute(param1 pexec.Execution) (string, string, error) {
 	if f.ExecuteCall.Stub != nil {
 		return f.ExecuteCall.Stub(param1)
 	}
-	return f.ExecuteCall.Returns.Stdout, f.ExecuteCall.Returns.Stderr, f.ExecuteCall.Returns.Err
+	return f.ExecuteCall.Returns.Error
 }

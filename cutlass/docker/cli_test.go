@@ -2,6 +2,7 @@ package docker_test
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/cloudfoundry/libbuildpack/cutlass/docker"
 	"github.com/cloudfoundry/libbuildpack/cutlass/docker/fakes"
@@ -19,8 +20,12 @@ var _ = Describe("CLI", func() {
 
 	BeforeEach(func() {
 		executable = &fakes.Executable{}
-		executable.ExecuteCall.Returns.Stdout = "some-stdout-output"
-		executable.ExecuteCall.Returns.Stderr = "some-stderr-output"
+		executable.ExecuteCall.Stub = func(execution pexec.Execution) error {
+			fmt.Fprintf(execution.Stdout, "some-stdout-output")
+			fmt.Fprintf(execution.Stderr, "some-stderr-output")
+
+			return nil
+		}
 
 		cli = docker.NewCLI(executable)
 	})
@@ -32,9 +37,7 @@ var _ = Describe("CLI", func() {
 			Expect(stdout).To(Equal("some-stdout-output"))
 			Expect(stderr).To(Equal("some-stderr-output"))
 
-			Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
-				Args: []string{"build", "."},
-			}))
+			Expect(executable.ExecuteCall.Receives.Execution.Args).To(Equal([]string{"build", "."}))
 		})
 
 		Context("when given the option to remove the build container", func() {
@@ -46,9 +49,7 @@ var _ = Describe("CLI", func() {
 				Expect(stdout).To(Equal("some-stdout-output"))
 				Expect(stderr).To(Equal("some-stderr-output"))
 
-				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
-					Args: []string{"build", "--rm", "."},
-				}))
+				Expect(executable.ExecuteCall.Receives.Execution.Args).To(Equal([]string{"build", "--rm", "."}))
 			})
 		})
 
@@ -61,9 +62,7 @@ var _ = Describe("CLI", func() {
 				Expect(stdout).To(Equal("some-stdout-output"))
 				Expect(stderr).To(Equal("some-stderr-output"))
 
-				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
-					Args: []string{"build", "--no-cache", "."},
-				}))
+				Expect(executable.ExecuteCall.Receives.Execution.Args).To(Equal([]string{"build", "--no-cache", "."}))
 			})
 		})
 
@@ -76,9 +75,7 @@ var _ = Describe("CLI", func() {
 				Expect(stdout).To(Equal("some-stdout-output"))
 				Expect(stderr).To(Equal("some-stderr-output"))
 
-				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
-					Args: []string{"build", "--tag", "some-tag", "."},
-				}))
+				Expect(executable.ExecuteCall.Receives.Execution.Args).To(Equal([]string{"build", "--tag", "some-tag", "."}))
 			})
 		})
 
@@ -91,9 +88,7 @@ var _ = Describe("CLI", func() {
 				Expect(stdout).To(Equal("some-stdout-output"))
 				Expect(stderr).To(Equal("some-stderr-output"))
 
-				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
-					Args: []string{"build", "--file", "some-file", "."},
-				}))
+				Expect(executable.ExecuteCall.Receives.Execution.Args).To(Equal([]string{"build", "--file", "some-file", "."}))
 			})
 		})
 
@@ -106,17 +101,19 @@ var _ = Describe("CLI", func() {
 				Expect(stdout).To(Equal("some-stdout-output"))
 				Expect(stderr).To(Equal("some-stderr-output"))
 
-				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
-					Args: []string{"build", "some-context"},
-					Dir:  "some-context",
-				}))
+				Expect(executable.ExecuteCall.Receives.Execution.Args).To(Equal([]string{"build", "some-context"}))
+				Expect(executable.ExecuteCall.Receives.Execution.Dir).To(Equal("some-context"))
 			})
 		})
 
 		Context("failure cases", func() {
 			Context("when the executable cannot execute", func() {
 				BeforeEach(func() {
-					executable.ExecuteCall.Returns.Err = errors.New("failed to execute")
+					executable.ExecuteCall.Stub = func(execution pexec.Execution) error {
+						fmt.Fprintf(execution.Stdout, "some-stdout-output")
+						fmt.Fprintf(execution.Stderr, "some-stderr-output")
+						return errors.New("failed to execute")
+					}
 				})
 
 				It("returns an error, but also includes stdout and stderr", func() {
@@ -136,9 +133,7 @@ var _ = Describe("CLI", func() {
 			Expect(stdout).To(Equal("some-stdout-output"))
 			Expect(stderr).To(Equal("some-stderr-output"))
 
-			Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
-				Args: []string{"run", "some-image"},
-			}))
+			Expect(executable.ExecuteCall.Receives.Execution.Args).To(Equal([]string{"run", "some-image"}))
 		})
 
 		Context("when given the network option to specify the network the container should use", func() {
@@ -149,9 +144,7 @@ var _ = Describe("CLI", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(stdout).To(Equal("some-stdout-output"))
 				Expect(stderr).To(Equal("some-stderr-output"))
-				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
-					Args: []string{"run", "--network", "some-network", "some-image"},
-				}))
+				Expect(executable.ExecuteCall.Receives.Execution.Args).To(Equal([]string{"run", "--network", "some-network", "some-image"}))
 			})
 		})
 
@@ -163,9 +156,7 @@ var _ = Describe("CLI", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(stdout).To(Equal("some-stdout-output"))
 				Expect(stderr).To(Equal("some-stderr-output"))
-				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
-					Args: []string{"run", "--rm", "some-image"},
-				}))
+				Expect(executable.ExecuteCall.Receives.Execution.Args).To(Equal([]string{"run", "--rm", "some-image"}))
 			})
 		})
 
@@ -177,9 +168,7 @@ var _ = Describe("CLI", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(stdout).To(Equal("some-stdout-output"))
 				Expect(stderr).To(Equal("some-stderr-output"))
-				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
-					Args: []string{"run", "--tty", "some-image"},
-				}))
+				Expect(executable.ExecuteCall.Receives.Execution.Args).To(Equal([]string{"run", "--tty", "some-image"}))
 			})
 		})
 
@@ -191,16 +180,18 @@ var _ = Describe("CLI", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(stdout).To(Equal("some-stdout-output"))
 				Expect(stderr).To(Equal("some-stderr-output"))
-				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
-					Args: []string{"run", "some-image", "bash", "-c", "some-command"},
-				}))
+				Expect(executable.ExecuteCall.Receives.Execution.Args).To(Equal([]string{"run", "some-image", "bash", "-c", "some-command"}))
 			})
 		})
 
 		Context("failure cases", func() {
 			Context("when the executable fails to execute", func() {
 				BeforeEach(func() {
-					executable.ExecuteCall.Returns.Err = errors.New("failed to execute")
+					executable.ExecuteCall.Stub = func(execution pexec.Execution) error {
+						fmt.Fprintf(execution.Stdout, "some-stdout-output")
+						fmt.Fprintf(execution.Stderr, "some-stderr-output")
+						return errors.New("failed to execute")
+					}
 				})
 
 				It("returns an error, but also includes stdout and stderr", func() {
@@ -220,9 +211,7 @@ var _ = Describe("CLI", func() {
 			Expect(stdout).To(Equal("some-stdout-output"))
 			Expect(stderr).To(Equal("some-stderr-output"))
 
-			Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
-				Args: []string{"image", "rm", "some-image"},
-			}))
+			Expect(executable.ExecuteCall.Receives.Execution.Args).To(Equal([]string{"image", "rm", "some-image"}))
 		})
 
 		Context("when given the force option", func() {
@@ -234,16 +223,18 @@ var _ = Describe("CLI", func() {
 				Expect(stdout).To(Equal("some-stdout-output"))
 				Expect(stderr).To(Equal("some-stderr-output"))
 
-				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
-					Args: []string{"image", "rm", "--force", "some-image"},
-				}))
+				Expect(executable.ExecuteCall.Receives.Execution.Args).To(Equal([]string{"image", "rm", "--force", "some-image"}))
 			})
 		})
 
 		Context("failure cases", func() {
 			Context("when the executable fails to execute", func() {
 				BeforeEach(func() {
-					executable.ExecuteCall.Returns.Err = errors.New("failed to execute")
+					executable.ExecuteCall.Stub = func(execution pexec.Execution) error {
+						fmt.Fprintf(execution.Stdout, "some-stdout-output")
+						fmt.Fprintf(execution.Stderr, "some-stderr-output")
+						return errors.New("failed to execute")
+					}
 				})
 
 				It("returns an error, but also includes stdout and stderr", func() {

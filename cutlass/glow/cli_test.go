@@ -2,6 +2,7 @@ package glow_test
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/cloudfoundry/libbuildpack/cutlass/glow"
 	"github.com/cloudfoundry/libbuildpack/cutlass/glow/fakes"
@@ -19,8 +20,12 @@ var _ = Describe("CLI", func() {
 
 	BeforeEach(func() {
 		executable = &fakes.Executable{}
-		executable.ExecuteCall.Returns.Stdout = "some-stdout"
-		executable.ExecuteCall.Returns.Stderr = "some-stderr"
+		executable.ExecuteCall.Stub = func(execution pexec.Execution) error {
+			fmt.Fprintf(execution.Stdout, "some-stdout")
+			fmt.Fprintf(execution.Stderr, "some-stderr")
+
+			return nil
+		}
 
 		cli = glow.NewCLI(executable)
 	})
@@ -32,10 +37,8 @@ var _ = Describe("CLI", func() {
 			Expect(stdout).To(Equal("some-stdout"))
 			Expect(stderr).To(Equal("some-stderr"))
 
-			Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
-				Args: []string{"package", "-stack", "some-stack"},
-				Dir:  "some-dir",
-			}))
+			Expect(executable.ExecuteCall.Receives.Execution.Args).To(Equal([]string{"package", "-stack", "some-stack"}))
+			Expect(executable.ExecuteCall.Receives.Execution.Dir).To(Equal("some-dir"))
 		})
 
 		It("calls the package subcommand with the -version flag", func() {
@@ -46,10 +49,8 @@ var _ = Describe("CLI", func() {
 			Expect(stdout).To(Equal("some-stdout"))
 			Expect(stderr).To(Equal("some-stderr"))
 
-			Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
-				Args: []string{"package", "-stack", "some-stack", "-version", "some-version"},
-				Dir:  "some-dir",
-			}))
+			Expect(executable.ExecuteCall.Receives.Execution.Args).To(Equal([]string{"package", "-stack", "some-stack", "-version", "some-version"}))
+			Expect(executable.ExecuteCall.Receives.Execution.Dir).To(Equal("some-dir"))
 		})
 
 		It("calls the package subcommand with the -manifestpath flag", func() {
@@ -60,10 +61,8 @@ var _ = Describe("CLI", func() {
 			Expect(stdout).To(Equal("some-stdout"))
 			Expect(stderr).To(Equal("some-stderr"))
 
-			Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
-				Args: []string{"package", "-stack", "some-stack", "-manifestpath", "some-path"},
-				Dir:  "some-dir",
-			}))
+			Expect(executable.ExecuteCall.Receives.Execution.Args).To(Equal([]string{"package", "-stack", "some-stack", "-manifestpath", "some-path"}))
+			Expect(executable.ExecuteCall.Receives.Execution.Dir).To(Equal("some-dir"))
 		})
 
 		It("calls the package subcommand with the -dev flag", func() {
@@ -74,10 +73,8 @@ var _ = Describe("CLI", func() {
 			Expect(stdout).To(Equal("some-stdout"))
 			Expect(stderr).To(Equal("some-stderr"))
 
-			Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
-				Args: []string{"package", "-stack", "some-stack", "-dev"},
-				Dir:  "some-dir",
-			}))
+			Expect(executable.ExecuteCall.Receives.Execution.Args).To(Equal([]string{"package", "-stack", "some-stack", "-dev"}))
+			Expect(executable.ExecuteCall.Receives.Execution.Dir).To(Equal("some-dir"))
 		})
 
 		It("calls the package subcommand with the -cached flag", func() {
@@ -88,16 +85,18 @@ var _ = Describe("CLI", func() {
 			Expect(stdout).To(Equal("some-stdout"))
 			Expect(stderr).To(Equal("some-stderr"))
 
-			Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
-				Args: []string{"package", "-stack", "some-stack", "-cached"},
-				Dir:  "some-dir",
-			}))
+			Expect(executable.ExecuteCall.Receives.Execution.Args).To(Equal([]string{"package", "-stack", "some-stack", "-cached"}))
+			Expect(executable.ExecuteCall.Receives.Execution.Dir).To(Equal("some-dir"))
 		})
 
 		Context("failure cases", func() {
 			Context("when the executable fails", func() {
 				BeforeEach(func() {
-					executable.ExecuteCall.Returns.Err = errors.New("failed to execute")
+					executable.ExecuteCall.Stub = func(execution pexec.Execution) error {
+						fmt.Fprintf(execution.Stdout, "some-stdout")
+						fmt.Fprintf(execution.Stderr, "some-stderr")
+						return errors.New("failed to execute")
+					}
 				})
 
 				It("returns the error and stdout and stderr", func() {
