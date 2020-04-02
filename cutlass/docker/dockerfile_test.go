@@ -28,14 +28,19 @@ ENV CF_STACK cflinuxfs3
 ENV VCAP_APPLICATION {}
 ENV some-env
 ENV other-env
+RUN mv /usr/sbin/tcpdump /usr/bin/tcpdump
+RUN chmod o+rwx /tmp
+RUN chown vcap /tmp/ -R
+RUN mkdir /vcap-home
+RUN chown vcap /vcap-home -R
+RUN chown vcap /home/vcap -R
 ADD /some/fixture-path /tmp/staged/
+RUN chown vcap /tmp/staged -R
 ADD /some/buildpack-path /tmp/
 RUN mkdir -p /buildpack/0
-RUN mkdir -p /tmp/cache
-RUN unzip /tmp/buildpack-path -d /buildpack
-RUN mv /usr/sbin/tcpdump /usr/bin/tcpdump`))
+RUN chown vcap /buildpack -R
+RUN unzip /tmp/buildpack-path -d /buildpack`))
 	})
-
 	Context("when the CF_STACK environment variable is set", func() {
 		BeforeEach(func() {
 			Expect(os.Setenv("CF_STACK", "some-stack")).To(Succeed())
@@ -53,12 +58,18 @@ ENV CF_STACK some-stack
 ENV VCAP_APPLICATION {}
 ENV some-env
 ENV other-env
+RUN mv /usr/sbin/tcpdump /usr/bin/tcpdump
+RUN chmod o+rwx /tmp
+RUN chown vcap /tmp/ -R
+RUN mkdir /vcap-home
+RUN chown vcap /vcap-home -R
+RUN chown vcap /home/vcap -R
 ADD /some/fixture-path /tmp/staged/
+RUN chown vcap /tmp/staged -R
 ADD /some/buildpack-path /tmp/
 RUN mkdir -p /buildpack/0
-RUN mkdir -p /tmp/cache
-RUN unzip /tmp/buildpack-path -d /buildpack
-RUN mv /usr/sbin/tcpdump /usr/bin/tcpdump`))
+RUN chown vcap /buildpack -R
+RUN unzip /tmp/buildpack-path -d /buildpack`))
 		})
 	})
 
@@ -79,12 +90,18 @@ ENV CF_STACK cflinuxfs3
 ENV VCAP_APPLICATION {}
 ENV some-env
 ENV other-env
+RUN mv /usr/sbin/tcpdump /usr/bin/tcpdump
+RUN chmod o+rwx /tmp
+RUN chown vcap /tmp/ -R
+RUN mkdir /vcap-home
+RUN chown vcap /vcap-home -R
+RUN chown vcap /home/vcap -R
 ADD /some/fixture-path /tmp/staged/
+RUN chown vcap /tmp/staged -R
 ADD /some/buildpack-path /tmp/
 RUN mkdir -p /buildpack/0
-RUN mkdir -p /tmp/cache
-RUN unzip /tmp/buildpack-path -d /buildpack
-RUN mv /usr/sbin/tcpdump /usr/bin/tcpdump`))
+RUN chown vcap /buildpack -R
+RUN unzip /tmp/buildpack-path -d /buildpack`))
 		})
 	})
 })
