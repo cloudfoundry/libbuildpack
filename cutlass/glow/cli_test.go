@@ -6,7 +6,7 @@ import (
 
 	"github.com/cloudfoundry/libbuildpack/cutlass/glow"
 	"github.com/cloudfoundry/libbuildpack/cutlass/glow/fakes"
-	"github.com/cloudfoundry/packit/pexec"
+	"github.com/paketo-buildpacks/packit/pexec"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
