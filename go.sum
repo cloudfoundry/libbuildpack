@@ -376,6 +376,7 @@ github.com/paketo-buildpacks/packit v0.3.0/go.mod h1:BQ38pCFZjrtPnJBVbH7X0DEoLyo
 github.com/paketo-buildpacks/packit v0.3.2/go.mod h1:BQ38pCFZjrtPnJBVbH7X0DEoLyob9YKjrx0+3hlFaRY=
 github.com/paketo-buildpacks/packit v0.4.1/go.mod h1:M32oBH9DJG8uZZBo4dVwjIpbZNjmEsOLY5JHsWThKNg=
 github.com/paketo-buildpacks/packit v0.4.2/go.mod h1:aqL3Yl44rPVAFA9dg0gSPKrVOBxyTUYTnhhJsOT93JA=
+github.com/paketo-buildpacks/packit v0.5.0/go.mod h1:ATLZccUzqEAyPlirdka8hs+XNqS4pyJ/tjyU1NXJKm8=
 github.com/pelletier/go-toml v1.2.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=
 github.com/pelletier/go-toml v1.8.1/go.mod h1:T2/BmBdy8dvIRq1a/8aqjN41wvWlN4lrapLU/GW4pbc=
 github.com/peterbourgon/diskv v2.0.1+incompatible/go.mod h1:uqqh8zWWbv1HBMNONnaR/tNboyR3/BZd58JJSHlUSCU=
