@@ -14,7 +14,7 @@ require (
 	github.com/onsi/gomega v1.10.4
 	github.com/paketo-buildpacks/packit v0.6.1
 	github.com/pkg/errors v0.9.1
-	github.com/tidwall/gjson v1.6.7
+	github.com/tidwall/gjson v1.6.8
 	gopkg.in/yaml.v2 v2.4.0
 )
 
