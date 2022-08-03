@@ -4,8 +4,11 @@ set -euo pipefail
 
 GO_VERSION="1.13.5"
 
-if [ $CF_STACK == "cflinuxfs3" ]; then
+if [ $CF_STACK == "cflinuxfs3" || $CF_STACK == "cflinuxfs4" ]; then
     GO_SHA256="fedef14df0fc373546067501db2009d31516bfe9217045028b4cf8fd06afc9df"
+    # TODO remove this when we have a go buildpack on cflinuxfs4
+    # cflinuxfs3 go dependency should work fine on cflinuxfs4 until then
+    CF_STACK="cflinuxfs4"
 else
   echo "       **ERROR** Unsupported stack"
   echo "                 See https://docs.cloudfoundry.org/devguide/deploy-apps/stacks.html for more info"
