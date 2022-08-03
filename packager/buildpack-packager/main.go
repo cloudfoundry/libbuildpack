@@ -7,8 +7,10 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 
+	"github.com/cloudfoundry/libbuildpack"
 	"github.com/cloudfoundry/libbuildpack/packager"
 	"github.com/google/subcommands"
 )
@@ -98,12 +100,108 @@ func (b *buildCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{})
 	return subcommands.ExitSuccess
 }
 
+type initCmd struct {
+	name string
+	dir  string
+}
+
+func (*initCmd) Name() string { return "init" }
+func (*initCmd) Synopsis() string {
+	return "Creates a folder with the basic structure of a new buildpack"
+}
+func (i *initCmd) SetFlags(f *flag.FlagSet) {
+	f.StringVar(&i.name, "name", "", "Name of the buildpack. Required.")
+	f.StringVar(&i.dir, "path", "", "Path to folder to create. Defaults to the name + '-buildpack' in the current directory.")
+}
+func (*initCmd) Usage() string {
+	return `init:
+	Create a new directory that is structured as a buildpack.
+`
+}
+func (i *initCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
+	fmt.Println("Init", i.name, i.dir)
+
+	if i.name == "" {
+		log.Printf("error: no name entered for new buildpack")
+		return subcommands.ExitUsageError
+	}
+
+	// assume user doesn't want -buildpack in the language name
+	i.name = strings.TrimSuffix(i.name, "-buildpack")
+
+	if i.dir == "" {
+		i.dir = i.name + "-buildpack"
+	}
+	var err error
+	i.dir, err = filepath.Abs(i.dir)
+	if err != nil {
+		log.Printf("error: couldn't get absolute path to default directory: %v", err)
+		return subcommands.ExitFailure
+	}
+
+	if exists, err := libbuildpack.FileExists(i.dir); err != nil {
+		return subcommands.ExitFailure
+	} else if exists {
+		log.Printf("error: directory %s already exists", i.dir)
+		return subcommands.ExitUsageError
+	}
+
+	if err := packager.Scaffold(i.dir, i.name); err != nil {
+		log.Printf("Error creating new buildpack scaffolding: %v", err)
+		return subcommands.ExitFailure
+	}
+
+	return subcommands.ExitSuccess
+}
+
+type upgradeCmd struct {
+	dir   string
+	force bool
+}
+
+func (*upgradeCmd) Name() string { return "upgrade" }
+func (*upgradeCmd) Synopsis() string {
+	return "Upgrades a buildpack scaffolded by buildpack-packager init"
+}
+func (u *upgradeCmd) SetFlags(f *flag.FlagSet) {
+	f.StringVar(&u.dir, "path", ".", "Path to folder to create. Defaults to the current directory.")
+	f.BoolVar(&u.force, "force", false, "Regenerate files even if they have been modified")
+}
+func (*upgradeCmd) Usage() string {
+	return `upgrade:
+	Update an existing buildpack with changes made to scaffolding code.
+`
+}
+func (u *upgradeCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
+	var err error
+	u.dir, err = filepath.Abs(u.dir)
+	if err != nil {
+		log.Printf("error: couldn't get absolute path to default directory: %v", err)
+		return subcommands.ExitFailure
+	}
+
+	if exists, err := libbuildpack.FileExists(u.dir); err != nil {
+		return subcommands.ExitFailure
+	} else if !exists {
+		log.Printf("error: directory %s does not exist", u.dir)
+		return subcommands.ExitUsageError
+	}
+
+	if err := packager.Upgrade(u.dir, u.force); err != nil {
+		log.Printf("Error upgrading buildpack: %v", err)
+		return subcommands.ExitFailure
+	}
+
+	return subcommands.ExitSuccess
+}
 func main() {
 	subcommands.Register(subcommands.HelpCommand(), "")
 	subcommands.Register(subcommands.FlagsCommand(), "")
 	subcommands.Register(subcommands.CommandsCommand(), "")
 	subcommands.Register(&summaryCmd{}, "Custom")
 	subcommands.Register(&buildCmd{}, "Custom")
+	subcommands.Register(&initCmd{}, "Custom")
+	subcommands.Register(&upgradeCmd{}, "Custom")
 
 	flag.Parse()
 	ctx := context.Background()
