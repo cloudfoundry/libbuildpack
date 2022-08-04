@@ -28,7 +28,7 @@ ENV CF_STACK cflinuxfs3
 ENV VCAP_APPLICATION {}
 ENV some-env
 ENV other-env
-RUN mv /usr/sbin/tcpdump /usr/bin/tcpdump
+RUN if [ ! -f /usr/bin/tcpdump ]; then mv /usr/sbin/tcpdump /usr/bin/tcpdump; fi
 RUN chmod o+rwx /tmp
 RUN chown vcap /tmp/ -R
 RUN mkdir /vcap-home
@@ -58,7 +58,7 @@ ENV CF_STACK some-stack
 ENV VCAP_APPLICATION {}
 ENV some-env
 ENV other-env
-RUN mv /usr/sbin/tcpdump /usr/bin/tcpdump
+RUN if [ ! -f /usr/bin/tcpdump ]; then mv /usr/sbin/tcpdump /usr/bin/tcpdump; fi
 RUN chmod o+rwx /tmp
 RUN chown vcap /tmp/ -R
 RUN mkdir /vcap-home
@@ -90,7 +90,7 @@ ENV CF_STACK cflinuxfs3
 ENV VCAP_APPLICATION {}
 ENV some-env
 ENV other-env
-RUN mv /usr/sbin/tcpdump /usr/bin/tcpdump
+RUN if [ ! -f /usr/bin/tcpdump ]; then mv /usr/sbin/tcpdump /usr/bin/tcpdump; fi
 RUN chmod o+rwx /tmp
 RUN chown vcap /tmp/ -R
 RUN mkdir /vcap-home
