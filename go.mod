@@ -1,11 +1,12 @@
 module github.com/cloudfoundry/libbuildpack
 
+go 1.19
+
 require (
 	code.cloudfoundry.org/lager v2.0.0+incompatible
 	github.com/Masterminds/semver v1.5.0
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/elazarl/goproxy v0.0.0-20190911111923-ecfe977594f1
-	github.com/elazarl/goproxy/ext v0.0.0-20190911111923-ecfe977594f1 // indirect
 	github.com/golang/mock v1.6.0
 	github.com/google/subcommands v1.2.0
 	github.com/jarcoal/httpmock v1.2.0
@@ -17,4 +18,16 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-go 1.13
+require (
+	github.com/elazarl/goproxy/ext v0.0.0-20190911111923-ecfe977594f1 // indirect
+	github.com/fsnotify/fsnotify v1.4.9 // indirect
+	github.com/google/go-cmp v0.5.9 // indirect
+	github.com/nxadm/tail v1.4.8 // indirect
+	github.com/tidwall/match v1.1.1 // indirect
+	github.com/tidwall/pretty v1.2.0 // indirect
+	golang.org/x/net v0.1.0 // indirect
+	golang.org/x/sys v0.1.0 // indirect
+	golang.org/x/text v0.4.0 // indirect
+	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
+)
