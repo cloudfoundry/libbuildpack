@@ -346,17 +346,30 @@ func CheckSha256(filePath, expectedSha256 string) error {
 }
 
 func downloadFile(url, destFile string) error {
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
+	retries := 3
 
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return fmt.Errorf("could not download: %d", resp.StatusCode)
+	for i := 0; i < retries; i++ {
+		resp, err := http.Get(url)
+		if err != nil {
+			if i == retries-1 {
+				return err
+			}
+			continue
+		}
+
+		defer resp.Body.Close()
+
+		if resp.StatusCode < 200 || resp.StatusCode > 299 {
+			if i == retries-1 {
+				return fmt.Errorf("could not download: %d", resp.StatusCode)
+			}
+			continue
+		}
+
+		return writeToFile(resp.Body, destFile, 0666)
 	}
 
-	return writeToFile(resp.Body, destFile, 0666)
+	return nil
 }
 
 func writeToFile(source io.Reader, destFile string, mode os.FileMode) error {

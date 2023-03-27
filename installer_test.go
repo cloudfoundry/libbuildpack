@@ -215,6 +215,31 @@ var _ = Describe("Installer", func() {
 				})
 				inputs.CheckOnError()
 			})
+			Context("url returns 500", func() {
+				BeforeEach(func() {
+					httpmock.RegisterResponder("GET", inputs.DependencyURI,
+						httpmock.NewStringResponder(500, string(inputs.ExpectedContent)))
+				})
+				It("retries 3 times", func() {
+					err = installer.FetchDependency(inputs.Dependency, outputFile)
+
+					Expect(httpmock.GetTotalCallCount()).To(Equal(3))
+				})
+
+				It("alerts the user that the url could not be downloaded", func() {
+					Expect(inputs.Dependency.Name).To(Equal("thing"))
+					err = installer.FetchDependency(inputs.Dependency, outputFile)
+					Expect(err).To(MatchError(ContainSubstring("could not download: 500")))
+					Expect(buffer.String()).ToNot(ContainSubstring("to ["))
+				})
+
+				It("outputfile does not exist", func() {
+					err = installer.FetchDependency(inputs.Dependency, outputFile)
+
+					Expect(outputFile).ToNot(BeAnExistingFile())
+				})
+				inputs.CheckOnError()
+			})
 
 			Context("url exists but does not match checksum", func() {
 				BeforeEach(func() {
