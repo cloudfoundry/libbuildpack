@@ -18,6 +18,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	backoff "github.com/cenkalti/backoff/v4"
 )
 
 func init() {
@@ -345,28 +347,40 @@ func CheckSha256(filePath, expectedSha256 string) error {
 	return nil
 }
 
-func downloadFile(url, destFile string) error {
-	retries := 3
+func downloadFile(url string, destFile string, retryTimeLimit time.Duration, retryTimeInitialInterval time.Duration) error {
+	bo := backoff.NewExponentialBackOff()
+	bo.MaxElapsedTime = retryTimeLimit
+	bo.InitialInterval = retryTimeInitialInterval
 
-	for i := 0; i < retries; i++ {
-		resp, err := http.Get(url)
+	var resp *http.Response
+	var err error
+
+	// Define the operation to perform the HTTP request
+	operation := func() error {
+		resp, err = http.Get(url)
+
 		if err != nil {
-			if i == retries-1 {
-				return err
-			}
-			continue
+			return err
+			// return backoff.Permanent(err)
 		}
-
 		defer resp.Body.Close()
 
-		if resp.StatusCode < 200 || resp.StatusCode > 299 {
-			if i == retries-1 {
-				return fmt.Errorf("could not download: %d", resp.StatusCode)
-			}
-			continue
+		if resp.StatusCode >= 400 {
+			return fmt.Errorf("%s", resp.Status)
 		}
-
 		return writeToFile(resp.Body, destFile, 0666)
+	}
+
+	// Define the notify function to handle retries
+	notify := func(err error, duration time.Duration) {
+		// TODO: Log errors like fmt.Printf("error: %v, retrying in %v...\n", err, duration)
+	}
+
+	// Use RetryNotify to perform the HTTP request with retries and backoff
+	err = backoff.RetryNotify(operation, bo, notify)
+
+	if err != nil {
+		return fmt.Errorf("could not download: %s", err)
 	}
 
 	return nil

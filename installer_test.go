@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -45,6 +46,8 @@ var _ = Describe("Installer", func() {
 		manifest, err := libbuildpack.NewManifest(manifestDir, logger, currentTime)
 		Expect(err).To(BeNil())
 		installer = libbuildpack.NewInstaller(manifest)
+		installer.SetRetryTimeLimit(10 * time.Millisecond)
+		installer.SetRetryTimeInitialInterval(1 * time.Millisecond)
 	})
 
 	Describe("FetchDependency", func() {
@@ -155,7 +158,6 @@ var _ = Describe("Installer", func() {
 					Expect(err).ToNot(BeNil())
 				})
 			})
-
 		}
 
 		type DownloadingTestInputs struct {
@@ -213,30 +215,18 @@ var _ = Describe("Installer", func() {
 
 					Expect(outputFile).ToNot(BeAnExistingFile())
 				})
+				It("retries", func() {
+					err = installer.FetchDependency(inputs.Dependency, outputFile)
+					Expect(httpmock.GetTotalCallCount()).To(BeNumerically(">", 1))
+				})
 				inputs.CheckOnError()
 			})
-			Context("url returns 500", func() {
-				BeforeEach(func() {
-					httpmock.RegisterResponder("GET", inputs.DependencyURI,
-						httpmock.NewStringResponder(500, string(inputs.ExpectedContent)))
-				})
-				It("retries 3 times", func() {
+			Context("connection reset by peer", func() {
+				It("retries", func() {
+					httpmock.RegisterNoResponder(httpmock.NewErrorResponder(errors.New("connection reset by peer")))
+
 					err = installer.FetchDependency(inputs.Dependency, outputFile)
-
-					Expect(httpmock.GetTotalCallCount()).To(Equal(3))
-				})
-
-				It("alerts the user that the url could not be downloaded", func() {
-					Expect(inputs.Dependency.Name).To(Equal("thing"))
-					err = installer.FetchDependency(inputs.Dependency, outputFile)
-					Expect(err).To(MatchError(ContainSubstring("could not download: 500")))
-					Expect(buffer.String()).ToNot(ContainSubstring("to ["))
-				})
-
-				It("outputfile does not exist", func() {
-					err = installer.FetchDependency(inputs.Dependency, outputFile)
-
-					Expect(outputFile).ToNot(BeAnExistingFile())
+					Expect(httpmock.GetTotalCallCount()).To(BeNumerically(">", 1))
 				})
 				inputs.CheckOnError()
 			})
