@@ -347,7 +347,7 @@ func CheckSha256(filePath, expectedSha256 string) error {
 	return nil
 }
 
-func downloadFile(url string, destFile string, retryTimeLimit time.Duration, retryTimeInitialInterval time.Duration) error {
+func downloadFile(url string, destFile string, retryTimeLimit time.Duration, retryTimeInitialInterval time.Duration, logger *Logger) error {
 	bo := backoff.NewExponentialBackOff()
 	bo.MaxElapsedTime = retryTimeLimit
 	bo.InitialInterval = retryTimeInitialInterval
@@ -373,7 +373,7 @@ func downloadFile(url string, destFile string, retryTimeLimit time.Duration, ret
 
 	// Define the notify function to handle retries
 	notify := func(err error, duration time.Duration) {
-		// TODO: Log errors like fmt.Printf("error: %v, retrying in %v...\n", err, duration)
+		logger.Info("error: %v, retrying in %v...\n", err, duration)
 	}
 
 	// Use RetryNotify to perform the HTTP request with retries and backoff

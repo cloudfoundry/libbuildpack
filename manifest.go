@@ -283,7 +283,7 @@ func downloadDependency(entry *ManifestEntry, outputFile string, logger *Logger,
 		return err
 	}
 	logger.Info("Download [%s]", filteredURI)
-	err = downloadFile(entry.URI, outputFile, retryTimeLimit, retryTimeInitialInterval)
+	err = downloadFile(entry.URI, outputFile, retryTimeLimit, retryTimeInitialInterval, logger)
 	if err != nil {
 		return err
 	}

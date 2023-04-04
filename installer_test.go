@@ -222,11 +222,17 @@ var _ = Describe("Installer", func() {
 				inputs.CheckOnError()
 			})
 			Context("connection reset by peer", func() {
-				It("retries", func() {
+				BeforeEach(func() {
 					httpmock.RegisterNoResponder(httpmock.NewErrorResponder(errors.New("connection reset by peer")))
-
+				})
+				It("retries a failure", func() {
 					err = installer.FetchDependency(inputs.Dependency, outputFile)
 					Expect(httpmock.GetTotalCallCount()).To(BeNumerically(">", 1))
+				})
+
+				It("logs the error", func() {
+					err = installer.FetchDependency(inputs.Dependency, outputFile)
+					Expect(buffer.String()).To(MatchRegexp("error.*connection reset by peer, retrying in .*"))
 				})
 				inputs.CheckOnError()
 			})
