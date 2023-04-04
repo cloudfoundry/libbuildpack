@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
 	"time"
@@ -190,6 +191,38 @@ var _ = Describe("Installer", func() {
 
 					Expect(err).To(BeNil())
 					Expect(ioutil.ReadFile(outputFile)).To(Equal(inputs.ExpectedContent))
+				})
+			})
+			Context("url returns error then success and matches checksum", func() {
+				BeforeEach(func() {
+					httpmock.RegisterResponder("GET", inputs.DependencyURI,
+						httpmock.ResponderFromMultipleResponses(
+							[]*http.Response{
+								httpmock.NewStringResponse(404, string(inputs.ExpectedContent)),
+								httpmock.NewStringResponse(200, string(inputs.ExpectedContent)),
+							},
+						))
+				})
+
+				It("downloads the file to the requested location", func() {
+					err = installer.FetchDependency(inputs.Dependency, outputFile)
+
+					Expect(err).To(BeNil())
+					Expect(ioutil.ReadFile(outputFile)).To(Equal(inputs.ExpectedContent))
+				})
+				inputs.CheckOnSuccess()
+
+				It("makes intermediate directories", func() {
+					outputFile = filepath.Join(tmpdir, "notexist", "out.tgz")
+					err = installer.FetchDependency(inputs.Dependency, outputFile)
+
+					Expect(err).To(BeNil())
+					Expect(ioutil.ReadFile(outputFile)).To(Equal(inputs.ExpectedContent))
+				})
+
+				It("retries to get success", func() {
+					err = installer.FetchDependency(inputs.Dependency, outputFile)
+					Expect(httpmock.GetTotalCallCount()).To(BeNumerically(">", 1))
 				})
 			})
 			Context("url returns 404", func() {
