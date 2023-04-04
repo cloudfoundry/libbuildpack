@@ -355,13 +355,11 @@ func downloadFile(url string, destFile string, retryTimeLimit time.Duration, ret
 	var resp *http.Response
 	var err error
 
-	// Define the operation to perform the HTTP request
 	operation := func() error {
 		resp, err = http.Get(url)
 
 		if err != nil {
 			return err
-			// return backoff.Permanent(err)
 		}
 		defer resp.Body.Close()
 
@@ -371,12 +369,10 @@ func downloadFile(url string, destFile string, retryTimeLimit time.Duration, ret
 		return writeToFile(resp.Body, destFile, 0666)
 	}
 
-	// Define the notify function to handle retries
 	notify := func(err error, duration time.Duration) {
-		logger.Info("error: %v, retrying in %v...\n", err, duration)
+		logger.Info("error: %v, retrying in %v...", err, duration)
 	}
 
-	// Use RetryNotify to perform the HTTP request with retries and backoff
 	err = backoff.RetryNotify(operation, bo, notify)
 
 	if err != nil {
