@@ -23,7 +23,7 @@ type Installer struct {
 }
 
 func NewInstaller(manifest *Manifest) *Installer {
-	return &Installer{manifest, "", make(map[string]interface{}), &map[string]string{}, 5 * time.Minute, 500 * time.Millisecond}
+	return &Installer{manifest, "", make(map[string]interface{}), &map[string]string{}, 1 * time.Minute, 1 * time.Second}
 }
 
 func (i *Installer) SetAppCacheDir(appCacheDir string) (err error) {
