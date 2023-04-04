@@ -222,6 +222,7 @@ var _ = Describe("Installer", func() {
 
 				It("retries to get success", func() {
 					err = installer.FetchDependency(inputs.Dependency, outputFile)
+					Expect(err).To(BeNil())
 					Expect(httpmock.GetTotalCallCount()).To(BeNumerically(">", 1))
 				})
 			})
