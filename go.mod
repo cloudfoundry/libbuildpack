@@ -12,7 +12,7 @@ require (
 	github.com/google/subcommands v1.2.0
 	github.com/jarcoal/httpmock v1.3.0
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.27.6
+	github.com/onsi/gomega v1.28.0
 	github.com/paketo-buildpacks/packit v1.3.1
 	github.com/pkg/errors v0.9.1
 	github.com/tidwall/gjson v1.12.0
@@ -26,9 +26,9 @@ require (
 	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
-	golang.org/x/net v0.8.0 // indirect
-	golang.org/x/sys v0.6.0 // indirect
-	golang.org/x/text v0.8.0 // indirect
+	golang.org/x/net v0.14.0 // indirect
+	golang.org/x/sys v0.11.0 // indirect
+	golang.org/x/text v0.12.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
