@@ -87,6 +87,41 @@ var _ = Describe("Util", func() {
 		})
 	})
 
+	Describe("ExtractZipWithStrip", func() {
+		var (
+			tmpdir string
+			err    error
+		)
+		BeforeEach(func() {
+			tmpdir, err = ioutil.TempDir("", "exploded")
+			Expect(err).To(BeNil())
+		})
+		AfterEach(func() { err = os.RemoveAll(tmpdir); Expect(err).To(BeNil()) })
+
+		Context("with stripComponents=0", func() {
+			It("behaves like ExtractZip", func() {
+				err = libbuildpack.ExtractZipWithStrip("fixtures/thing.zip", tmpdir, 0)
+				Expect(err).To(BeNil())
+
+				Expect(filepath.Join(tmpdir, "root.txt")).To(BeAnExistingFile())
+				Expect(filepath.Join(tmpdir, "thing", "bin", "file2.exe")).To(BeAnExistingFile())
+			})
+		})
+
+		Context("with stripComponents=1", func() {
+			It("strips the top-level directory", func() {
+				err = libbuildpack.ExtractZipWithStrip("fixtures/thing.zip", tmpdir, 1)
+				Expect(err).To(BeNil())
+
+				// root.txt should be gone (only 1 component)
+				Expect(filepath.Join(tmpdir, "root.txt")).ToNot(BeAnExistingFile())
+				// thing/bin/file2.exe should become bin/file2.exe
+				Expect(filepath.Join(tmpdir, "bin", "file2.exe")).To(BeAnExistingFile())
+				Expect(ioutil.ReadFile(filepath.Join(tmpdir, "bin", "file2.exe"))).To(Equal([]byte("progam2\n")))
+			})
+		})
+	})
+
 	Describe("GetBuildpackDir", func() {
 		var (
 			parentDir string
@@ -250,6 +285,63 @@ var _ = Describe("Util", func() {
 			It("returns an error", func() {
 				err = libbuildpack.ExtractTarGz("fixtures/path_traversal.tgz", tmpdir)
 				Expect(err).ToNot(BeNil())
+			})
+		})
+	})
+
+	Describe("ExtractTarGzWithStrip", func() {
+		var (
+			tmpdir string
+			err    error
+		)
+		BeforeEach(func() {
+			tmpdir, err = ioutil.TempDir("", "exploded")
+			Expect(err).To(BeNil())
+		})
+		AfterEach(func() { err = os.RemoveAll(tmpdir); Expect(err).To(BeNil()) })
+
+		Context("with stripComponents=0", func() {
+			It("behaves like ExtractTarGz", func() {
+				err = libbuildpack.ExtractTarGzWithStrip("fixtures/thing.tgz", tmpdir, 0)
+				Expect(err).To(BeNil())
+
+				Expect(filepath.Join(tmpdir, "root.txt")).To(BeAnExistingFile())
+				Expect(filepath.Join(tmpdir, "thing", "bin", "file2.exe")).To(BeAnExistingFile())
+			})
+		})
+
+		Context("with stripComponents=1", func() {
+			It("strips the top-level directory", func() {
+				err = libbuildpack.ExtractTarGzWithStrip("fixtures/thing.tgz", tmpdir, 1)
+				Expect(err).To(BeNil())
+
+				// root.txt should be gone (only 1 component)
+				Expect(filepath.Join(tmpdir, "root.txt")).ToNot(BeAnExistingFile())
+				// thing/bin/file2.exe should become bin/file2.exe
+				Expect(filepath.Join(tmpdir, "bin", "file2.exe")).To(BeAnExistingFile())
+				Expect(ioutil.ReadFile(filepath.Join(tmpdir, "bin", "file2.exe"))).To(Equal([]byte("progam2\n")))
+			})
+		})
+	})
+
+	Describe("ExtractTarXzWithStrip", func() {
+		var (
+			tmpdir string
+			err    error
+		)
+		BeforeEach(func() {
+			tmpdir, err = ioutil.TempDir("", "exploded")
+			Expect(err).To(BeNil())
+		})
+		AfterEach(func() { err = os.RemoveAll(tmpdir); Expect(err).To(BeNil()) })
+
+		Context("with stripComponents=0", func() {
+			It("behaves like ExtractTarXz", func() {
+				err = libbuildpack.ExtractTarXzWithStrip("fixtures/xzarchive.tar.xz", tmpdir, 0)
+				Expect(err).To(BeNil())
+
+				Expect(filepath.Join(tmpdir, "innerDir")).To(BeADirectory())
+				Expect(filepath.Join(tmpdir, "innerDir", "inner_file.txt")).To(BeAnExistingFile())
 			})
 		})
 	})
