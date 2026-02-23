@@ -4,6 +4,8 @@ import (
 	"crypto/md5"
 	"fmt"
 	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -35,6 +37,57 @@ var _ = Describe("Packager", func() {
 		version = fmt.Sprintf("1.23.45.%s", time.Now().Format("20060102150405"))
 
 		httpmock.Reset()
+	})
+
+	Describe("DownloadFromURI", func() {
+		var (
+			destFile string
+			destDir  string
+		)
+
+		BeforeEach(func() {
+			var err error
+			destDir, err = ioutil.TempDir("", "packager-download")
+			Expect(err).To(BeNil())
+			destFile = filepath.Join(destDir, "some_dep_1.2.3+4_linux.tgz")
+		})
+
+		AfterEach(func() { os.RemoveAll(destDir) })
+
+		Context("when the server returns a non-2xx status", func() {
+			It("returns an error containing the URI and does not leave a file on disk", func() {
+				server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					http.Error(w, "Forbidden", http.StatusForbidden)
+				}))
+				defer server.Close()
+
+				uri := server.URL + "/dependencies/dep/dep_1.2.3+4_linux.tgz"
+				err := packager.DownloadFromURI(uri, destFile)
+				Expect(err).To(MatchError(ContainSubstring("could not download")))
+				Expect(err).To(MatchError(ContainSubstring(uri)))
+				Expect(err).To(MatchError(ContainSubstring("403")))
+
+				_, statErr := os.Stat(destFile)
+				Expect(os.IsNotExist(statErr)).To(BeTrue(), "stale file should not be left on disk after a failed download")
+			})
+		})
+
+		Context("when the download succeeds", func() {
+			It("writes the file to disk", func() {
+				server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusOK)
+					w.Write([]byte("binary content"))
+				}))
+				defer server.Close()
+
+				uri := server.URL + "/dependencies/dep/dep_1.2.3_linux.tgz"
+				err := packager.DownloadFromURI(uri, destFile)
+				Expect(err).To(BeNil())
+
+				_, statErr := os.Stat(destFile)
+				Expect(statErr).To(BeNil(), "file should exist after successful download")
+			})
+		})
 	})
 
 	Describe("Package", func() {
