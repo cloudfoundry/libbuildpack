@@ -92,7 +92,9 @@ var _ = Describe("Packager", func() {
 	Describe("Package", func() {
 		var zipFile string
 		var cached bool
-		DeferCleanup(func() { os.Remove(zipFile) })
+		BeforeEach(func() {
+			DeferCleanup(func() { os.Remove(zipFile) })
+		})
 
 		AssertStack := func() {
 			var manifest *packager.Manifest
