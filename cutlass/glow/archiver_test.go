@@ -9,7 +9,7 @@ import (
 	"github.com/cloudfoundry/libbuildpack/cutlass/glow"
 	"github.com/cloudfoundry/libbuildpack/cutlass/glow/fakes"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
