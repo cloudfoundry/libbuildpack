@@ -20,13 +20,9 @@ var _ = Describe("JSON", func() {
 	BeforeEach(func() {
 		tmpDir, err = ioutil.TempDir("", "json")
 		Expect(err).To(BeNil())
+		DeferCleanup(os.RemoveAll, tmpDir)
 
 		json = &libbuildpack.JSON{}
-	})
-
-	AfterEach(func() {
-		err = os.RemoveAll(tmpDir)
-		Expect(err).To(BeNil())
 	})
 
 	Describe("Load", func() {

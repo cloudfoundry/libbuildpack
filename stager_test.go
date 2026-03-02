@@ -33,12 +33,15 @@ var _ = Describe("Stager", func() {
 	BeforeEach(func() {
 		buildDir, err = ioutil.TempDir("", "build")
 		Expect(err).To(BeNil())
+		DeferCleanup(os.RemoveAll, buildDir)
 
 		cacheDir, err = ioutil.TempDir("", "cache")
 		Expect(err).To(BeNil())
+		DeferCleanup(os.RemoveAll, cacheDir)
 
 		depsDir, err = ioutil.TempDir("", "deps")
 		Expect(err).To(BeNil())
+		DeferCleanup(os.RemoveAll, depsDir)
 
 		depsIdx = "0"
 		err = os.MkdirAll(filepath.Join(depsDir, depsIdx), 0755)
@@ -46,6 +49,7 @@ var _ = Describe("Stager", func() {
 
 		profileDir, err = ioutil.TempDir("", "profiled")
 		Expect(err).To(BeNil())
+		DeferCleanup(os.RemoveAll, profileDir)
 
 		manifestDir = filepath.Join("fixtures", "manifest", "standard")
 
@@ -57,20 +61,6 @@ var _ = Describe("Stager", func() {
 		logger = libbuildpack.NewLogger(buffer)
 
 		s = libbuildpack.NewStager([]string{buildDir, cacheDir, depsDir, depsIdx, profileDir}, logger, manifest)
-	})
-
-	AfterEach(func() {
-		err = os.RemoveAll(buildDir)
-		Expect(err).To(BeNil())
-
-		err = os.RemoveAll(cacheDir)
-		Expect(err).To(BeNil())
-
-		err = os.RemoveAll(depsDir)
-		Expect(err).To(BeNil())
-
-		err = os.RemoveAll(profileDir)
-		Expect(err).To(BeNil())
 	})
 
 	Describe("NewStager", func() {
@@ -300,16 +290,12 @@ var _ = Describe("Stager", func() {
 		BeforeEach(func() {
 			destDir, err = ioutil.TempDir("", "untarred-dependencies")
 			Expect(err).To(BeNil())
+			DeferCleanup(os.RemoveAll, destDir)
 
 			err = ioutil.WriteFile(filepath.Join(destDir, "thing1"), []byte("xxx"), 0644)
 			Expect(err).To(BeNil())
 
 			err = ioutil.WriteFile(filepath.Join(destDir, "thing2"), []byte("yyy"), 0644)
-			Expect(err).To(BeNil())
-		})
-
-		AfterEach(func() {
-			err = os.RemoveAll(destDir)
 			Expect(err).To(BeNil())
 		})
 
@@ -466,14 +452,8 @@ var _ = Describe("Stager", func() {
 
 				for _, envVar := range vars {
 					envVars[envVar] = os.Getenv(envVar)
+					DeferCleanup(os.Setenv, envVar, os.Getenv(envVar))
 					os.Setenv(envVar, "existing_"+envVar)
-				}
-			})
-
-			AfterEach(func() {
-				for key, val := range envVars {
-					err = os.Setenv(key, val)
-					Expect(err).To(BeNil())
 				}
 			})
 

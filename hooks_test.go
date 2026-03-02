@@ -22,10 +22,7 @@ var _ = Describe("Hooks", func() {
 		mockCtrl = gomock.NewController(GinkgoT())
 		mockHook = NewMockHook(mockCtrl)
 		mockStager = &bp.Stager{}
-	})
-
-	AfterEach(func() {
-		bp.ClearHooks()
+		DeferCleanup(bp.ClearHooks)
 	})
 
 	Describe("RunBeforeCompile", func() {

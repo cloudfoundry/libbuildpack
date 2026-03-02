@@ -11,7 +11,7 @@ import (
 
 var _ = Describe("Simple Integration Test", func() {
 	var app *cutlass.App
-	AfterEach(func() {
+	DeferCleanup(func() {
 		if app != nil {
 			app.Destroy()
 		}

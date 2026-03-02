@@ -20,13 +20,9 @@ var _ = Describe("YAML", func() {
 	BeforeEach(func() {
 		tmpDir, err = ioutil.TempDir("", "yaml")
 		Expect(err).To(BeNil())
+		DeferCleanup(os.RemoveAll, tmpDir)
 
 		yaml = &libbuildpack.YAML{}
-	})
-
-	AfterEach(func() {
-		err = os.RemoveAll(tmpDir)
-		Expect(err).To(BeNil())
 	})
 
 	Describe("Load", func() {

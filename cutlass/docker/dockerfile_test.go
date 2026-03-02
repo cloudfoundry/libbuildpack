@@ -43,10 +43,7 @@ RUN unzip /tmp/buildpack-path -d /buildpack`))
 	Context("when the CF_STACK environment variable is set", func() {
 		BeforeEach(func() {
 			Expect(os.Setenv("CF_STACK", "some-stack")).To(Succeed())
-		})
-
-		AfterEach(func() {
-			Expect(os.Unsetenv("CF_STACK")).To(Succeed())
+			DeferCleanup(os.Unsetenv, "CF_STACK")
 		})
 
 		It("returns a dockerfile used for staging", func() {
@@ -75,10 +72,7 @@ RUN unzip /tmp/buildpack-path -d /buildpack`))
 	Context("when the CF_STACK_DOCKER_IMAGE environment variable is set", func() {
 		BeforeEach(func() {
 			Expect(os.Setenv("CF_STACK_DOCKER_IMAGE", "some-stack-docker-image")).To(Succeed())
-		})
-
-		AfterEach(func() {
-			Expect(os.Unsetenv("CF_STACK_DOCKER_IMAGE")).To(Succeed())
+			DeferCleanup(os.Unsetenv, "CF_STACK_DOCKER_IMAGE")
 		})
 
 		It("returns a dockerfile used for staging", func() {

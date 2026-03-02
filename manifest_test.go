@@ -31,6 +31,7 @@ var _ = Describe("Manifest", func() {
 	BeforeEach(func() {
 		oldCfStack = os.Getenv("CF_STACK")
 		os.Setenv("CF_STACK", "cflinuxfs2")
+		DeferCleanup(os.Setenv, "CF_STACK", oldCfStack)
 		manifestDir = "fixtures/manifest/standard"
 		currentTime = time.Now()
 		httpmock.Reset()
@@ -38,8 +39,6 @@ var _ = Describe("Manifest", func() {
 		buffer = new(bytes.Buffer)
 		logger = libbuildpack.NewLogger(ansicleaner.New(buffer))
 	})
-	AfterEach(func() { err = os.Setenv("CF_STACK", oldCfStack); Expect(err).To(BeNil()) })
-
 	JustBeforeEach(func() {
 		manifest, err = libbuildpack.NewManifest(manifestDir, logger, currentTime)
 		Expect(err).To(BeNil())
@@ -56,6 +55,7 @@ var _ = Describe("Manifest", func() {
 		BeforeEach(func() {
 			depsDir, err = ioutil.TempDir("", "libbuildpack_override")
 			Expect(err).ToNot(HaveOccurred())
+			DeferCleanup(os.RemoveAll, depsDir)
 			Expect(os.Mkdir(filepath.Join(depsDir, "0"), 0755)).To(Succeed())
 			Expect(os.Mkdir(filepath.Join(depsDir, "1"), 0755)).To(Succeed())
 			Expect(os.Mkdir(filepath.Join(depsDir, "2"), 0755)).To(Succeed())
@@ -84,10 +84,6 @@ ruby:
     cf_stacks: ['cflinuxfs2']
 `
 			Expect(ioutil.WriteFile(filepath.Join(depsDir, "1", "override.yml"), []byte(data), 0644)).To(Succeed())
-		})
-
-		AfterEach(func() {
-			Expect(os.RemoveAll(depsDir)).To(Succeed())
 		})
 
 		It("updates default version", func() {
@@ -297,6 +293,7 @@ ruby:
 			var err error
 			manifestDir, err = ioutil.TempDir("", "cached")
 			Expect(err).To(BeNil())
+			DeferCleanup(os.RemoveAll, manifestDir)
 
 			data, err := ioutil.ReadFile("fixtures/manifest/fetch/manifest.yml")
 			Expect(err).To(BeNil())
@@ -304,10 +301,6 @@ ruby:
 			err = ioutil.WriteFile(filepath.Join(manifestDir, "manifest.yml"), data, 0644)
 			Expect(err).To(BeNil())
 		})
-		AfterEach(func() {
-			Expect(os.RemoveAll(manifestDir)).To(Succeed())
-		})
-
 		Context("uncached buildpack", func() {
 			It("is false", func() {
 				Expect(manifest.IsCached()).To(BeFalse())
@@ -402,11 +395,7 @@ ruby:
 
 		BeforeEach(func() {
 			cacheDir, err = ioutil.TempDir("", "cache")
-		})
-
-		AfterEach(func() {
-			err = os.RemoveAll(cacheDir)
-			Expect(err).To(BeNil())
+			DeferCleanup(os.RemoveAll, cacheDir)
 		})
 
 		Context("BUILDPACK_METADATA exists", func() {
@@ -464,11 +453,7 @@ ruby:
 
 		BeforeEach(func() {
 			cacheDir, err = ioutil.TempDir("", "cache")
-		})
-
-		AfterEach(func() {
-			err = os.RemoveAll(cacheDir)
-			Expect(err).To(BeNil())
+			DeferCleanup(os.RemoveAll, cacheDir)
 		})
 
 		Context("VERSION file exists", func() {
