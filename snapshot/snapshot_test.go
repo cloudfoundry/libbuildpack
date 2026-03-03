@@ -1,7 +1,6 @@
 package snapshot_test
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -28,14 +27,14 @@ var _ = Describe("Snapshot", func() {
 		origBPDebug = os.Getenv("BP_DEBUG")
 		DeferCleanup(os.Setenv, "BP_DEBUG", origBPDebug)
 
-		tmpDir, err = ioutil.TempDir("", "libbuildpack.snapshot.build.")
+		tmpDir, err = os.MkdirTemp("", "libbuildpack.snapshot.build.")
 		Expect(err).To(BeNil())
 		DeferCleanup(os.RemoveAll, tmpDir)
 
-		Expect(ioutil.WriteFile(filepath.Join(tmpDir, "Gemfile"), []byte("source \"https://rubygems.org\"\r\ngem \"rack\"\r\n"), 0644)).To(Succeed())
-		Expect(ioutil.WriteFile(filepath.Join(tmpDir, "other"), []byte("other"), 0644)).To(Succeed())
+		Expect(os.WriteFile(filepath.Join(tmpDir, "Gemfile"), []byte("source \"https://rubygems.org\"\r\ngem \"rack\"\r\n"), 0644)).To(Succeed())
+		Expect(os.WriteFile(filepath.Join(tmpDir, "other"), []byte("other"), 0644)).To(Succeed())
 		Expect(os.MkdirAll(filepath.Join(tmpDir, "dir"), 0755)).To(Succeed())
-		Expect(ioutil.WriteFile(filepath.Join(tmpDir, "dir", "other"), []byte("other"), 0644)).To(Succeed())
+		Expect(os.WriteFile(filepath.Join(tmpDir, "dir", "other"), []byte("other"), 0644)).To(Succeed())
 		Expect(os.Symlink(filepath.Join(tmpDir, "Gemfile"), filepath.Join(tmpDir, "mySymLink"))).To(Succeed())
 		Expect(os.MkdirAll(filepath.Join(tmpDir, "myEmptyDir"), 0755)).To(Succeed())
 
@@ -56,8 +55,8 @@ var _ = Describe("Snapshot", func() {
 		Context(".cloudfoundry directory", func() {
 			BeforeEach(func() {
 				Expect(os.MkdirAll(filepath.Join(tmpDir, ".cloudfoundry", "dir"), 0755)).To(Succeed())
-				Expect(ioutil.WriteFile(filepath.Join(tmpDir, ".cloudfoundry", "other"), []byte("other"), 0644)).To(Succeed())
-				Expect(ioutil.WriteFile(filepath.Join(tmpDir, ".cloudfoundry", "dir", "other"), []byte("other"), 0644)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(tmpDir, ".cloudfoundry", "other"), []byte("other"), 0644)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(tmpDir, ".cloudfoundry", "dir", "other"), []byte("other"), 0644)).To(Succeed())
 			})
 
 			It("excludes .cloudfoundry directory in the checksum calcuation", func() {
@@ -142,7 +141,7 @@ var _ = Describe("Snapshot", func() {
 
 			Context("when a file is added", func() {
 				BeforeEach(func() {
-					Expect(ioutil.WriteFile(filepath.Join(tmpDir, "extrafile"), []byte("extrafile"), 0644)).To(Succeed())
+					Expect(os.WriteFile(filepath.Join(tmpDir, "extrafile"), []byte("extrafile"), 0644)).To(Succeed())
 				})
 
 				It("logs the new MD5 sum as well as changed paths", func() {
@@ -168,7 +167,7 @@ var _ = Describe("Snapshot", func() {
 
 			Context("when a files contents have changed", func() {
 				BeforeEach(func() {
-					Expect(ioutil.WriteFile(filepath.Join(tmpDir, "other"), []byte("other other"), 0644)).To(Succeed())
+					Expect(os.WriteFile(filepath.Join(tmpDir, "other"), []byte("other other"), 0644)).To(Succeed())
 				})
 
 				It("logs the new MD5 sum as well as changed paths", func() {
@@ -201,7 +200,7 @@ var _ = Describe("Snapshot", func() {
 			var dirSnapshot *snapshot.DirSnapshot
 			BeforeEach(func() {
 				dirSnapshot = snapshot.Dir(tmpDir, mockLogger)
-				Expect(ioutil.WriteFile(filepath.Join(tmpDir, "other"), []byte("other other"), 0644)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(tmpDir, "other"), []byte("other other"), 0644)).To(Succeed())
 			})
 			It("Does not log anything", func() {
 				dirSnapshot.Diff()

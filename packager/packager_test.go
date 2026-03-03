@@ -3,7 +3,6 @@ package packager_test
 import (
 	"crypto/md5"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -32,7 +31,7 @@ var _ = Describe("Packager", func() {
 	BeforeEach(func() {
 		stack = "cflinuxfs2"
 		buildpackDir = "./fixtures/good"
-		cacheDir, err = ioutil.TempDir("", "packager-cachedir")
+		cacheDir, err = os.MkdirTemp("", "packager-cachedir")
 		Expect(err).To(BeNil())
 		version = fmt.Sprintf("1.23.45.%s", time.Now().Format("20060102150405"))
 
@@ -47,7 +46,7 @@ var _ = Describe("Packager", func() {
 
 		BeforeEach(func() {
 			var err error
-			destDir, err = ioutil.TempDir("", "packager-download")
+			destDir, err = os.MkdirTemp("", "packager-download")
 			Expect(err).To(BeNil())
 			DeferCleanup(os.RemoveAll, destDir)
 			destFile = filepath.Join(destDir, "some_dep_1.2.3+4_linux.tgz")
@@ -257,22 +256,22 @@ var _ = Describe("Packager", func() {
 				var tempfile string
 				BeforeEach(func() {
 					var err error
-					tempdir, err := ioutil.TempDir("", "bp_fixture")
+					tempdir, err := os.MkdirTemp("", "bp_fixture")
 					Expect(err).ToNot(HaveOccurred())
 					Expect(libbuildpack.CopyDirectory(buildpackDir, tempdir)).To(Succeed())
 
-					fh, err := ioutil.TempFile("", "bp_dependency")
+					fh, err := os.CreateTemp("", "bp_dependency")
 					Expect(err).ToNot(HaveOccurred())
 					fh.WriteString("keaty")
 					fh.Close()
 					tempfile = fh.Name()
 
-					manifestyml, err := ioutil.ReadFile(filepath.Join(tempdir, "manifest.yml"))
+					manifestyml, err := os.ReadFile(filepath.Join(tempdir, "manifest.yml"))
 					Expect(err).ToNot(HaveOccurred())
 					manifestyml2 := string(manifestyml)
 					manifestyml2 = strings.Replace(manifestyml2, "https://www.ietf.org/rfc/rfc2324.txt", "file://"+tempfile, -1)
 					manifestyml2 = strings.Replace(manifestyml2, "b11329c3fd6dbe9dddcb8dd90f18a4bf441858a6b5bfaccae5f91e5c7d2b3596", "f909ee4c4bec3280bbbff6b41529479366ab10c602d8aed33e3a86f0a9c5db4e", -1)
-					Expect(ioutil.WriteFile(filepath.Join(tempdir, "manifest.yml"), []byte(manifestyml2), 0644)).To(Succeed())
+					Expect(os.WriteFile(filepath.Join(tempdir, "manifest.yml"), []byte(manifestyml2), 0644)).To(Succeed())
 
 					buildpackDir = tempdir
 					DeferCleanup(os.RemoveAll, buildpackDir)

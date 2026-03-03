@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -65,14 +64,14 @@ var _ = Describe("Installer", func() {
 		)
 
 		BeforeEach(func() {
-			tmpdir, err = ioutil.TempDir("", "downloads")
+			tmpdir, err = os.MkdirTemp("", "downloads")
 			Expect(err).To(BeNil())
 			DeferCleanup(os.RemoveAll, tmpdir)
 			outputFile = filepath.Join(tmpdir, "out.tgz")
 
-			manifestDir, err = ioutil.TempDir("", "buildpack")
+			manifestDir, err = os.MkdirTemp("", "buildpack")
 			Expect(err).To(BeNil())
-			appCacheDir, err = ioutil.TempDir("", "appCache")
+			appCacheDir, err = os.MkdirTemp("", "appCache")
 			Expect(err).To(BeNil())
 			DeferCleanup(os.RemoveAll, appCacheDir)
 
@@ -115,27 +114,27 @@ var _ = Describe("Installer", func() {
 			Context("dependency exists cached on disk and matches checksum", func() {
 				BeforeEach(func() {
 					os.MkdirAll(filepath.Dir(inputs.pathToCachedFile), 0755)
-					Expect(ioutil.WriteFile(inputs.pathToCachedFile, inputs.expectedContents, 0644)).To(Succeed())
+					Expect(os.WriteFile(inputs.pathToCachedFile, inputs.expectedContents, 0644)).To(Succeed())
 				})
 				It("copies the cached file to outputFile", func() {
 					err = installer.FetchDependency(inputs.dependency, outputFile)
 
 					Expect(err).To(BeNil())
-					Expect(ioutil.ReadFile(outputFile)).To(Equal(inputs.expectedContents))
+					Expect(os.ReadFile(outputFile)).To(Equal(inputs.expectedContents))
 				})
 				It("makes intermediate directories", func() {
 					outputFile = filepath.Join(tmpdir, "notexist", "out.tgz")
 					err = installer.FetchDependency(inputs.dependency, outputFile)
 
 					Expect(err).To(BeNil())
-					Expect(ioutil.ReadFile(outputFile)).To(Equal(inputs.expectedContents))
+					Expect(os.ReadFile(outputFile)).To(Equal(inputs.expectedContents))
 				})
 			})
 
 			Context("dependency exists cached on disk and does not match checksum", func() {
 				BeforeEach(func() {
 					os.MkdirAll(filepath.Dir(inputs.pathToCachedFile), 0755)
-					Expect(ioutil.WriteFile(inputs.pathToCachedFile, append(inputs.expectedContents, []byte(" except not")...), 0644)).To(Succeed())
+					Expect(os.WriteFile(inputs.pathToCachedFile, append(inputs.expectedContents, []byte(" except not")...), 0644)).To(Succeed())
 				})
 				It("raises error", func() {
 					err = installer.FetchDependency(inputs.dependency, outputFile)
@@ -178,7 +177,7 @@ var _ = Describe("Installer", func() {
 					err = installer.FetchDependency(inputs.Dependency, outputFile)
 
 					Expect(err).To(BeNil())
-					Expect(ioutil.ReadFile(outputFile)).To(Equal(inputs.ExpectedContent))
+					Expect(os.ReadFile(outputFile)).To(Equal(inputs.ExpectedContent))
 				})
 				inputs.CheckOnSuccess()
 
@@ -187,7 +186,7 @@ var _ = Describe("Installer", func() {
 					err = installer.FetchDependency(inputs.Dependency, outputFile)
 
 					Expect(err).To(BeNil())
-					Expect(ioutil.ReadFile(outputFile)).To(Equal(inputs.ExpectedContent))
+					Expect(os.ReadFile(outputFile)).To(Equal(inputs.ExpectedContent))
 				})
 			})
 			Context("url returns error then success and matches checksum", func() {
@@ -205,7 +204,7 @@ var _ = Describe("Installer", func() {
 					err = installer.FetchDependency(inputs.Dependency, outputFile)
 
 					Expect(err).To(BeNil())
-					Expect(ioutil.ReadFile(outputFile)).To(Equal(inputs.ExpectedContent))
+					Expect(os.ReadFile(outputFile)).To(Equal(inputs.ExpectedContent))
 				})
 				inputs.CheckOnSuccess()
 
@@ -214,7 +213,7 @@ var _ = Describe("Installer", func() {
 					err = installer.FetchDependency(inputs.Dependency, outputFile)
 
 					Expect(err).To(BeNil())
-					Expect(ioutil.ReadFile(outputFile)).To(Equal(inputs.ExpectedContent))
+					Expect(os.ReadFile(outputFile)).To(Equal(inputs.ExpectedContent))
 				})
 
 				It("retries to get success", func() {
@@ -337,7 +336,7 @@ var _ = Describe("Installer", func() {
 					It("downloads the file to the cache location", func() {
 						Expect(installer.FetchDependency(entryToFetch.entry.Dependency, outputFile)).To(Succeed())
 
-						Expect(ioutil.ReadFile(entryToFetch.appCachePath)).To(Equal(entryToFetch.content))
+						Expect(os.ReadFile(entryToFetch.appCachePath)).To(Equal(entryToFetch.content))
 					})
 				}
 				checkOnError := func() {
@@ -364,19 +363,19 @@ var _ = Describe("Installer", func() {
 					// create file in app cache dir
 					extraFile := filepath.Join(appCacheDir, "dependencies", "abcdef0123456789", "decoyFile")
 					Expect(os.MkdirAll(filepath.Dir(extraFile), 0755)).To(Succeed())
-					Expect(ioutil.WriteFile(extraFile, []byte("decoy content"), 0644)).To(Succeed())
+					Expect(os.WriteFile(extraFile, []byte("decoy content"), 0644)).To(Succeed())
 					extraFilePaths = append(extraFilePaths, extraFile)
 
 					// create file for real dependency in manifest
 					extraOtherDepFile := filepath.Join(appCacheDir, "dependencies", "662eacac1df6ae7eee9ccd1ac1eb1d0d8777c403e5375fd64d14907f875f50c0", "some-dependency-name-5.tgz")
 					os.MkdirAll(filepath.Dir(extraOtherDepFile), 0755)
-					Expect(ioutil.WriteFile(extraOtherDepFile, []byte("some super legit dependency content"), 0644)).To(Succeed())
+					Expect(os.WriteFile(extraOtherDepFile, []byte("some super legit dependency content"), 0644)).To(Succeed())
 					extraFilePaths = append(extraFilePaths, extraOtherDepFile)
 
 					// create extra file for the fetched dependency
 					extraDepFile := filepath.Join(filepath.Dir(entryToFetch.appCachePath), "decoyDep.zip")
 					os.MkdirAll(filepath.Dir(extraDepFile), 0755)
-					Expect(ioutil.WriteFile(extraDepFile, []byte("some more decoy content"), 0644)).To(Succeed())
+					Expect(os.WriteFile(extraDepFile, []byte("some more decoy content"), 0644)).To(Succeed())
 					extraFilePaths = append(extraFilePaths, extraDepFile)
 
 					// Add extra dependency to manifest & rewrite that file
@@ -401,7 +400,7 @@ var _ = Describe("Installer", func() {
 					It("downloads the file to the cache location", func() {
 						Expect(installer.FetchDependency(entryToFetch.entry.Dependency, outputFile)).To(Succeed())
 
-						Expect(ioutil.ReadFile(entryToFetch.appCachePath)).To(Equal(entryToFetch.content))
+						Expect(os.ReadFile(entryToFetch.appCachePath)).To(Equal(entryToFetch.content))
 					})
 					It("everything else is deleted", func() {
 						Expect(installer.FetchDependency(entryToFetch.entry.Dependency, outputFile)).To(Succeed())
@@ -474,7 +473,7 @@ var _ = Describe("Installer", func() {
 		)
 
 		BeforeEach(func() {
-			appCacheDir, err = ioutil.TempDir("", "appCache")
+			appCacheDir, err = os.MkdirTemp("", "appCache")
 			Expect(err).To(BeNil())
 		})
 		JustBeforeEach(func() {
@@ -494,7 +493,7 @@ var _ = Describe("Installer", func() {
 			BeforeEach(func() {
 				Expect(os.Mkdir(filepath.Join(appCacheDir, "dependencies"), 0755)).To(Succeed())
 				Expect(os.Mkdir(filepath.Join(appCacheDir, "dependencies", "abcd"), 0755)).To(Succeed())
-				Expect(ioutil.WriteFile(filepath.Join(appCacheDir, "dependencies", "abcd", "file.tgz"), []byte("contents"), 0644)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(appCacheDir, "dependencies", "abcd", "file.tgz"), []byte("contents"), 0644)).To(Succeed())
 			})
 			It("deletes old files", func() {
 				Expect(filepath.Join(appCacheDir, "dependencies", "abcd", "file.tgz")).To(BeARegularFile())
@@ -510,7 +509,7 @@ var _ = Describe("Installer", func() {
 		var outputDir string
 
 		BeforeEach(func() {
-			outputDir, err = ioutil.TempDir("", "downloads")
+			outputDir, err = os.MkdirTemp("", "downloads")
 			Expect(err).To(BeNil())
 			DeferCleanup(os.RemoveAll, outputDir)
 		})
@@ -521,7 +520,7 @@ var _ = Describe("Installer", func() {
 			})
 			Context("url exists and matches sha256", func() {
 				BeforeEach(func() {
-					tgzContents, err := ioutil.ReadFile("fixtures/thing.tgz")
+					tgzContents, err := os.ReadFile("fixtures/thing.tgz")
 					Expect(err).To(BeNil())
 					httpmock.RegisterResponder("GET", "https://example.com/dependencies/real_tar_file-3-linux-x64.tgz",
 						httpmock.NewStringResponder(200, string(tgzContents)))
@@ -539,7 +538,7 @@ var _ = Describe("Installer", func() {
 					Expect(err).To(BeNil())
 
 					Expect(filepath.Join(outputDir, "root.txt")).To(BeAnExistingFile())
-					Expect(ioutil.ReadFile(filepath.Join(outputDir, "root.txt"))).To(Equal([]byte("root\n")))
+					Expect(os.ReadFile(filepath.Join(outputDir, "root.txt"))).To(Equal([]byte("root\n")))
 				})
 
 				It("extracts a nested file", func() {
@@ -547,7 +546,7 @@ var _ = Describe("Installer", func() {
 					Expect(err).To(BeNil())
 
 					Expect(filepath.Join(outputDir, "thing", "bin", "file2.exe")).To(BeAnExistingFile())
-					Expect(ioutil.ReadFile(filepath.Join(outputDir, "thing", "bin", "file2.exe"))).To(Equal([]byte("progam2\n")))
+					Expect(os.ReadFile(filepath.Join(outputDir, "thing", "bin", "file2.exe"))).To(Equal([]byte("progam2\n")))
 				})
 
 				It("makes intermediate directories", func() {
@@ -556,12 +555,12 @@ var _ = Describe("Installer", func() {
 					Expect(err).To(BeNil())
 
 					Expect(filepath.Join(outputDir, "thing", "bin", "file2.exe")).To(BeAnExistingFile())
-					Expect(ioutil.ReadFile(filepath.Join(outputDir, "thing", "bin", "file2.exe"))).To(Equal([]byte("progam2\n")))
+					Expect(os.ReadFile(filepath.Join(outputDir, "thing", "bin", "file2.exe"))).To(Equal([]byte("progam2\n")))
 				})
 
 				Context("file does not need to be unpackaged", func() {
 					BeforeEach(func() {
-						someContents, err := ioutil.ReadFile("fixtures/source.txt")
+						someContents, err := os.ReadFile("fixtures/source.txt")
 						Expect(err).To(BeNil())
 						httpmock.RegisterResponder("GET", "https://github.com/wp-cli/wp-cli/releases/download/v2.2.0/wp-cli-2.2.0.phar",
 							httpmock.NewStringResponder(200, string(someContents)))
@@ -572,13 +571,13 @@ var _ = Describe("Installer", func() {
 						Expect(err).To(BeNil())
 
 						Expect(filepath.Join(outputDir, "wp-cli-2.2.0.phar")).To(BeAnExistingFile())
-						Expect(ioutil.ReadFile(filepath.Join(outputDir, "wp-cli-2.2.0.phar"))).To(Equal([]byte("a file\n")))
+						Expect(os.ReadFile(filepath.Join(outputDir, "wp-cli-2.2.0.phar"))).To(Equal([]byte("a file\n")))
 					})
 				})
 
 				Context("by default, the version is NOT latest patch in version line", func() {
 					BeforeEach(func() {
-						tgzContents, err := ioutil.ReadFile("fixtures/thing.tgz")
+						tgzContents, err := os.ReadFile("fixtures/thing.tgz")
 						Expect(err).To(BeNil())
 						httpmock.RegisterResponder("GET", "https://example.com/dependencies/thing-6.2.2-linux-x64.tgz",
 							httpmock.NewStringResponder(200, string(tgzContents)))
@@ -597,7 +596,7 @@ var _ = Describe("Installer", func() {
 
 				Context("when there is a greater minor version and a greater patch version", func() {
 					BeforeEach(func() {
-						tgzContents, err := ioutil.ReadFile("fixtures/thing.tgz")
+						tgzContents, err := os.ReadFile("fixtures/thing.tgz")
 						Expect(err).To(BeNil())
 						httpmock.RegisterResponder("GET", "https://example.com/dependencies/thing-8.1.2-linux-x64.tgz",
 							httpmock.NewStringResponder(200, string(tgzContents)))
@@ -617,7 +616,7 @@ var _ = Describe("Installer", func() {
 
 				Context("when the version line in a manifest is by patch line and the version installed is not the latest patch in that line", func() {
 					BeforeEach(func() {
-						tgzContents, err := ioutil.ReadFile("fixtures/thing.tgz")
+						tgzContents, err := os.ReadFile("fixtures/thing.tgz")
 						Expect(err).To(BeNil())
 						httpmock.RegisterResponder("GET", "https://example.com/dependencies/thing-8.1.2-linux-x64.tgz",
 							httpmock.NewStringResponder(200, string(tgzContents)))
@@ -637,7 +636,7 @@ var _ = Describe("Installer", func() {
 
 				Context("version is latest in version line", func() {
 					BeforeEach(func() {
-						tgzContents, err := ioutil.ReadFile("fixtures/thing.tgz")
+						tgzContents, err := os.ReadFile("fixtures/thing.tgz")
 						Expect(err).To(BeNil())
 						httpmock.RegisterResponder("GET", "https://example.com/dependencies/thing-6.2.3-linux-x64.tgz",
 							httpmock.NewStringResponder(200, string(tgzContents)))
@@ -652,7 +651,7 @@ var _ = Describe("Installer", func() {
 
 				Context("version is not semver", func() {
 					BeforeEach(func() {
-						tgzContents, err := ioutil.ReadFile("fixtures/thing.tgz")
+						tgzContents, err := os.ReadFile("fixtures/thing.tgz")
 						Expect(err).To(BeNil())
 						httpmock.RegisterResponder("GET", "https://buildpacks.cloudfoundry.org/dependencies/godep/godep-v79-linux-x64-9e37ce0f.tgz",
 							httpmock.NewStringResponder(200, string(tgzContents)))
@@ -668,7 +667,7 @@ var _ = Describe("Installer", func() {
 				Context("version has an EOL, version line is major", func() {
 					const warning = "**WARNING** thing 4.x will no longer be available in new buildpacks released after 2017-03-01."
 					BeforeEach(func() {
-						tgzContents, err := ioutil.ReadFile("fixtures/thing.tgz")
+						tgzContents, err := os.ReadFile("fixtures/thing.tgz")
 						Expect(err).To(BeNil())
 						httpmock.RegisterResponder("GET", "https://example.com/dependencies/thing-4.6.1-linux-x64.tgz",
 							httpmock.NewStringResponder(200, string(tgzContents)))
@@ -696,7 +695,7 @@ var _ = Describe("Installer", func() {
 
 						Context("dependency EOL does not have a link associated with it", func() {
 							BeforeEach(func() {
-								tgzContents, err := ioutil.ReadFile("fixtures/thing.tgz")
+								tgzContents, err := os.ReadFile("fixtures/thing.tgz")
 								Expect(err).To(BeNil())
 								httpmock.RegisterResponder("GET", "https://example.com/dependencies/thing-5.2.3-linux-x64.tgz",
 									httpmock.NewStringResponder(200, string(tgzContents)))
@@ -736,7 +735,7 @@ var _ = Describe("Installer", func() {
 				Context("version has an EOL, version line is major + minor", func() {
 					const warning = "**WARNING** thing 6.2.x will no longer be available in new buildpacks released after 2018-04-01"
 					BeforeEach(func() {
-						tgzContents, err := ioutil.ReadFile("fixtures/thing.tgz")
+						tgzContents, err := os.ReadFile("fixtures/thing.tgz")
 						Expect(err).To(BeNil())
 						httpmock.RegisterResponder("GET", "https://example.com/dependencies/thing-6.2.3-linux-x64.tgz",
 							httpmock.NewStringResponder(200, string(tgzContents)))
@@ -780,7 +779,7 @@ var _ = Describe("Installer", func() {
 				Context("version has an EOL, version line non semver", func() {
 					const warning = "**WARNING** nonsemver abc-1.2.3-def-4.5.6 will no longer be available in new buildpacks released after 2018-04-01"
 					BeforeEach(func() {
-						tgzContents, err := ioutil.ReadFile("fixtures/thing.tgz")
+						tgzContents, err := os.ReadFile("fixtures/thing.tgz")
 						Expect(err).To(BeNil())
 						httpmock.RegisterResponder("GET", "https://example.com/dependencies/nonsemver-abc-1.2.3-def-4.5.6-linux-x64.tgz",
 							httpmock.NewStringResponder(200, string(tgzContents)))
@@ -824,7 +823,7 @@ var _ = Describe("Installer", func() {
 				Context("version does not have an EOL", func() {
 					const warning = "**WARNING** real_tar_file 3 will no longer be available in new buildpacks released after"
 					BeforeEach(func() {
-						tgzContents, err := ioutil.ReadFile("fixtures/thing.tgz")
+						tgzContents, err := os.ReadFile("fixtures/thing.tgz")
 						Expect(err).To(BeNil())
 						httpmock.RegisterResponder("GET", "https://example.com/dependencies/real_tar_file-3-linux-x64.tgz",
 							httpmock.NewStringResponder(200, string(tgzContents)))
@@ -867,19 +866,19 @@ var _ = Describe("Installer", func() {
 			)
 
 			BeforeEach(func() {
-				manifestDir, err = ioutil.TempDir("", "cached")
+				manifestDir, err = os.MkdirTemp("", "cached")
 				Expect(err).To(BeNil())
 
 				dependenciesDir = filepath.Join(manifestDir, "dependencies")
 				os.MkdirAll(dependenciesDir, 0755)
 
-				data, err := ioutil.ReadFile("fixtures/manifest/fetch_cached/manifest.yml")
+				data, err := os.ReadFile("fixtures/manifest/fetch_cached/manifest.yml")
 				Expect(err).To(BeNil())
 
-				err = ioutil.WriteFile(filepath.Join(manifestDir, "manifest.yml"), data, 0644)
+				err = os.WriteFile(filepath.Join(manifestDir, "manifest.yml"), data, 0644)
 				Expect(err).To(BeNil())
 
-				outputDir, err = ioutil.TempDir("", "downloads")
+				outputDir, err = os.MkdirTemp("", "downloads")
 				Expect(err).To(BeNil())
 			})
 
@@ -900,7 +899,7 @@ var _ = Describe("Installer", func() {
 					Expect(err).To(BeNil())
 
 					Expect(filepath.Join(outputDir, "root.txt")).To(BeAnExistingFile())
-					Expect(ioutil.ReadFile(filepath.Join(outputDir, "root.txt"))).To(Equal([]byte("root\n")))
+					Expect(os.ReadFile(filepath.Join(outputDir, "root.txt"))).To(Equal([]byte("root\n")))
 				})
 
 				It("extracts a nested file", func() {
@@ -908,7 +907,7 @@ var _ = Describe("Installer", func() {
 					Expect(err).To(BeNil())
 
 					Expect(filepath.Join(outputDir, "thing", "bin", "file2.exe")).To(BeAnExistingFile())
-					Expect(ioutil.ReadFile(filepath.Join(outputDir, "thing", "bin", "file2.exe"))).To(Equal([]byte("progam2\n")))
+					Expect(os.ReadFile(filepath.Join(outputDir, "thing", "bin", "file2.exe"))).To(Equal([]byte("progam2\n")))
 				})
 
 				It("makes intermediate directories", func() {
@@ -917,7 +916,7 @@ var _ = Describe("Installer", func() {
 					Expect(err).To(BeNil())
 
 					Expect(filepath.Join(outputDir, "thing", "bin", "file2.exe")).To(BeAnExistingFile())
-					Expect(ioutil.ReadFile(filepath.Join(outputDir, "thing", "bin", "file2.exe"))).To(Equal([]byte("progam2\n")))
+					Expect(os.ReadFile(filepath.Join(outputDir, "thing", "bin", "file2.exe"))).To(Equal([]byte("progam2\n")))
 				})
 			})
 		})
@@ -928,14 +927,14 @@ var _ = Describe("Installer", func() {
 
 		BeforeEach(func() {
 			manifestDir = "fixtures/manifest/fetch"
-			outputDir, err = ioutil.TempDir("", "downloads")
+			outputDir, err = os.MkdirTemp("", "downloads")
 			Expect(err).To(BeNil())
 			DeferCleanup(os.RemoveAll, outputDir)
 		})
 
 		Context("there is only one version of the dependency", func() {
 			BeforeEach(func() {
-				tgzContents, err := ioutil.ReadFile("fixtures/thing.tgz")
+				tgzContents, err := os.ReadFile("fixtures/thing.tgz")
 				Expect(err).To(BeNil())
 				httpmock.RegisterResponder("GET", "https://example.com/dependencies/real_tar_file-3-linux-x64.tgz",
 					httpmock.NewStringResponder(200, string(tgzContents)))
@@ -947,7 +946,7 @@ var _ = Describe("Installer", func() {
 				Expect(err).To(BeNil())
 
 				Expect(filepath.Join(outputDir, "thing", "bin", "file2.exe")).To(BeAnExistingFile())
-				Expect(ioutil.ReadFile(filepath.Join(outputDir, "thing", "bin", "file2.exe"))).To(Equal([]byte("progam2\n")))
+				Expect(os.ReadFile(filepath.Join(outputDir, "thing", "bin", "file2.exe"))).To(Equal([]byte("progam2\n")))
 			})
 		})
 

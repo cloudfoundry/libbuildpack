@@ -1,7 +1,6 @@
 package libbuildpack_test
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -21,7 +20,7 @@ var _ = Describe("Util", func() {
 			fileInfo os.FileInfo
 		)
 		BeforeEach(func() {
-			tmpdir, err = ioutil.TempDir("", "exploded")
+			tmpdir, err = os.MkdirTemp("", "exploded")
 			Expect(err).To(BeNil())
 			DeferCleanup(os.RemoveAll, tmpdir)
 		})
@@ -32,7 +31,7 @@ var _ = Describe("Util", func() {
 				Expect(err).To(BeNil())
 
 				Expect(filepath.Join(tmpdir, "root.txt")).To(BeAnExistingFile())
-				Expect(ioutil.ReadFile(filepath.Join(tmpdir, "root.txt"))).To(Equal([]byte("root\n")))
+				Expect(os.ReadFile(filepath.Join(tmpdir, "root.txt"))).To(Equal([]byte("root\n")))
 			})
 
 			It("extracts a nested file", func() {
@@ -40,7 +39,7 @@ var _ = Describe("Util", func() {
 				Expect(err).To(BeNil())
 
 				Expect(filepath.Join(tmpdir, "thing", "bin", "file2.exe")).To(BeAnExistingFile())
-				Expect(ioutil.ReadFile(filepath.Join(tmpdir, "thing", "bin", "file2.exe"))).To(Equal([]byte("progam2\n")))
+				Expect(os.ReadFile(filepath.Join(tmpdir, "thing", "bin", "file2.exe"))).To(Equal([]byte("progam2\n")))
 			})
 
 			It("preserves the file mode", func() {
@@ -93,7 +92,7 @@ var _ = Describe("Util", func() {
 			err    error
 		)
 		BeforeEach(func() {
-			tmpdir, err = ioutil.TempDir("", "exploded")
+			tmpdir, err = os.MkdirTemp("", "exploded")
 			Expect(err).To(BeNil())
 			DeferCleanup(os.RemoveAll, tmpdir)
 		})
@@ -117,7 +116,7 @@ var _ = Describe("Util", func() {
 				Expect(filepath.Join(tmpdir, "root.txt")).ToNot(BeAnExistingFile())
 				// thing/bin/file2.exe should become bin/file2.exe
 				Expect(filepath.Join(tmpdir, "bin", "file2.exe")).To(BeAnExistingFile())
-				Expect(ioutil.ReadFile(filepath.Join(tmpdir, "bin", "file2.exe"))).To(Equal([]byte("progam2\n")))
+				Expect(os.ReadFile(filepath.Join(tmpdir, "bin", "file2.exe"))).To(Equal([]byte("progam2\n")))
 			})
 		})
 	})
@@ -171,7 +170,7 @@ var _ = Describe("Util", func() {
 			fileInfo os.FileInfo
 		)
 		BeforeEach(func() {
-			tmpdir, err = ioutil.TempDir("", "exploded")
+			tmpdir, err = os.MkdirTemp("", "exploded")
 			Expect(err).To(BeNil())
 			DeferCleanup(os.RemoveAll, tmpdir)
 		})
@@ -182,16 +181,18 @@ var _ = Describe("Util", func() {
 
 				innerDir := filepath.Join(tmpdir, "innerDir")
 				Expect(innerDir).To(BeADirectory())
-				files, err := ioutil.ReadDir(innerDir)
+				files, err := os.ReadDir(innerDir)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(files).NotTo(BeEmpty())
 				for _, f := range files {
-					Expect(int(f.Size())).NotTo(Equal(0))
+					fi, err := f.Info()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(int(fi.Size())).NotTo(Equal(0))
 				}
 
 				nestedFile := filepath.Join(innerDir, "inner_file.txt")
 				Expect(nestedFile).To(BeAnExistingFile())
-				contents, err := ioutil.ReadFile(nestedFile)
+				contents, err := os.ReadFile(nestedFile)
 				Expect(contents).To(ContainSubstring("simple inner file"))
 
 				symFile := filepath.Join(tmpdir, "innerDir", "softlink.txt")
@@ -204,7 +205,7 @@ var _ = Describe("Util", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					if !info.IsDir() {
-						contents, err := ioutil.ReadFile(path)
+						contents, err := os.ReadFile(path)
 						Expect(err).NotTo(HaveOccurred())
 						Expect(contents).NotTo(BeEmpty())
 					}
@@ -220,7 +221,7 @@ var _ = Describe("Util", func() {
 				Expect(err).To(BeNil())
 
 				Expect(filepath.Join(tmpdir, "root.txt")).To(BeAnExistingFile())
-				Expect(ioutil.ReadFile(filepath.Join(tmpdir, "root.txt"))).To(Equal([]byte("root\n")))
+				Expect(os.ReadFile(filepath.Join(tmpdir, "root.txt"))).To(Equal([]byte("root\n")))
 			})
 
 			It("extracts a nested file", func() {
@@ -228,7 +229,7 @@ var _ = Describe("Util", func() {
 				Expect(err).To(BeNil())
 
 				Expect(filepath.Join(tmpdir, "thing", "bin", "file2.exe")).To(BeAnExistingFile())
-				Expect(ioutil.ReadFile(filepath.Join(tmpdir, "thing", "bin", "file2.exe"))).To(Equal([]byte("progam2\n")))
+				Expect(os.ReadFile(filepath.Join(tmpdir, "thing", "bin", "file2.exe"))).To(Equal([]byte("progam2\n")))
 			})
 
 			It("preserves the file mode", func() {
@@ -251,7 +252,7 @@ var _ = Describe("Util", func() {
 
 				path := filepath.Join(tmpdir, "other", "file.txt")
 				Expect(path).To(BeAnExistingFile())
-				Expect(ioutil.ReadFile(path)).To(Equal([]byte("content\n")))
+				Expect(os.ReadFile(path)).To(Equal([]byte("content\n")))
 
 				fi, err := os.Lstat(path)
 				Expect(err).To(BeNil())
@@ -291,7 +292,7 @@ var _ = Describe("Util", func() {
 			err    error
 		)
 		BeforeEach(func() {
-			tmpdir, err = ioutil.TempDir("", "exploded")
+			tmpdir, err = os.MkdirTemp("", "exploded")
 			Expect(err).To(BeNil())
 			DeferCleanup(os.RemoveAll, tmpdir)
 		})
@@ -315,7 +316,7 @@ var _ = Describe("Util", func() {
 				Expect(filepath.Join(tmpdir, "root.txt")).ToNot(BeAnExistingFile())
 				// thing/bin/file2.exe should become bin/file2.exe
 				Expect(filepath.Join(tmpdir, "bin", "file2.exe")).To(BeAnExistingFile())
-				Expect(ioutil.ReadFile(filepath.Join(tmpdir, "bin", "file2.exe"))).To(Equal([]byte("progam2\n")))
+				Expect(os.ReadFile(filepath.Join(tmpdir, "bin", "file2.exe"))).To(Equal([]byte("progam2\n")))
 			})
 		})
 	})
@@ -326,7 +327,7 @@ var _ = Describe("Util", func() {
 			err    error
 		)
 		BeforeEach(func() {
-			tmpdir, err = ioutil.TempDir("", "exploded")
+			tmpdir, err = os.MkdirTemp("", "exploded")
 			Expect(err).To(BeNil())
 			DeferCleanup(os.RemoveAll, tmpdir)
 		})
@@ -354,7 +355,7 @@ var _ = Describe("Util", func() {
 			var fh *os.File
 			sourceFile := "fixtures/source.txt"
 
-			tmpdir, err = ioutil.TempDir("", "copy")
+			tmpdir, err = os.MkdirTemp("", "copy")
 			Expect(err).To(BeNil())
 
 			fileInfo, err = os.Stat(sourceFile)
@@ -395,7 +396,7 @@ var _ = Describe("Util", func() {
 				Expect(err).To(BeNil())
 
 				Expect(filepath.Join(tmpdir, "out.txt")).To(BeAnExistingFile())
-				Expect(ioutil.ReadFile(filepath.Join(tmpdir, "out.txt"))).To(Equal([]byte("a file\n")))
+				Expect(os.ReadFile(filepath.Join(tmpdir, "out.txt"))).To(Equal([]byte("a file\n")))
 			})
 
 			It("preserves the file mode", func() {
@@ -428,7 +429,7 @@ var _ = Describe("Util", func() {
 		)
 
 		BeforeEach(func() {
-			destDir, err = ioutil.TempDir("", "destDir")
+			destDir, err = os.MkdirTemp("", "destDir")
 			Expect(err).To(BeNil())
 		})
 
@@ -473,9 +474,9 @@ var _ = Describe("Util", func() {
 		)
 
 		BeforeEach(func() {
-			srcDir, err = ioutil.TempDir("", "dir1")
+			srcDir, err = os.MkdirTemp("", "dir1")
 			Expect(err).ToNot(HaveOccurred())
-			destDir, err = ioutil.TempDir("", "")
+			destDir, err = os.MkdirTemp("", "")
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -498,14 +499,14 @@ var _ = Describe("Util", func() {
 					innerDestDir := filepath.Join(destDir, "inner_dir")
 					Expect(os.MkdirAll(innerDir, 0777)).To(Succeed())
 					Expect(os.MkdirAll(innerDestDir, 0777)).To(Succeed())
-					Expect(ioutil.WriteFile(filepath.Join(innerDir, "test_file"), []byte("contentsA"), 0777)).To(Succeed())
-					Expect(ioutil.WriteFile(filepath.Join(innerDestDir, "test_file"), []byte("contentsB"), 0777)).To(Succeed())
+					Expect(os.WriteFile(filepath.Join(innerDir, "test_file"), []byte("contentsA"), 0777)).To(Succeed())
+					Expect(os.WriteFile(filepath.Join(innerDestDir, "test_file"), []byte("contentsB"), 0777)).To(Succeed())
 					Expect(os.MkdirAll(innerDir, os.ModePerm)).ToNot(HaveOccurred())
 					Expect(libbuildpack.MoveDirectory(srcDir, destDir)).To(Succeed())
 					Expect(innerDestDir).To(BeADirectory())
 					destFile := filepath.Join(innerDestDir, "test_file")
 					Expect(destFile).To(BeAnExistingFile())
-					contents, err := ioutil.ReadFile(destFile)
+					contents, err := os.ReadFile(destFile)
 					Expect(err).ToNot(HaveOccurred())
 					Expect(string(contents)).To(ContainSubstring("contentsB"))
 				})
@@ -521,7 +522,7 @@ var _ = Describe("Util", func() {
 			)
 
 			BeforeEach(func() {
-				dir, err = ioutil.TempDir("", "file.exists")
+				dir, err = os.MkdirTemp("", "file.exists")
 				Expect(err).To(BeNil())
 				DeferCleanup(os.RemoveAll, dir)
 			})

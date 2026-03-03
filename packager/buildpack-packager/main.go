@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -69,7 +68,7 @@ func (b *buildCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{})
 		return subcommands.ExitFailure
 	}
 	if b.version == "" {
-		v, err := ioutil.ReadFile("VERSION")
+		v, err := os.ReadFile("VERSION")
 		if err != nil {
 			log.Printf("error: Could not read VERSION file: %v", err)
 			return subcommands.ExitFailure
