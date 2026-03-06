@@ -3,7 +3,7 @@ package packager_test
 import (
 	"archive/zip"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"testing"
 
@@ -37,7 +37,7 @@ func ZipContents(zipFile, file string) (string, error) {
 				return "", err
 			}
 			defer rc.Close()
-			body, err := ioutil.ReadAll(rc)
+			body, err := io.ReadAll(rc)
 			if err != nil {
 				return "", err
 			}

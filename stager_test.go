@@ -3,7 +3,6 @@ package libbuildpack_test
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -31,15 +30,15 @@ var _ = Describe("Stager", func() {
 	)
 
 	BeforeEach(func() {
-		buildDir, err = ioutil.TempDir("", "build")
+		buildDir, err = os.MkdirTemp("", "build")
 		Expect(err).To(BeNil())
 		DeferCleanup(os.RemoveAll, buildDir)
 
-		cacheDir, err = ioutil.TempDir("", "cache")
+		cacheDir, err = os.MkdirTemp("", "cache")
 		Expect(err).To(BeNil())
 		DeferCleanup(os.RemoveAll, cacheDir)
 
-		depsDir, err = ioutil.TempDir("", "deps")
+		depsDir, err = os.MkdirTemp("", "deps")
 		Expect(err).To(BeNil())
 		DeferCleanup(os.RemoveAll, depsDir)
 
@@ -47,7 +46,7 @@ var _ = Describe("Stager", func() {
 		err = os.MkdirAll(filepath.Join(depsDir, depsIdx), 0755)
 		Expect(err).To(BeNil())
 
-		profileDir, err = ioutil.TempDir("", "profiled")
+		profileDir, err = os.MkdirTemp("", "profiled")
 		Expect(err).To(BeNil())
 		DeferCleanup(os.RemoveAll, profileDir)
 
@@ -179,10 +178,10 @@ var _ = Describe("Stager", func() {
 		Context("not empty", func() {
 			BeforeEach(func() {
 				Expect(os.MkdirAll(filepath.Join(cacheDir, "fred", "jane"), 0755)).To(Succeed())
-				Expect(ioutil.WriteFile(filepath.Join(cacheDir, "fred", "jane", "jack.txt"), []byte("content"), 0644)).To(Succeed())
-				Expect(ioutil.WriteFile(filepath.Join(cacheDir, "jill.txt"), []byte("content"), 0644)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(cacheDir, "fred", "jane", "jack.txt"), []byte("content"), 0644)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(cacheDir, "jill.txt"), []byte("content"), 0644)).To(Succeed())
 
-				fi, err := ioutil.ReadDir(cacheDir)
+				fi, err := os.ReadDir(cacheDir)
 				Expect(err).To(BeNil())
 				Expect(len(fi)).To(Equal(2))
 			})
@@ -192,7 +191,7 @@ var _ = Describe("Stager", func() {
 				Expect(err).To(BeNil())
 				Expect(cacheDir).To(BeADirectory())
 
-				fi, err := ioutil.ReadDir(cacheDir)
+				fi, err := os.ReadDir(cacheDir)
 				Expect(err).To(BeNil())
 				Expect(len(fi)).To(Equal(0))
 			})
@@ -211,11 +210,11 @@ var _ = Describe("Stager", func() {
 		Context("not empty", func() {
 			BeforeEach(func() {
 				Expect(os.MkdirAll(filepath.Join(depsDir, depsIdx, "fred", "jane"), 0755)).To(Succeed())
-				Expect(ioutil.WriteFile(filepath.Join(depsDir, depsIdx, "fred", "jane", "jack.txt"), []byte("content"), 0644)).To(Succeed())
-				Expect(ioutil.WriteFile(filepath.Join(depsDir, depsIdx, "jill.txt"), []byte("content"), 0644)).To(Succeed())
-				Expect(ioutil.WriteFile(filepath.Join(depsDir, depsIdx, "config.yml"), []byte("yaml"), 0644)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(depsDir, depsIdx, "fred", "jane", "jack.txt"), []byte("content"), 0644)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(depsDir, depsIdx, "jill.txt"), []byte("content"), 0644)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(depsDir, depsIdx, "config.yml"), []byte("yaml"), 0644)).To(Succeed())
 
-				fi, err := ioutil.ReadDir(filepath.Join(depsDir, depsIdx))
+				fi, err := os.ReadDir(filepath.Join(depsDir, depsIdx))
 				Expect(err).To(BeNil())
 				Expect(len(fi)).To(Equal(3))
 			})
@@ -225,11 +224,11 @@ var _ = Describe("Stager", func() {
 				Expect(err).To(BeNil())
 				Expect(s.DepDir()).To(BeADirectory())
 
-				fi, err := ioutil.ReadDir(s.DepDir())
+				fi, err := os.ReadDir(s.DepDir())
 				Expect(err).To(BeNil())
 				Expect(len(fi)).To(Equal(1))
 
-				content, err := ioutil.ReadFile(filepath.Join(s.DepDir(), "config.yml"))
+				content, err := os.ReadFile(filepath.Join(s.DepDir(), "config.yml"))
 				Expect(err).To(BeNil())
 				Expect(string(content)).To(Equal("yaml"))
 			})
@@ -241,7 +240,7 @@ var _ = Describe("Stager", func() {
 			err := s.WriteEnvFile("ENVVAR", "value")
 			Expect(err).To(BeNil())
 
-			contents, err := ioutil.ReadFile(filepath.Join(s.DepDir(), "env", "ENVVAR"))
+			contents, err := os.ReadFile(filepath.Join(s.DepDir(), "env", "ENVVAR"))
 			Expect(err).To(BeNil())
 
 			Expect(string(contents)).To(Equal("value"))
@@ -288,14 +287,14 @@ var _ = Describe("Stager", func() {
 		var destDir string
 
 		BeforeEach(func() {
-			destDir, err = ioutil.TempDir("", "untarred-dependencies")
+			destDir, err = os.MkdirTemp("", "untarred-dependencies")
 			Expect(err).To(BeNil())
 			DeferCleanup(os.RemoveAll, destDir)
 
-			err = ioutil.WriteFile(filepath.Join(destDir, "thing1"), []byte("xxx"), 0644)
+			err = os.WriteFile(filepath.Join(destDir, "thing1"), []byte("xxx"), 0644)
 			Expect(err).To(BeNil())
 
-			err = ioutil.WriteFile(filepath.Join(destDir, "thing2"), []byte("yyy"), 0644)
+			err = os.WriteFile(filepath.Join(destDir, "thing2"), []byte("yyy"), 0644)
 			Expect(err).To(BeNil())
 		})
 
@@ -307,7 +306,7 @@ var _ = Describe("Stager", func() {
 			Expect(err).To(BeNil())
 			Expect(link).To(Equal(filepath.Join("..", "..", "..", filepath.Base(destDir), "thing1")))
 
-			data, err := ioutil.ReadFile(filepath.Join(s.DepDir(), "include", "thing1"))
+			data, err := os.ReadFile(filepath.Join(s.DepDir(), "include", "thing1"))
 			Expect(err).To(BeNil())
 			Expect(string(data)).To(Equal("xxx"))
 
@@ -315,7 +314,7 @@ var _ = Describe("Stager", func() {
 			Expect(err).To(BeNil())
 			Expect(link).To(Equal(filepath.Join("..", "..", "..", filepath.Base(destDir), "thing2")))
 
-			data, err = ioutil.ReadFile(filepath.Join(s.DepDir(), "include", "thing2"))
+			data, err = os.ReadFile(filepath.Join(s.DepDir(), "include", "thing2"))
 			Expect(err).To(BeNil())
 			Expect(string(data)).To(Equal("yyy"))
 		})
@@ -370,7 +369,7 @@ var _ = Describe("Stager", func() {
 			})
 
 			It("the script has the correct contents", func() {
-				data, err := ioutil.ReadFile(profileDScript)
+				data, err := os.ReadFile(profileDScript)
 				Expect(err).To(BeNil())
 
 				Expect(data).To(Equal([]byte("used the dir")))
@@ -395,7 +394,7 @@ var _ = Describe("Stager", func() {
 		})
 
 		It("the script has the correct contents", func() {
-			data, err := ioutil.ReadFile(profileDScript)
+			data, err := os.ReadFile(profileDScript)
 			Expect(err).To(BeNil())
 
 			Expect(data).To(Equal([]byte("made the dir")))
@@ -425,22 +424,22 @@ var _ = Describe("Stager", func() {
 			err = os.MkdirAll(filepath.Join(depsDir, "05", "env"), 0755)
 			Expect(err).To(BeNil())
 
-			err = ioutil.WriteFile(filepath.Join(depsDir, "05", "env", "ENV_VAR"), []byte("value"), 0644)
+			err = os.WriteFile(filepath.Join(depsDir, "05", "env", "ENV_VAR"), []byte("value"), 0644)
 			Expect(err).To(BeNil())
 
 			err = os.MkdirAll(filepath.Join(depsDir, "00", "profile.d"), 0755)
 			Expect(err).To(BeNil())
 
-			err = ioutil.WriteFile(filepath.Join(depsDir, "00", "profile.d", "supplied-script.sh"), []byte("first"), 0644)
+			err = os.WriteFile(filepath.Join(depsDir, "00", "profile.d", "supplied-script.sh"), []byte("first"), 0644)
 			Expect(err).To(BeNil())
 
 			err = os.MkdirAll(filepath.Join(depsDir, "01", "profile.d"), 0755)
 			Expect(err).To(BeNil())
 
-			err = ioutil.WriteFile(filepath.Join(depsDir, "01", "profile.d", "supplied-script.sh"), []byte("second"), 0644)
+			err = os.WriteFile(filepath.Join(depsDir, "01", "profile.d", "supplied-script.sh"), []byte("second"), 0644)
 			Expect(err).To(BeNil())
 
-			err = ioutil.WriteFile(filepath.Join(depsDir, "some-file.yml"), []byte("things"), 0644)
+			err = os.WriteFile(filepath.Join(depsDir, "some-file.yml"), []byte("things"), 0644)
 			Expect(err).To(BeNil())
 		})
 
@@ -610,11 +609,11 @@ var _ = Describe("Stager", func() {
 				Expect(err).To(BeNil())
 
 				if runtime.GOOS == "windows" {
-					contents, err := ioutil.ReadFile(filepath.Join(profileDir, "000_multi-supply.bat"))
+					contents, err := os.ReadFile(filepath.Join(profileDir, "000_multi-supply.bat"))
 					Expect(err).To(BeNil())
 					Expect(string(contents)).To(ContainSubstring(`set PATH=%DEPS_DIR%\01\bin;%DEPS_DIR%\00\bin;%PATH%`))
 				} else {
-					contents, err := ioutil.ReadFile(filepath.Join(profileDir, "000_multi-supply.sh"))
+					contents, err := os.ReadFile(filepath.Join(profileDir, "000_multi-supply.sh"))
 					Expect(err).To(BeNil())
 					Expect(string(contents)).To(ContainSubstring(`export LIBRARY_PATH=$DEPS_DIR/02/lib:$DEPS_DIR/01/lib$([[ ! -z "${LIBRARY_PATH:-}" ]] && echo ":$LIBRARY_PATH")`))
 					Expect(string(contents)).To(ContainSubstring(`export LD_LIBRARY_PATH=$DEPS_DIR/02/lib:$DEPS_DIR/01/lib$([[ ! -z "${LD_LIBRARY_PATH:-}" ]] && echo ":$LD_LIBRARY_PATH")`))
@@ -626,12 +625,12 @@ var _ = Describe("Stager", func() {
 				err = s.SetLaunchEnvironment()
 				Expect(err).To(BeNil())
 
-				contents, err := ioutil.ReadFile(filepath.Join(profileDir, "00_supplied-script.sh"))
+				contents, err := os.ReadFile(filepath.Join(profileDir, "00_supplied-script.sh"))
 				Expect(err).To(BeNil())
 
 				Expect(string(contents)).To(Equal("first"))
 
-				contents, err = ioutil.ReadFile(filepath.Join(profileDir, "01_supplied-script.sh"))
+				contents, err = os.ReadFile(filepath.Join(profileDir, "01_supplied-script.sh"))
 				Expect(err).To(BeNil())
 
 				Expect(string(contents)).To(Equal("second"))

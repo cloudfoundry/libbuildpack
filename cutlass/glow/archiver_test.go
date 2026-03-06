@@ -2,7 +2,6 @@ package glow_test
 
 import (
 	"errors"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -23,7 +22,7 @@ var _ = Describe("Archiver", func() {
 
 	BeforeEach(func() {
 		var err error
-		tmpDir, err = ioutil.TempDir("", "archiver")
+		tmpDir, err = os.MkdirTemp("", "archiver")
 		Expect(err).NotTo(HaveOccurred())
 		DeferCleanup(os.RemoveAll, tmpDir)
 
@@ -35,7 +34,7 @@ var _ = Describe("Archiver", func() {
 
 	Describe("Archive", func() {
 		BeforeEach(func() {
-			err := ioutil.WriteFile(filepath.Join(tmpDir, "VERSION"), []byte("1.2.3"), 0644)
+			err := os.WriteFile(filepath.Join(tmpDir, "VERSION"), []byte("1.2.3"), 0644)
 			Expect(err).NotTo(HaveOccurred())
 		})
 

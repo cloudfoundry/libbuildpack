@@ -3,7 +3,6 @@ package libbuildpack_test
 import (
 	"bytes"
 	"errors"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -53,7 +52,7 @@ var _ = Describe("Manifest", func() {
 	Describe("ApplyOverride", func() {
 		var depsDir string
 		BeforeEach(func() {
-			depsDir, err = ioutil.TempDir("", "libbuildpack_override")
+			depsDir, err = os.MkdirTemp("", "libbuildpack_override")
 			Expect(err).ToNot(HaveOccurred())
 			DeferCleanup(os.RemoveAll, depsDir)
 			Expect(os.Mkdir(filepath.Join(depsDir, "0"), 0755)).To(Succeed())
@@ -83,7 +82,7 @@ ruby:
     version: 2.2.2
     cf_stacks: ['cflinuxfs2']
 `
-			Expect(ioutil.WriteFile(filepath.Join(depsDir, "1", "override.yml"), []byte(data), 0644)).To(Succeed())
+			Expect(os.WriteFile(filepath.Join(depsDir, "1", "override.yml"), []byte(data), 0644)).To(Succeed())
 		})
 
 		It("updates default version", func() {
@@ -291,14 +290,14 @@ ruby:
 	Describe("IsCached", func() {
 		BeforeEach(func() {
 			var err error
-			manifestDir, err = ioutil.TempDir("", "cached")
+			manifestDir, err = os.MkdirTemp("", "cached")
 			Expect(err).To(BeNil())
 			DeferCleanup(os.RemoveAll, manifestDir)
 
-			data, err := ioutil.ReadFile("fixtures/manifest/fetch/manifest.yml")
+			data, err := os.ReadFile("fixtures/manifest/fetch/manifest.yml")
 			Expect(err).To(BeNil())
 
-			err = ioutil.WriteFile(filepath.Join(manifestDir, "manifest.yml"), data, 0644)
+			err = os.WriteFile(filepath.Join(manifestDir, "manifest.yml"), data, 0644)
 			Expect(err).To(BeNil())
 		})
 		Context("uncached buildpack", func() {
@@ -394,7 +393,7 @@ ruby:
 		var cacheDir string
 
 		BeforeEach(func() {
-			cacheDir, err = ioutil.TempDir("", "cache")
+			cacheDir, err = os.MkdirTemp("", "cache")
 			DeferCleanup(os.RemoveAll, cacheDir)
 		})
 
@@ -402,7 +401,7 @@ ruby:
 			Context("The language does not match", func() {
 				BeforeEach(func() {
 					metadata := "---\nlanguage: diffLang\nversion: 99.99"
-					ioutil.WriteFile(filepath.Join(cacheDir, "BUILDPACK_METADATA"), []byte(metadata), 0666)
+					os.WriteFile(filepath.Join(cacheDir, "BUILDPACK_METADATA"), []byte(metadata), 0666)
 				})
 
 				It("Does not log anything", func() {
@@ -414,7 +413,7 @@ ruby:
 				Context("The version matches", func() {
 					BeforeEach(func() {
 						metadata := "---\nlanguage: dotnet-core\nversion: 99.99"
-						ioutil.WriteFile(filepath.Join(cacheDir, "BUILDPACK_METADATA"), []byte(metadata), 0666)
+						os.WriteFile(filepath.Join(cacheDir, "BUILDPACK_METADATA"), []byte(metadata), 0666)
 					})
 
 					It("Does not log anything", func() {
@@ -427,7 +426,7 @@ ruby:
 				Context("The version does not match", func() {
 					BeforeEach(func() {
 						metadata := "---\nlanguage: dotnet-core\nversion: 33.99"
-						ioutil.WriteFile(filepath.Join(cacheDir, "BUILDPACK_METADATA"), []byte(metadata), 0666)
+						os.WriteFile(filepath.Join(cacheDir, "BUILDPACK_METADATA"), []byte(metadata), 0666)
 					})
 
 					It("Logs a warning that the buildpack version has changed", func() {
@@ -452,7 +451,7 @@ ruby:
 		var cacheDir string
 
 		BeforeEach(func() {
-			cacheDir, err = ioutil.TempDir("", "cache")
+			cacheDir, err = os.MkdirTemp("", "cache")
 			DeferCleanup(os.RemoveAll, cacheDir)
 		})
 

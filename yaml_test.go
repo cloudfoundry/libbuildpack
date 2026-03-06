@@ -1,7 +1,6 @@
 package libbuildpack_test
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -18,7 +17,7 @@ var _ = Describe("YAML", func() {
 	)
 
 	BeforeEach(func() {
-		tmpDir, err = ioutil.TempDir("", "yaml")
+		tmpDir, err = os.MkdirTemp("", "yaml")
 		Expect(err).To(BeNil())
 		DeferCleanup(os.RemoveAll, tmpDir)
 
@@ -28,7 +27,7 @@ var _ = Describe("YAML", func() {
 	Describe("Load", func() {
 		Context("file is valid yaml", func() {
 			BeforeEach(func() {
-				ioutil.WriteFile(filepath.Join(tmpDir, "valid.yml"), []byte("key: value"), 0666)
+				os.WriteFile(filepath.Join(tmpDir, "valid.yml"), []byte("key: value"), 0666)
 			})
 			It("returns an error", func() {
 				obj := make(map[string]string)
@@ -41,7 +40,7 @@ var _ = Describe("YAML", func() {
 
 		Context("file is NOT valid yaml", func() {
 			BeforeEach(func() {
-				ioutil.WriteFile(filepath.Join(tmpDir, "invalid.yml"), []byte("not valid yml"), 0666)
+				os.WriteFile(filepath.Join(tmpDir, "invalid.yml"), []byte("not valid yml"), 0666)
 			})
 			It("returns an error", func() {
 				obj := make(map[string]string)
@@ -68,7 +67,7 @@ var _ = Describe("YAML", func() {
 				err = yaml.Write(filepath.Join(tmpDir, "file.yml"), obj)
 				Expect(err).To(BeNil())
 
-				Expect(ioutil.ReadFile(filepath.Join(tmpDir, "file.yml"))).To(Equal([]byte("key: val\n")))
+				Expect(os.ReadFile(filepath.Join(tmpDir, "file.yml"))).To(Equal([]byte("key: val\n")))
 			})
 		})
 
@@ -80,7 +79,7 @@ var _ = Describe("YAML", func() {
 				err = yaml.Write(filepath.Join(tmpDir, "extradir", "file.yml"), obj)
 				Expect(err).To(BeNil())
 
-				Expect(ioutil.ReadFile(filepath.Join(tmpDir, "extradir", "file.yml"))).To(Equal([]byte("key: val\n")))
+				Expect(os.ReadFile(filepath.Join(tmpDir, "extradir", "file.yml"))).To(Equal([]byte("key: val\n")))
 			})
 		})
 	})

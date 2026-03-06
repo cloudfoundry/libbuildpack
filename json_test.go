@@ -1,7 +1,6 @@
 package libbuildpack_test
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -18,7 +17,7 @@ var _ = Describe("JSON", func() {
 	)
 
 	BeforeEach(func() {
-		tmpDir, err = ioutil.TempDir("", "json")
+		tmpDir, err = os.MkdirTemp("", "json")
 		Expect(err).To(BeNil())
 		DeferCleanup(os.RemoveAll, tmpDir)
 
@@ -29,7 +28,7 @@ var _ = Describe("JSON", func() {
 		Context("file is valid json", func() {
 			Context("that starts with BOM", func() {
 				BeforeEach(func() {
-					ioutil.WriteFile(filepath.Join(tmpDir, "valid.json"), []byte("\uFEFF"+`{"key": "value"}`), 0666)
+					os.WriteFile(filepath.Join(tmpDir, "valid.json"), []byte("\uFEFF"+`{"key": "value"}`), 0666)
 				})
 				It("returns an error", func() {
 					obj := make(map[string]string)
@@ -41,7 +40,7 @@ var _ = Describe("JSON", func() {
 			})
 			Context("that does not start with BOM", func() {
 				BeforeEach(func() {
-					ioutil.WriteFile(filepath.Join(tmpDir, "valid.json"), []byte(`{"key": "value"}`), 0666)
+					os.WriteFile(filepath.Join(tmpDir, "valid.json"), []byte(`{"key": "value"}`), 0666)
 				})
 				It("returns an error", func() {
 					obj := make(map[string]string)
@@ -55,7 +54,7 @@ var _ = Describe("JSON", func() {
 
 		Context("file is NOT valid json", func() {
 			BeforeEach(func() {
-				ioutil.WriteFile(filepath.Join(tmpDir, "invalid.json"), []byte("not valid json"), 0666)
+				os.WriteFile(filepath.Join(tmpDir, "invalid.json"), []byte("not valid json"), 0666)
 			})
 			It("returns an error", func() {
 				obj := make(map[string]string)
@@ -82,7 +81,7 @@ var _ = Describe("JSON", func() {
 				err = json.Write(filepath.Join(tmpDir, "file.json"), obj)
 				Expect(err).To(BeNil())
 
-				Expect(ioutil.ReadFile(filepath.Join(tmpDir, "file.json"))).To(Equal([]byte(`{"key":"val"}`)))
+				Expect(os.ReadFile(filepath.Join(tmpDir, "file.json"))).To(Equal([]byte(`{"key":"val"}`)))
 			})
 		})
 
@@ -94,7 +93,7 @@ var _ = Describe("JSON", func() {
 				err = json.Write(filepath.Join(tmpDir, "extradir", "file.json"), obj)
 				Expect(err).To(BeNil())
 
-				Expect(ioutil.ReadFile(filepath.Join(tmpDir, "extradir", "file.json"))).To(Equal([]byte(`{"key":"val"}`)))
+				Expect(os.ReadFile(filepath.Join(tmpDir, "extradir", "file.json"))).To(Equal([]byte(`{"key":"val"}`)))
 			})
 		})
 	})

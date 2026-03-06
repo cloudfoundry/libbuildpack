@@ -3,7 +3,6 @@ package checksum_test
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -23,13 +22,13 @@ var _ = Describe("Checksum", func() {
 
 	BeforeEach(func() {
 		var err error
-		dir, err = ioutil.TempDir("", "checksum")
+		dir, err = os.MkdirTemp("", "checksum")
 		Expect(err).To(BeNil())
 		DeferCleanup(os.RemoveAll, dir)
 
 		Expect(os.MkdirAll(filepath.Join(dir, ".cloudfoundry"), 0755)).To(Succeed())
 		Expect(os.MkdirAll(filepath.Join(dir, "a", "b"), 0755)).To(Succeed())
-		Expect(ioutil.WriteFile(filepath.Join(dir, "a/b", "file"), []byte("hi"), 0644)).To(Succeed())
+		Expect(os.WriteFile(filepath.Join(dir, "a/b", "file"), []byte("hi"), 0644)).To(Succeed())
 
 		lines = []string{}
 		exec = func() error { return nil }
@@ -54,7 +53,7 @@ var _ = Describe("Checksum", func() {
 			BeforeEach(func() {
 				exec = func() error {
 					time.Sleep(10 * time.Millisecond)
-					return ioutil.WriteFile(filepath.Join(dir, "a/b", "file"), []byte("bye"), 0644)
+					return os.WriteFile(filepath.Join(dir, "a/b", "file"), []byte("bye"), 0644)
 				}
 			})
 
@@ -73,7 +72,7 @@ var _ = Describe("Checksum", func() {
 			BeforeEach(func() {
 				exec = func() error {
 					time.Sleep(10 * time.Millisecond)
-					return ioutil.WriteFile(filepath.Join(dir, "a", "file"), []byte("new file"), 0644)
+					return os.WriteFile(filepath.Join(dir, "a", "file"), []byte("new file"), 0644)
 				}
 			})
 
@@ -93,7 +92,7 @@ var _ = Describe("Checksum", func() {
 			BeforeEach(func() {
 				exec = func() error {
 					time.Sleep(10 * time.Millisecond)
-					return ioutil.WriteFile(filepath.Join(dir, ".cloudfoundry", "file"), []byte("bye"), 0644)
+					return os.WriteFile(filepath.Join(dir, ".cloudfoundry", "file"), []byte("bye"), 0644)
 				}
 			})
 
