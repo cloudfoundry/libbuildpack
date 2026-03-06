@@ -8,7 +8,7 @@ import (
 	"github.com/cloudfoundry/libbuildpack/cutlass/docker/fakes"
 	"github.com/paketo-buildpacks/packit/pexec"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 

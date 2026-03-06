@@ -5,7 +5,7 @@ import (
 
 	bp "github.com/cloudfoundry/libbuildpack"
 	"github.com/golang/mock/gomock"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
@@ -22,10 +22,7 @@ var _ = Describe("Hooks", func() {
 		mockCtrl = gomock.NewController(GinkgoT())
 		mockHook = NewMockHook(mockCtrl)
 		mockStager = &bp.Stager{}
-	})
-
-	AfterEach(func() {
-		bp.ClearHooks()
+		DeferCleanup(bp.ClearHooks)
 	})
 
 	Describe("RunBeforeCompile", func() {

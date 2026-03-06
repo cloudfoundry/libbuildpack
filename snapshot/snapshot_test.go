@@ -9,7 +9,7 @@ import (
 	"github.com/cloudfoundry/libbuildpack/snapshot"
 	gomock "github.com/golang/mock/gomock"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
@@ -26,9 +26,11 @@ var _ = Describe("Snapshot", func() {
 
 	BeforeEach(func() {
 		origBPDebug = os.Getenv("BP_DEBUG")
+		DeferCleanup(os.Setenv, "BP_DEBUG", origBPDebug)
 
 		tmpDir, err = ioutil.TempDir("", "libbuildpack.snapshot.build.")
 		Expect(err).To(BeNil())
+		DeferCleanup(os.RemoveAll, tmpDir)
 
 		Expect(ioutil.WriteFile(filepath.Join(tmpDir, "Gemfile"), []byte("source \"https://rubygems.org\"\r\ngem \"rack\"\r\n"), 0644)).To(Succeed())
 		Expect(ioutil.WriteFile(filepath.Join(tmpDir, "other"), []byte("other"), 0644)).To(Succeed())
@@ -39,15 +41,6 @@ var _ = Describe("Snapshot", func() {
 
 		mockCtrl = gomock.NewController(GinkgoT())
 		mockLogger = NewMockLogger(mockCtrl)
-	})
-
-	AfterEach(func() {
-		os.Setenv("BP_DEBUG", origBPDebug)
-
-		mockCtrl.Finish()
-
-		err = os.RemoveAll(tmpDir)
-		Expect(err).To(BeNil())
 	})
 
 	Context("BP_DEBUG is set", func() {

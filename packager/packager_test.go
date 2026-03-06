@@ -16,7 +16,7 @@ import (
 	httpmock "github.com/jarcoal/httpmock"
 	yaml "gopkg.in/yaml.v2"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
@@ -49,10 +49,9 @@ var _ = Describe("Packager", func() {
 			var err error
 			destDir, err = ioutil.TempDir("", "packager-download")
 			Expect(err).To(BeNil())
+			DeferCleanup(os.RemoveAll, destDir)
 			destFile = filepath.Join(destDir, "some_dep_1.2.3+4_linux.tgz")
 		})
-
-		AfterEach(func() { os.RemoveAll(destDir) })
 
 		Context("when the server returns a non-2xx status", func() {
 			It("returns an error containing the URI and does not leave a file on disk", func() {
@@ -93,7 +92,9 @@ var _ = Describe("Packager", func() {
 	Describe("Package", func() {
 		var zipFile string
 		var cached bool
-		AfterEach(func() { os.Remove(zipFile) })
+		BeforeEach(func() {
+			DeferCleanup(func() { os.Remove(zipFile) })
+		})
 
 		AssertStack := func() {
 			var manifest *packager.Manifest
@@ -274,8 +275,8 @@ var _ = Describe("Packager", func() {
 					Expect(ioutil.WriteFile(filepath.Join(tempdir, "manifest.yml"), []byte(manifestyml2), 0644)).To(Succeed())
 
 					buildpackDir = tempdir
+					DeferCleanup(os.RemoveAll, buildpackDir)
 				})
-				AfterEach(func() { os.RemoveAll(buildpackDir) })
 
 				It("includes dependencies", func() {
 					dest := filepath.Join("dependencies", fmt.Sprintf("%x", md5.Sum([]byte("file://"+tempfile))), filepath.Base(tempfile))

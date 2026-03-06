@@ -7,7 +7,7 @@ import (
 	"runtime"
 
 	"github.com/cloudfoundry/libbuildpack"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
@@ -23,8 +23,8 @@ var _ = Describe("Util", func() {
 		BeforeEach(func() {
 			tmpdir, err = ioutil.TempDir("", "exploded")
 			Expect(err).To(BeNil())
+			DeferCleanup(os.RemoveAll, tmpdir)
 		})
-		AfterEach(func() { err = os.RemoveAll(tmpdir); Expect(err).To(BeNil()) })
 
 		Context("with a valid zip file", func() {
 			It("extracts a file at the root", func() {
@@ -95,8 +95,8 @@ var _ = Describe("Util", func() {
 		BeforeEach(func() {
 			tmpdir, err = ioutil.TempDir("", "exploded")
 			Expect(err).To(BeNil())
+			DeferCleanup(os.RemoveAll, tmpdir)
 		})
-		AfterEach(func() { err = os.RemoveAll(tmpdir); Expect(err).To(BeNil()) })
 
 		Context("with stripComponents=0", func() {
 			It("behaves like ExtractZip", func() {
@@ -139,11 +139,7 @@ var _ = Describe("Util", func() {
 			oldBpDir = os.Getenv("BUILDPACK_DIR")
 			err = os.Setenv("BUILDPACK_DIR", testBpDir)
 			Expect(err).To(BeNil())
-		})
-
-		AfterEach(func() {
-			err = os.Setenv("BUILDPACK_DIR", oldBpDir)
-			Expect(err).To(BeNil())
+			DeferCleanup(os.Setenv, "BUILDPACK_DIR", oldBpDir)
 		})
 
 		Context("BUILDPACK_DIR is set", func() {
@@ -177,8 +173,8 @@ var _ = Describe("Util", func() {
 		BeforeEach(func() {
 			tmpdir, err = ioutil.TempDir("", "exploded")
 			Expect(err).To(BeNil())
+			DeferCleanup(os.RemoveAll, tmpdir)
 		})
-		AfterEach(func() { err = os.RemoveAll(tmpdir); Expect(err).To(BeNil()) })
 
 		Context("a tar.xz file", func() {
 			It("extracts the whole file and resolves hard links", func() {
@@ -297,8 +293,8 @@ var _ = Describe("Util", func() {
 		BeforeEach(func() {
 			tmpdir, err = ioutil.TempDir("", "exploded")
 			Expect(err).To(BeNil())
+			DeferCleanup(os.RemoveAll, tmpdir)
 		})
-		AfterEach(func() { err = os.RemoveAll(tmpdir); Expect(err).To(BeNil()) })
 
 		Context("with stripComponents=0", func() {
 			It("behaves like ExtractTarGz", func() {
@@ -332,8 +328,8 @@ var _ = Describe("Util", func() {
 		BeforeEach(func() {
 			tmpdir, err = ioutil.TempDir("", "exploded")
 			Expect(err).To(BeNil())
+			DeferCleanup(os.RemoveAll, tmpdir)
 		})
-		AfterEach(func() { err = os.RemoveAll(tmpdir); Expect(err).To(BeNil()) })
 
 		Context("with stripComponents=0", func() {
 			It("behaves like ExtractTarXz", func() {
@@ -375,24 +371,22 @@ var _ = Describe("Util", func() {
 			}
 
 			oldUmask = umask(0000)
-		})
-		AfterEach(func() {
-			var fh *os.File
-			sourceFile := "fixtures/source.txt"
-
-			fh, err = os.Open(sourceFile)
-			Expect(err).To(BeNil())
-			defer fh.Close()
-
-			if runtime.GOOS != "windows" {
-				err = fh.Chmod(oldMode)
+			DeferCleanup(func() {
+				var fh *os.File
+				fh, err = os.Open(sourceFile)
 				Expect(err).To(BeNil())
-			}
+				defer fh.Close()
 
-			err = os.RemoveAll(tmpdir)
-			Expect(err).To(BeNil())
+				if runtime.GOOS != "windows" {
+					err = fh.Chmod(oldMode)
+					Expect(err).To(BeNil())
+				}
 
-			umask(oldUmask)
+				err = os.RemoveAll(tmpdir)
+				Expect(err).To(BeNil())
+
+				umask(oldUmask)
+			})
 		})
 
 		Context("with a valid source file", func() {
@@ -529,11 +523,7 @@ var _ = Describe("Util", func() {
 			BeforeEach(func() {
 				dir, err = ioutil.TempDir("", "file.exists")
 				Expect(err).To(BeNil())
-			})
-
-			AfterEach(func() {
-				err = os.RemoveAll(dir)
-				Expect(err).To(BeNil())
+				DeferCleanup(os.RemoveAll, dir)
 			})
 
 			It("returns true", func() {

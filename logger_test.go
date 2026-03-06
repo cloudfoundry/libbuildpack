@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/cloudfoundry/libbuildpack"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
@@ -30,12 +30,8 @@ var _ = Describe("Logger", func() {
 
 		JustBeforeEach(func() {
 			oldBpDebug = os.Getenv("BP_DEBUG")
+			DeferCleanup(os.Setenv, "BP_DEBUG", oldBpDebug)
 			err = os.Setenv("BP_DEBUG", bpDebug)
-			Expect(err).To(BeNil())
-		})
-
-		AfterEach(func() {
-			err = os.Setenv("BP_DEBUG", oldBpDebug)
 			Expect(err).To(BeNil())
 		})
 

@@ -15,7 +15,7 @@ import (
 	"github.com/cloudfoundry/libbuildpack/ansicleaner"
 	httpmock "github.com/jarcoal/httpmock"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
@@ -33,6 +33,7 @@ var _ = Describe("Installer", func() {
 	BeforeEach(func() {
 		oldCfStack = os.Getenv("CF_STACK")
 		os.Setenv("CF_STACK", "cflinuxfs2")
+		DeferCleanup(os.Setenv, "CF_STACK", oldCfStack)
 		err = nil
 		manifestDir = "fixtures/manifest/standard"
 		currentTime = time.Now()
@@ -41,8 +42,6 @@ var _ = Describe("Installer", func() {
 		buffer = new(bytes.Buffer)
 		logger = libbuildpack.NewLogger(ansicleaner.New(buffer))
 	})
-	AfterEach(func() { err = os.Setenv("CF_STACK", oldCfStack); Expect(err).To(BeNil()) })
-
 	JustBeforeEach(func() {
 		manifest, err := libbuildpack.NewManifest(manifestDir, logger, currentTime)
 		Expect(err).To(BeNil())
@@ -68,12 +67,14 @@ var _ = Describe("Installer", func() {
 		BeforeEach(func() {
 			tmpdir, err = ioutil.TempDir("", "downloads")
 			Expect(err).To(BeNil())
+			DeferCleanup(os.RemoveAll, tmpdir)
 			outputFile = filepath.Join(tmpdir, "out.tgz")
 
 			manifestDir, err = ioutil.TempDir("", "buildpack")
 			Expect(err).To(BeNil())
 			appCacheDir, err = ioutil.TempDir("", "appCache")
 			Expect(err).To(BeNil())
+			DeferCleanup(os.RemoveAll, appCacheDir)
 
 			entryToFetch = ExpectedEntry{
 				entry: libbuildpack.ManifestEntry{
@@ -102,10 +103,6 @@ var _ = Describe("Installer", func() {
 					allEntries = append(allEntries, entry)
 				}
 			}
-		})
-		AfterEach(func() {
-			Expect(os.RemoveAll(tmpdir)).To(Succeed())
-			Expect(os.RemoveAll(appCacheDir)).To(Succeed())
 		})
 
 		type CachedTestInputs struct {
@@ -515,11 +512,7 @@ var _ = Describe("Installer", func() {
 		BeforeEach(func() {
 			outputDir, err = ioutil.TempDir("", "downloads")
 			Expect(err).To(BeNil())
-		})
-
-		AfterEach(func() {
-			err = os.RemoveAll(outputDir)
-			Expect(err).To(BeNil())
+			DeferCleanup(os.RemoveAll, outputDir)
 		})
 
 		Context("uncached", func() {
@@ -937,8 +930,8 @@ var _ = Describe("Installer", func() {
 			manifestDir = "fixtures/manifest/fetch"
 			outputDir, err = ioutil.TempDir("", "downloads")
 			Expect(err).To(BeNil())
+			DeferCleanup(os.RemoveAll, outputDir)
 		})
-		AfterEach(func() { err = os.RemoveAll(outputDir); Expect(err).To(BeNil()) })
 
 		Context("there is only one version of the dependency", func() {
 			BeforeEach(func() {

@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/cloudfoundry/libbuildpack"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
@@ -20,13 +20,9 @@ var _ = Describe("JSON", func() {
 	BeforeEach(func() {
 		tmpDir, err = ioutil.TempDir("", "json")
 		Expect(err).To(BeNil())
+		DeferCleanup(os.RemoveAll, tmpDir)
 
 		json = &libbuildpack.JSON{}
-	})
-
-	AfterEach(func() {
-		err = os.RemoveAll(tmpDir)
-		Expect(err).To(BeNil())
 	})
 
 	Describe("Load", func() {

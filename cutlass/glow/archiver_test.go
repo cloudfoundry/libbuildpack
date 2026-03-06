@@ -9,7 +9,7 @@ import (
 	"github.com/cloudfoundry/libbuildpack/cutlass/glow"
 	"github.com/cloudfoundry/libbuildpack/cutlass/glow/fakes"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
@@ -25,15 +25,12 @@ var _ = Describe("Archiver", func() {
 		var err error
 		tmpDir, err = ioutil.TempDir("", "archiver")
 		Expect(err).NotTo(HaveOccurred())
+		DeferCleanup(os.RemoveAll, tmpDir)
 
 		packager = &fakes.Packager{}
 		packager.PackageCall.Returns.Stderr = "Packaged Shimmed Buildpack at: some-buildpack-file.zip"
 
 		archiver = glow.NewArchiver(packager)
-	})
-
-	AfterEach(func() {
-		Expect(os.RemoveAll(tmpDir)).To(Succeed())
 	})
 
 	Describe("Archive", func() {

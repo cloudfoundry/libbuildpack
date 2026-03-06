@@ -10,7 +10,7 @@ import (
 
 	"github.com/cloudfoundry/libbuildpack/checksum"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
@@ -25,6 +25,7 @@ var _ = Describe("Checksum", func() {
 		var err error
 		dir, err = ioutil.TempDir("", "checksum")
 		Expect(err).To(BeNil())
+		DeferCleanup(os.RemoveAll, dir)
 
 		Expect(os.MkdirAll(filepath.Join(dir, ".cloudfoundry"), 0755)).To(Succeed())
 		Expect(os.MkdirAll(filepath.Join(dir, "a", "b"), 0755)).To(Succeed())
@@ -32,10 +33,6 @@ var _ = Describe("Checksum", func() {
 
 		lines = []string{}
 		exec = func() error { return nil }
-	})
-
-	AfterEach(func() {
-		Expect(os.RemoveAll(dir)).To(Succeed())
 	})
 
 	debug := func(format string, args ...interface{}) {

@@ -5,13 +5,13 @@ import (
 
 	"github.com/cloudfoundry/libbuildpack/cutlass"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Simple Integration Test", func() {
 	var app *cutlass.App
-	AfterEach(func() {
+	DeferCleanup(func() {
 		if app != nil {
 			app.Destroy()
 		}
