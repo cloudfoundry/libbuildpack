@@ -1,0 +1,38 @@
+---
+language: ruby
+default_versions:
+- name: core-dep
+  version: 1.0.0
+dependencies:
+- name: core-dep
+  version: 1.0.0
+  sha256: 30d444543fbf15edc568d29705afe7ecbc813c4152b09f403f48393b0023c8a7
+  uri: file://PLACEHOLDER_CORE
+  cf_stacks:
+  - cflinuxfs4
+- name: agent-dep
+  version: 2.0.0
+  sha256: 4376301a8bdefc71d4c686a919f9cae5232707c00a5949994b1faba7aefc3796
+  uri: file://PLACEHOLDER_AGENT
+  cf_stacks:
+  - cflinuxfs4
+- name: profiler-dep
+  version: 3.0.0
+  sha256: b6d1482cd7b189071c3c48e936f04f7d0a6f7a0a75df6ecb6cb4b55fd398baa2
+  uri: file://PLACEHOLDER_PROFILER
+  cf_stacks:
+  - cflinuxfs4
+include_files:
+- manifest.yml
+- VERSION
+- bin/filename
+packaging_profiles:
+  minimal:
+    description: Core deps only. No agents or profilers.
+    exclude:
+    - agent-dep
+    - profiler-dep
+  no-profiler:
+    description: Core and agents only. No profilers.
+    exclude:
+    - profiler-dep

@@ -1,6 +1,8 @@
 package packager_test
 
 import (
+	"strings"
+
 	"github.com/cloudfoundry/libbuildpack/packager"
 	httpmock "github.com/jarcoal/httpmock"
 	. "github.com/onsi/ginkgo/v2"
@@ -59,6 +61,23 @@ Packaged binaries:
 			})
 			It("Produces no output", func() {
 				Expect(packager.Summary(buildpackDir)).To(Equal(""))
+			})
+		})
+
+		Context("manifest has packaging_profiles", func() {
+			BeforeEach(func() {
+				buildpackDir = "./fixtures/with_profiles"
+			})
+			It("prints a Packaging profiles section with sorted profile names and descriptions", func() {
+				s, err := packager.Summary(buildpackDir)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(s).To(ContainSubstring("Packaging profiles:"))
+				Expect(s).To(ContainSubstring("minimal"))
+				Expect(s).To(ContainSubstring("Core deps only. No agents or profilers."))
+				Expect(s).To(ContainSubstring("no-profiler"))
+				Expect(s).To(ContainSubstring("Core and agents only. No profilers."))
+				// minimal sorts before no-profiler
+				Expect(strings.Index(s, "minimal")).To(BeNumerically("<", strings.Index(s, "no-profiler")))
 			})
 		})
 	})
