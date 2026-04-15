@@ -40,13 +40,30 @@ type buildCmd struct {
 	version  string
 	cacheDir string
 	stack    string
+	profile  string
+	exclude  string
+	include  string
 }
 
 func (*buildCmd) Name() string     { return "build" }
 func (*buildCmd) Synopsis() string { return "Create a buildpack zipfile from the current directory" }
 func (*buildCmd) Usage() string {
-	return `build -stack <stack>|-any-stack [-cached] [-version <version>] [-cachedir <path to cachedir>]:
+	return `build -stack <stack>|-any-stack [-cached] [-version <version>] [-cachedir <path>]
+      [-profile <profile>] [-exclude <dep1,dep2,...>] [-include <dep1,dep2,...>]:
   When run in a directory that is structured as a buildpack, creates a zip file.
+
+  -profile  Name of a packaging profile defined in manifest.yml's
+            packaging_profiles section. Profiles declare which dependencies
+            to exclude from the cached zip.
+
+  -exclude  Comma-separated list of dependency names to exclude, in addition
+            to any exclusions implied by -profile. Names must exist in
+            manifest.yml. Example: -exclude datadog-javaagent,newrelic
+
+  -include  Comma-separated list of dependency names to force-include,
+            overriding exclusions implied by -profile. Useful for starting
+            from a restrictive profile and adding back a single dep.
+            Example: -profile minimal -include jprofiler-profiler
 
 `
 }
@@ -54,9 +71,11 @@ func (b *buildCmd) SetFlags(f *flag.FlagSet) {
 	f.StringVar(&b.version, "version", "", "version to build as")
 	f.BoolVar(&b.cached, "cached", false, "include dependencies")
 	f.StringVar(&b.cacheDir, "cachedir", packager.CacheDir, "cache dir")
-
 	f.StringVar(&b.stack, "stack", "", "stack to package buildpack for")
 	f.BoolVar(&b.anyStack, "any-stack", false, "package buildpack for any stack")
+	f.StringVar(&b.profile, "profile", "", "packaging profile defined in manifest.yml")
+	f.StringVar(&b.exclude, "exclude", "", "comma-separated dependency names to exclude")
+	f.StringVar(&b.include, "include", "", "comma-separated dependency names to include, overriding profile exclusions")
 }
 func (b *buildCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
 	if b.stack == "" && !b.anyStack {
@@ -76,7 +95,24 @@ func (b *buildCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{})
 		b.version = strings.TrimSpace(string(v))
 	}
 
-	zipFile, err := packager.Package(".", b.cacheDir, b.version, b.stack, b.cached)
+	parseCSV := func(s string) []string {
+		var out []string
+		for _, name := range strings.Split(s, ",") {
+			name = strings.TrimSpace(name)
+			if name != "" {
+				out = append(out, name)
+			}
+		}
+		return out
+	}
+
+	opts := packager.PackageOptions{
+		Profile: b.profile,
+		Exclude: parseCSV(b.exclude),
+		Include: parseCSV(b.include),
+	}
+
+	zipFile, err := packager.PackageWithOptions(".", b.cacheDir, b.version, b.stack, b.cached, opts)
 	if err != nil {
 		log.Printf("error while creating zipfile: %v", err)
 		return subcommands.ExitFailure
