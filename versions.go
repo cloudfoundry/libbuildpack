@@ -3,6 +3,7 @@ package libbuildpack
 import (
 	"fmt"
 	"sort"
+	"strings"
 
 	semver2 "github.com/Masterminds/semver"
 	semver1 "github.com/blang/semver"
@@ -17,6 +18,17 @@ type versionsWithOriginal []versionWithOriginal
 func (v versionsWithOriginal) Len() int           { return len(v) }
 func (v versionsWithOriginal) Swap(i, j int)      { v[i], v[j] = v[j], v[i] }
 func (v versionsWithOriginal) Less(i, j int) bool { return v[i].version.LT(v[j].version) }
+
+// normalizeSemver truncates a 4-part version string (e.g. "21.0.12.1") to its
+// first three segments ("21.0.12") so that standard semver libraries can parse
+// it. The original string is preserved separately for output.
+func normalizeSemver(ver string) string {
+	parts := strings.SplitN(ver, ".", 5)
+	if len(parts) > 3 {
+		return strings.Join(parts[:3], ".")
+	}
+	return ver
+}
 
 func FindMatchingVersion(constraint string, versions []string) (string, error) {
 	vs, err := FindMatchingVersions(constraint, versions)
@@ -43,7 +55,7 @@ func matchSemver1(constraint string, versions []string) ([]string, error) {
 	}
 
 	for _, ver := range versions {
-		depVersion, err := semver1.Parse(ver)
+		depVersion, err := semver1.Parse(normalizeSemver(ver))
 		if err != nil {
 			return []string{}, err
 		}
@@ -70,28 +82,34 @@ func matchSemver1(constraint string, versions []string) ([]string, error) {
 }
 
 func matchSemver2(constraint string, versions []string) ([]string, error) {
-	var depVersions []*semver2.Version
+	type versionEntry struct {
+		original string
+		parsed   *semver2.Version
+	}
+	var depVersions []versionEntry
 	versionConstraint, err := semver2.NewConstraint(constraint)
 	if err != nil {
 		return []string{}, err
 	}
 
 	for _, ver := range versions {
-		depVersion, err := semver2.NewVersion(ver)
+		depVersion, err := semver2.NewVersion(normalizeSemver(ver))
 		if err != nil {
 			return []string{}, err
 		}
 
 		if versionConstraint.Check(depVersion) {
-			depVersions = append(depVersions, depVersion)
+			depVersions = append(depVersions, versionEntry{original: ver, parsed: depVersion})
 		}
 	}
 
 	if len(depVersions) != 0 {
-		sort.Sort(semver2.Collection(depVersions))
+		sort.Slice(depVersions, func(i, j int) bool {
+			return depVersions[i].parsed.LessThan(depVersions[j].parsed)
+		})
 		var vs []string
-		for _, depV := range depVersions {
-			vs = append(vs, depV.Original())
+		for _, e := range depVersions {
+			vs = append(vs, e.original)
 		}
 		return vs, nil
 	}

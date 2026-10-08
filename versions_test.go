@@ -11,6 +11,32 @@ import (
 
 var _ = Describe("versions", func() {
 
+	Describe("FindMatchingVersion with 4-part versions", func() {
+		It("matches a minor-line constraint against a 4-part version", func() {
+			ver, err := bp.FindMatchingVersion("21.x", []string{"21.0.12.1"})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ver).To(Equal("21.0.12.1"))
+		})
+
+		It("returns the original 4-part string, not the normalized form", func() {
+			ver, err := bp.FindMatchingVersion("21.x", []string{"21.0.11.2", "21.0.12.1"})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ver).To(Equal("21.0.12.1"))
+		})
+
+		It("matches 3-part constraint against mixed 3-part and 4-part list", func() {
+			ver, err := bp.FindMatchingVersion("21.x", []string{"17.0.20.1", "21.0.12.1", "25.0.4.1"})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ver).To(Equal("21.0.12.1"))
+		})
+
+		It("matches an exact 4-part version constraint", func() {
+			ver, err := bp.FindMatchingVersion("21.0.12.1", []string{"21.0.11.2", "21.0.12.1"})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ver).To(Equal("21.0.12.1"))
+		})
+	})
+
 	Describe("FindMatchingVersion", func() {
 		var versions []string
 
