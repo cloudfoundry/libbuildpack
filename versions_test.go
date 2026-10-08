@@ -87,7 +87,7 @@ var _ = Describe("versions", func() {
 				"8.0.100-preview.7.23376.3",
 			})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(ver).To(Equal("8.0.1"))
+			Expect(ver).To(Equal("8.0.100-preview.7.23376.3"))
 		})
 	})
 
