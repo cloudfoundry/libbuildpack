@@ -13,7 +13,7 @@ import (
 type versionWithOriginal struct {
 	original string
 	version  semver1.Version
-	build    int // 4th version segment, 0 if absent
+	build    int // 4th version segment, -1 if absent
 }
 type versionsWithOriginal []versionWithOriginal
 
@@ -62,14 +62,20 @@ func parseBuildSegment(ver string) int {
 }
 
 // is4PartVersion reports whether ver is exactly a 4-part numeric version string.
+// Each segment must contain only ASCII digits — leading signs are rejected.
 func is4PartVersion(ver string) bool {
 	parts := strings.Split(ver, ".")
 	if len(parts) != 4 {
 		return false
 	}
 	for _, p := range parts {
-		if _, err := strconv.Atoi(p); err != nil {
+		if p == "" {
 			return false
+		}
+		for _, r := range p {
+			if r < '0' || r > '9' {
+				return false
+			}
 		}
 	}
 	return true
