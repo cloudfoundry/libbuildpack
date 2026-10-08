@@ -42,6 +42,17 @@ var _ = Describe("versions", func() {
 			Expect(ver).To(Equal("21.0.12.1"))
 		})
 
+		It("distinguishes 21.0.12 from 21.0.12.0 — 4-part wins regardless of input order", func() {
+			for _, versions := range [][]string{
+				{"21.0.12.0", "21.0.12"},
+				{"21.0.12", "21.0.12.0"},
+			} {
+				ver, err := bp.FindMatchingVersion("21.x", versions)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(ver).To(Equal("21.0.12.0"))
+			}
+		})
+
 		It("3-part constraint matches 4-part version with same prefix", func() {
 			ver, err := bp.FindMatchingVersion("21.0.12", []string{"21.0.12.1"})
 			Expect(err).NotTo(HaveOccurred())

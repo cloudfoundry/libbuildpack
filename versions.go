@@ -43,16 +43,20 @@ func normalizeSemver(ver string) string {
 	return ver
 }
 
-// parseBuildSegment extracts the 4th numeric segment from a version string,
-// returning 0 if the string has 3 or fewer segments or the segment is not numeric.
+// parseBuildSegment extracts the 4th numeric segment from a version string.
+// Returns -1 if the string has 3 or fewer segments (absent), or the numeric
+// value of the 4th segment if present. This distinguishes "21.0.12" (returns -1)
+// from "21.0.12.0" (returns 0) so that 4-part versions always sort after their
+// 3-part prefix regardless of the 4th segment value.
+// Only purely numeric 4-part versions are considered; all others return -1.
 func parseBuildSegment(ver string) int {
-	parts := strings.SplitN(ver, ".", 5)
-	if len(parts) < 4 {
-		return 0
+	if !is4PartVersion(ver) {
+		return -1
 	}
+	parts := strings.SplitN(ver, ".", 5)
 	n, err := strconv.Atoi(parts[3])
 	if err != nil {
-		return 0
+		return -1
 	}
 	return n
 }
