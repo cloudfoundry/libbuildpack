@@ -30,10 +30,10 @@ var _ = Describe("versions", func() {
 			Expect(ver).To(Equal("21.0.12.1"))
 		})
 
-		It("matches an exact 4-part version constraint", func() {
-			ver, err := bp.FindMatchingVersion("21.0.12.1", []string{"21.0.11.2", "21.0.12.1"})
+		It("resolves the correct entry when multiple 4-part versions exist for the same major", func() {
+			ver, err := bp.FindMatchingVersion("21.0.12.x", []string{"21.0.11.2", "21.0.12.1", "21.0.12.3"})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(ver).To(Equal("21.0.12.1"))
+			Expect(ver).To(Equal("21.0.12.3"))
 		})
 	})
 

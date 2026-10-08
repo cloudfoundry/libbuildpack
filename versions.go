@@ -49,7 +49,7 @@ func FindMatchingVersions(constraint string, versions []string) ([]string, error
 
 func matchSemver1(constraint string, versions []string) ([]string, error) {
 	var depVersions versionsWithOriginal
-	versionConstraint, err := semver1.ParseRange(constraint)
+	versionConstraint, err := semver1.ParseRange(normalizeSemver(constraint))
 	if err != nil {
 		return []string{}, err
 	}
@@ -87,7 +87,7 @@ func matchSemver2(constraint string, versions []string) ([]string, error) {
 		parsed   *semver2.Version
 	}
 	var depVersions []versionEntry
-	versionConstraint, err := semver2.NewConstraint(constraint)
+	versionConstraint, err := semver2.NewConstraint(normalizeSemver(constraint))
 	if err != nil {
 		return []string{}, err
 	}
