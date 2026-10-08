@@ -35,6 +35,98 @@ var _ = Describe("versions", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(ver).To(Equal("21.0.12.3"))
 		})
+
+		It("prefers 4-part over 3-part when both share the same prefix", func() {
+			ver, err := bp.FindMatchingVersion("21.x", []string{"21.0.12.1", "21.0.12"})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ver).To(Equal("21.0.12.1"))
+		})
+
+		It("3-part constraint matches 4-part version with same prefix", func() {
+			ver, err := bp.FindMatchingVersion("21.0.12", []string{"21.0.12.1"})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ver).To(Equal("21.0.12.1"))
+		})
+
+		It("matches an exact 4-part version constraint via string equality", func() {
+			ver, err := bp.FindMatchingVersion("21.0.12.1", []string{"21.0.11.2", "21.0.12.1"})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ver).To(Equal("21.0.12.1"))
+		})
+
+		It("returns error for exact 4-part constraint when version is absent", func() {
+			_, err := bp.FindMatchingVersion("21.0.12.1", []string{"21.0.12.2"})
+			Expect(err).To(HaveOccurred())
+		})
+	})
+
+	Describe("FindMatchingVersion regression: pre-release versions with dot-separated identifiers", func() {
+		It("does not truncate pre-release version strings", func() {
+			ver, err := bp.FindMatchingVersion("~8.0.x-0", []string{
+				"8.0.100-preview.1.23115.2",
+				"8.0.100-preview.7.23376.3",
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ver).To(Equal("8.0.100-preview.7.23376.3"))
+		})
+
+		It("picks the latest dotnet preview regardless of input order", func() {
+			for _, versions := range [][]string{
+				{"8.0.100-preview.7.23376.3", "8.0.100-preview.1.23115.2"},
+				{"8.0.100-preview.1.23115.2", "8.0.100-preview.7.23376.3"},
+			} {
+				ver, err := bp.FindMatchingVersion("~8.0.x-0", versions)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(ver).To(Equal("8.0.100-preview.7.23376.3"))
+			}
+		})
+
+		It("handles mixed pre-release and stable versions correctly", func() {
+			ver, err := bp.FindMatchingVersion("8.0.x", []string{
+				"8.0.1",
+				"8.0.100-preview.7.23376.3",
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ver).To(Equal("8.0.1"))
+		})
+	})
+
+	Describe("FindMatchingVersions regression", func() {
+		It("handles build metadata (Liberica-style openjdk versions)", func() {
+			vers, err := bp.FindMatchingVersions("21.x", []string{"21.0.11+9", "21.0.12+10", "17.0.20+10"})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(vers).To(Equal([]string{"21.0.11+9", "21.0.12+10"}))
+		})
+
+		It("matches an exact version with build metadata", func() {
+			vers, err := bp.FindMatchingVersions("21.0.12+10", []string{"21.0.11+9", "21.0.12+10"})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(vers).To(Equal([]string{"21.0.12+10"}))
+		})
+
+		It("matches an exact 3-part version only", func() {
+			vers, err := bp.FindMatchingVersions("1.2.3", []string{"1.2.3", "1.2.4", "1.3.0"})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(vers).To(Equal([]string{"1.2.3"}))
+		})
+
+		It("supports tilde constraints", func() {
+			vers, err := bp.FindMatchingVersions("~1.2.0", []string{"1.2.3", "1.2.4", "1.3.0"})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(vers).To(Equal([]string{"1.2.3", "1.2.4"}))
+		})
+
+		It("supports caret constraints", func() {
+			vers, err := bp.FindMatchingVersions("^1.2.0", []string{"1.2.3", "1.2.4", "2.0.0"})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(vers).To(Equal([]string{"1.2.3", "1.2.4"}))
+		})
+
+		It("supports or-constraints", func() {
+			vers, err := bp.FindMatchingVersions("1.2.x || 2.x", []string{"1.2.3", "1.3.0", "2.0.0"})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(vers).To(Equal([]string{"1.2.3", "2.0.0"}))
+		})
 	})
 
 	Describe("FindMatchingVersion", func() {

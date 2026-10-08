@@ -3,6 +3,7 @@ package libbuildpack
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
 	semver2 "github.com/Masterminds/semver"
@@ -12,26 +13,62 @@ import (
 type versionWithOriginal struct {
 	original string
 	version  semver1.Version
+	build    int // 4th version segment, 0 if absent
 }
 type versionsWithOriginal []versionWithOriginal
 
-func (v versionsWithOriginal) Len() int           { return len(v) }
-func (v versionsWithOriginal) Swap(i, j int)      { v[i], v[j] = v[j], v[i] }
-func (v versionsWithOriginal) Less(i, j int) bool { return v[i].version.LT(v[j].version) }
+func (v versionsWithOriginal) Len() int      { return len(v) }
+func (v versionsWithOriginal) Swap(i, j int) { v[i], v[j] = v[j], v[i] }
+func (v versionsWithOriginal) Less(i, j int) bool {
+	if v[i].version.EQ(v[j].version) {
+		return v[i].build < v[j].build
+	}
+	return v[i].version.LT(v[j].version)
+}
 
-// normalizeSemver truncates a 4-part version string (e.g. "21.0.12.1") to its
-// first three segments ("21.0.12") so that standard semver libraries can parse
+// normalizeSemver truncates a purely numeric 4-part version string (e.g. "21.0.12.1")
+// to its first three segments ("21.0.12") so that standard semver libraries can parse
 // it. The original string is preserved separately for output.
+// Strings with pre-release identifiers or build metadata (e.g. "8.0.100-preview.7.23376.3")
+// are returned unchanged — only strings matching \d+\.\d+\.\d+\.\d+ are truncated.
 // Note: if multiple 4-part versions share the same 3-part prefix (e.g. "17.0.20.1"
-// and "17.0.20.2"), their relative sort order is undefined. In practice this is not
-// expected — only one 4-part patch release per major version line is assumed to be
-// present in the manifest at any time.
+// and "17.0.20.2"), the 4th segment is used as a numeric tie-breaker during sorting.
+// In practice only one 4-part patch release per major version line is expected in
+// the manifest at any time.
 func normalizeSemver(ver string) string {
-	parts := strings.SplitN(ver, ".", 5)
-	if len(parts) > 3 {
+	if is4PartVersion(ver) {
+		parts := strings.SplitN(ver, ".", 5)
 		return strings.Join(parts[:3], ".")
 	}
 	return ver
+}
+
+// parseBuildSegment extracts the 4th numeric segment from a version string,
+// returning 0 if the string has 3 or fewer segments or the segment is not numeric.
+func parseBuildSegment(ver string) int {
+	parts := strings.SplitN(ver, ".", 5)
+	if len(parts) < 4 {
+		return 0
+	}
+	n, err := strconv.Atoi(parts[3])
+	if err != nil {
+		return 0
+	}
+	return n
+}
+
+// is4PartVersion reports whether ver is exactly a 4-part numeric version string.
+func is4PartVersion(ver string) bool {
+	parts := strings.Split(ver, ".")
+	if len(parts) != 4 {
+		return false
+	}
+	for _, p := range parts {
+		if _, err := strconv.Atoi(p); err != nil {
+			return false
+		}
+	}
+	return true
 }
 
 func FindMatchingVersion(constraint string, versions []string) (string, error) {
@@ -43,6 +80,18 @@ func FindMatchingVersion(constraint string, versions []string) (string, error) {
 }
 
 func FindMatchingVersions(constraint string, versions []string) ([]string, error) {
+	// Short-circuit: exact 4-part version constraint — use string equality rather
+	// than semver parsing, since neither blang/semver nor Masterminds/semver accept
+	// a 4-part string as a constraint.
+	if is4PartVersion(constraint) {
+		for _, v := range versions {
+			if v == constraint {
+				return []string{v}, nil
+			}
+		}
+		return []string{}, fmt.Errorf("no match found for %s in %v", constraint, versions)
+	}
+
 	matchedVersions, err := matchSemver1(constraint, versions)
 	if err == nil {
 		return matchedVersions, nil
@@ -63,13 +112,13 @@ func matchSemver1(constraint string, versions []string) ([]string, error) {
 		if err != nil {
 			return []string{}, err
 		}
-		versionWithOriginal := versionWithOriginal{
-			original: ver,
-			version:  depVersion,
-		}
 
 		if versionConstraint(depVersion) {
-			depVersions = append(depVersions, versionWithOriginal)
+			depVersions = append(depVersions, versionWithOriginal{
+				original: ver,
+				version:  depVersion,
+				build:    parseBuildSegment(ver),
+			})
 		}
 	}
 
@@ -89,6 +138,7 @@ func matchSemver2(constraint string, versions []string) ([]string, error) {
 	type versionEntry struct {
 		original string
 		parsed   *semver2.Version
+		build    int
 	}
 	var depVersions []versionEntry
 	versionConstraint, err := semver2.NewConstraint(constraint)
@@ -103,12 +153,19 @@ func matchSemver2(constraint string, versions []string) ([]string, error) {
 		}
 
 		if versionConstraint.Check(depVersion) {
-			depVersions = append(depVersions, versionEntry{original: ver, parsed: depVersion})
+			depVersions = append(depVersions, versionEntry{
+				original: ver,
+				parsed:   depVersion,
+				build:    parseBuildSegment(ver),
+			})
 		}
 	}
 
 	if len(depVersions) != 0 {
 		sort.Slice(depVersions, func(i, j int) bool {
+			if depVersions[i].parsed.Equal(depVersions[j].parsed) {
+				return depVersions[i].build < depVersions[j].build
+			}
 			return depVersions[i].parsed.LessThan(depVersions[j].parsed)
 		})
 		var vs []string
