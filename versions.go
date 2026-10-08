@@ -22,6 +22,10 @@ func (v versionsWithOriginal) Less(i, j int) bool { return v[i].version.LT(v[j].
 // normalizeSemver truncates a 4-part version string (e.g. "21.0.12.1") to its
 // first three segments ("21.0.12") so that standard semver libraries can parse
 // it. The original string is preserved separately for output.
+// Note: if multiple 4-part versions share the same 3-part prefix (e.g. "17.0.20.1"
+// and "17.0.20.2"), their relative sort order is undefined. In practice this is not
+// expected — only one 4-part patch release per major version line is assumed to be
+// present in the manifest at any time.
 func normalizeSemver(ver string) string {
 	parts := strings.SplitN(ver, ".", 5)
 	if len(parts) > 3 {
