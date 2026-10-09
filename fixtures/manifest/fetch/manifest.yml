@@ -174,3 +174,9 @@ dependencies:
   sha256: 8208480eb849203632239f73bd3c61ed488546d19d29c06d7c2e1649d8950bd1
   cf_stacks:
   - cflinuxfs2
+- name: buildline
+  version: not-semver
+  uri: https://example.com/dependencies/buildline-not-semver-linux-x64.tgz
+  sha256: 8208480eb849203632239f73bd3c61ed488546d19d29c06d7c2e1649d8950bd1
+  cf_stacks:
+  - cflinuxfs2

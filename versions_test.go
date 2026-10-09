@@ -169,6 +169,28 @@ var _ = Describe("versions", func() {
 			Expect(vers).To(Equal([]string{"21.0.12+10"}))
 		})
 
+		It("skips unparsable versions instead of failing", func() {
+			for _, versions := range [][]string{
+				{"not-a-version", "21.0.12+10", "21.0.12.1+1"},
+				{"21.0.12+10", "21.0.12.1+1", "not-a-version"},
+			} {
+				vers, err := bp.FindMatchingVersions("21.x", versions)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(vers).To(Equal([]string{"21.0.12+10", "21.0.12.1+1"}))
+			}
+		})
+
+		It("still uses the lenient parser for versions it accepts", func() {
+			vers, err := bp.FindMatchingVersions("1.x", []string{"1.2", "1.3.0", "not-a-version"})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(vers).To(Equal([]string{"1.2", "1.3.0"}))
+		})
+
+		It("returns error when no parsable version matches", func() {
+			_, err := bp.FindMatchingVersions("21.x", []string{"not-a-version", "17.0.20+10"})
+			Expect(err).To(HaveOccurred())
+		})
+
 		It("returns error for an exact X.Y.Z.N+B version when the build is absent", func() {
 			_, err := bp.FindMatchingVersion("21.0.12.1+3", []string{"21.0.12.1+1", "21.0.12.1+2"})
 			Expect(err).To(HaveOccurred())

@@ -747,6 +747,12 @@ var _ = Describe("Installer", func() {
 						Expect(err).To(BeNil())
 						Expect(buffer.String()).NotTo(ContainSubstring(warning))
 					})
+
+					It("warns about a newer build despite an unparsable sibling version", func() {
+						err = installer.InstallDependency(libbuildpack.Dependency{Name: "buildline", Version: "21.0.12+9"}, outputDir)
+						Expect(err).To(BeNil())
+						Expect(buffer.String()).To(ContainSubstring("Please adjust your app to use version 21.0.12+10 instead of version 21.0.12+9"))
+					})
 				})
 
 				Context("version has an EOL, version line is major", func() {
