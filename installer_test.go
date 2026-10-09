@@ -723,6 +723,32 @@ var _ = Describe("Installer", func() {
 					})
 				})
 
+				Context("version has an EOL, version line is an exact version with build", func() {
+					const warning = "**WARNING** buildline 21.0.12+10 will no longer be available in new buildpacks released after 2018-04-01"
+					BeforeEach(func() {
+						tgzContents, err := os.ReadFile("fixtures/thing.tgz")
+						Expect(err).To(BeNil())
+						for _, v := range []string{"21.0.12+9", "21.0.12+10"} {
+							httpmock.RegisterResponder("GET", "https://example.com/dependencies/buildline-"+v+"-linux-x64.tgz",
+								httpmock.NewStringResponder(200, string(tgzContents)))
+						}
+						currentTime, err = time.Parse("2006-01-02", "2018-03-29")
+						Expect(err).To(BeNil())
+					})
+
+					It("warns for the matching build", func() {
+						err = installer.InstallDependency(libbuildpack.Dependency{Name: "buildline", Version: "21.0.12+10"}, outputDir)
+						Expect(err).To(BeNil())
+						Expect(buffer.String()).To(ContainSubstring(warning))
+					})
+
+					It("does not warn for another build", func() {
+						err = installer.InstallDependency(libbuildpack.Dependency{Name: "buildline", Version: "21.0.12+9"}, outputDir)
+						Expect(err).To(BeNil())
+						Expect(buffer.String()).NotTo(ContainSubstring(warning))
+					})
+				})
+
 				Context("version has an EOL, version line is major", func() {
 					const warning = "**WARNING** thing 4.x will no longer be available in new buildpacks released after 2017-03-01."
 					BeforeEach(func() {

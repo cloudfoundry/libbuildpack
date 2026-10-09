@@ -146,6 +146,29 @@ var _ = Describe("versions", func() {
 			Expect(ver).To(Equal("21.0.12.1+2"))
 		})
 
+		It("orders numeric builds above non-numeric build metadata regardless of input order", func() {
+			for _, versions := range [][]string{
+				{"21.0.12+10", "21.0.12+foo", "21.0.12+9"},
+				{"21.0.12+9", "21.0.12+foo", "21.0.12+10"},
+				{"21.0.12+foo", "21.0.12+10", "21.0.12+9"},
+				{"21.0.12+10", "21.0.12+9", "21.0.12+foo"},
+			} {
+				vers, err := bp.FindMatchingVersions("21.x", versions)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(vers).To(Equal([]string{"21.0.12+foo", "21.0.12+9", "21.0.12+10"}))
+			}
+		})
+
+		It("requires exact constraints to have the same number of fields", func() {
+			vers, err := bp.FindMatchingVersions("21.0.12.0", []string{"21.0.12", "21.0.12.0", "21.0.12.0.0"})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(vers).To(Equal([]string{"21.0.12.0"}))
+
+			vers, err = bp.FindMatchingVersions("21.0.12+10", []string{"21.0.12.0+10", "21.0.12+10"})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(vers).To(Equal([]string{"21.0.12+10"}))
+		})
+
 		It("returns error for an exact X.Y.Z.N+B version when the build is absent", func() {
 			_, err := bp.FindMatchingVersion("21.0.12.1+3", []string{"21.0.12.1+1", "21.0.12.1+2"})
 			Expect(err).To(HaveOccurred())

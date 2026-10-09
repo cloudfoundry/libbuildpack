@@ -20,6 +20,9 @@ dependency_deprecation_dates:
 - name: fourpart
   version_line: '1.2.3.4'
   date: 2018-04-01
+- name: buildline
+  version_line: '21.0.12+10'
+  date: 2018-04-01
 dependencies:
 - name: other_thing
   version: 4.5.6
@@ -156,6 +159,18 @@ dependencies:
 - name: fourpart
   version: not-semver
   uri: https://example.com/dependencies/fourpart-not-semver-linux-x64.tgz
+  sha256: 8208480eb849203632239f73bd3c61ed488546d19d29c06d7c2e1649d8950bd1
+  cf_stacks:
+  - cflinuxfs2
+- name: buildline
+  version: 21.0.12+9
+  uri: https://example.com/dependencies/buildline-21.0.12+9-linux-x64.tgz
+  sha256: 8208480eb849203632239f73bd3c61ed488546d19d29c06d7c2e1649d8950bd1
+  cf_stacks:
+  - cflinuxfs2
+- name: buildline
+  version: 21.0.12+10
+  uri: https://example.com/dependencies/buildline-21.0.12+10-linux-x64.tgz
   sha256: 8208480eb849203632239f73bd3c61ed488546d19d29c06d7c2e1649d8950bd1
   cf_stacks:
   - cflinuxfs2
