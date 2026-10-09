@@ -71,6 +71,87 @@ var _ = Describe("versions", func() {
 		})
 	})
 
+	Describe("FindMatchingVersion with JEP 322 versions", func() {
+		It("orders 21.0.12 < 21.0.12.1 < 21.0.12.1.1 regardless of input order", func() {
+			for _, versions := range [][]string{
+				{"21.0.12", "21.0.12.1", "21.0.12.1.1"},
+				{"21.0.12.1.1", "21.0.12.1", "21.0.12"},
+				{"21.0.12.1", "21.0.12.1.1", "21.0.12"},
+			} {
+				vers, err := bp.FindMatchingVersions("21.x", versions)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(vers).To(Equal([]string{"21.0.12", "21.0.12.1", "21.0.12.1.1"}))
+			}
+		})
+
+		It("orders by numeric build number", func() {
+			for _, versions := range [][]string{
+				{"21.0.12.1+1", "21.0.12.1+2", "21.0.12.1+10"},
+				{"21.0.12.1+10", "21.0.12.1+2", "21.0.12.1+1"},
+			} {
+				vers, err := bp.FindMatchingVersions("21.x", versions)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(vers).To(Equal([]string{"21.0.12.1+1", "21.0.12.1+2", "21.0.12.1+10"}))
+			}
+		})
+
+		It("orders 3-part versions by numeric build number", func() {
+			vers, err := bp.FindMatchingVersions("21.x", []string{"21.0.12+10", "21.0.12+9"})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(vers).To(Equal([]string{"21.0.12+9", "21.0.12+10"}))
+		})
+
+		It("resolves the newest Liberica-style version in a mixed list", func() {
+			versions := []string{"17.0.20+10", "17.0.20.1+2", "21.0.12+10", "21.0.12.1+1", "21.0.12.1+2", "25.0.4+9", "25.0.4.1+1"}
+			for constraint, expected := range map[string]string{
+				"17.x":   "17.0.20.1+2",
+				"21.x":   "21.0.12.1+2",
+				"21.0.x": "21.0.12.1+2",
+				"21.*":   "21.0.12.1+2",
+				"25.x":   "25.0.4.1+1",
+			} {
+				ver, err := bp.FindMatchingVersion(constraint, versions)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(ver).To(Equal(expected), constraint)
+			}
+		})
+
+		It("supports more than four numeric fields", func() {
+			ver, err := bp.FindMatchingVersion("21.x", []string{"21.0.10", "21.0.10.0.1", "21.0.9.1"})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ver).To(Equal("21.0.10.0.1"))
+		})
+
+		It("handles Java 8 versions", func() {
+			ver, err := bp.FindMatchingVersion("8.x", []string{"8.0.492+10", "8.0.504+7", "11.0.32.1+1"})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ver).To(Equal("8.0.504+7"))
+		})
+
+		It("matches an exact X.Y.Z.N+B version", func() {
+			vers, err := bp.FindMatchingVersions("21.0.12.1+1", []string{"21.0.12+10", "21.0.12.1+1", "21.0.12.1+2"})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(vers).To(Equal([]string{"21.0.12.1+1"}))
+		})
+
+		It("matches an exact X.Y.Z+B version without matching newer patch releases", func() {
+			vers, err := bp.FindMatchingVersions("21.0.12+10", []string{"21.0.12+9", "21.0.12+10", "21.0.12.1+1"})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(vers).To(Equal([]string{"21.0.12+10"}))
+		})
+
+		It("matches all builds of an exact X.Y.Z.N version without build number", func() {
+			ver, err := bp.FindMatchingVersion("21.0.12.1", []string{"21.0.12+10", "21.0.12.1+2", "21.0.12.1+1"})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ver).To(Equal("21.0.12.1+2"))
+		})
+
+		It("returns error for an exact X.Y.Z.N+B version when the build is absent", func() {
+			_, err := bp.FindMatchingVersion("21.0.12.1+3", []string{"21.0.12.1+1", "21.0.12.1+2"})
+			Expect(err).To(HaveOccurred())
+		})
+	})
+
 	Describe("FindMatchingVersion regression: pre-release versions with dot-separated identifiers", func() {
 		It("does not truncate pre-release version strings", func() {
 			ver, err := bp.FindMatchingVersion("~8.0.x-0", []string{

@@ -664,6 +664,65 @@ var _ = Describe("Installer", func() {
 					})
 				})
 
+				Context("JEP 322 versions (X.Y.Z.N+B)", func() {
+					BeforeEach(func() {
+						tgzContents, err := os.ReadFile("fixtures/thing.tgz")
+						Expect(err).To(BeNil())
+						for _, v := range []string{"21.0.12+10", "21.0.12.1+1", "21.0.12.1+2"} {
+							httpmock.RegisterResponder("GET", "https://example.com/dependencies/jre-"+v+"-linux-x64.tgz",
+								httpmock.NewStringResponder(200, string(tgzContents)))
+						}
+					})
+
+					It("installs the latest version without a newer version warning", func() {
+						err = installer.InstallDependency(libbuildpack.Dependency{Name: "jre", Version: "21.0.12.1+2"}, outputDir)
+						Expect(err).To(BeNil())
+						Expect(buffer.String()).NotTo(ContainSubstring("newer version"))
+					})
+
+					It("warns when a newer patch release is available", func() {
+						err = installer.InstallDependency(libbuildpack.Dependency{Name: "jre", Version: "21.0.12+10"}, outputDir)
+						Expect(err).To(BeNil())
+						Expect(buffer.String()).To(ContainSubstring("Please adjust your app to use version 21.0.12.1+2 instead of version 21.0.12+10"))
+					})
+
+					It("warns when a newer build is available", func() {
+						err = installer.InstallDependency(libbuildpack.Dependency{Name: "jre", Version: "21.0.12.1+1"}, outputDir)
+						Expect(err).To(BeNil())
+						Expect(buffer.String()).To(ContainSubstring("Please adjust your app to use version 21.0.12.1+2 instead of version 21.0.12.1+1"))
+					})
+
+					Context("version line has an EOL less than 30 days in the future", func() {
+						BeforeEach(func() {
+							currentTime, err = time.Parse("2006-01-02", "2018-03-29")
+							Expect(err).To(BeNil())
+						})
+
+						It("warns the user", func() {
+							err = installer.InstallDependency(libbuildpack.Dependency{Name: "jre", Version: "21.0.12.1+2"}, outputDir)
+							Expect(err).To(BeNil())
+							Expect(buffer.String()).To(ContainSubstring("**WARNING** jre 21.x will no longer be available in new buildpacks released after 2018-04-01"))
+						})
+					})
+				})
+
+				Context("4-part version with an unparsable sibling version and an exact EOL version line", func() {
+					BeforeEach(func() {
+						tgzContents, err := os.ReadFile("fixtures/thing.tgz")
+						Expect(err).To(BeNil())
+						httpmock.RegisterResponder("GET", "https://example.com/dependencies/fourpart-1.2.3.4-linux-x64.tgz",
+							httpmock.NewStringResponder(200, string(tgzContents)))
+						currentTime, err = time.Parse("2006-01-02", "2018-03-29")
+						Expect(err).To(BeNil())
+					})
+
+					It("installs and warns about the EOL", func() {
+						err = installer.InstallDependency(libbuildpack.Dependency{Name: "fourpart", Version: "1.2.3.4"}, outputDir)
+						Expect(err).To(BeNil())
+						Expect(buffer.String()).To(ContainSubstring("**WARNING** fourpart 1.2.3.4 will no longer be available in new buildpacks released after 2018-04-01"))
+					})
+				})
+
 				Context("version has an EOL, version line is major", func() {
 					const warning = "**WARNING** thing 4.x will no longer be available in new buildpacks released after 2017-03-01."
 					BeforeEach(func() {
